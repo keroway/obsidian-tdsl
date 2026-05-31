@@ -1,0 +1,19 @@
+/* Timeline DSL plugin styles */
+
+.tdsl-preview {
+  overflow-x: auto;
+}
+
+.tdsl-preview svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.tdsl-error {
+  color: var(--text-error);
+  background: var(--background-modifier-error);
+  border-left: 3px solid var(--text-error);
+  padding: 0.5em 1em;
+  white-space: pre-wrap;
+  font-size: 0.9em;
+}

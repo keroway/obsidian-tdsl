@@ -1,0 +1,34 @@
+{
+  "name": "obsidian-tdsl",
+  "version": "0.1.0",
+  "description": "Timeline DSL plugin for Obsidian — renders .tdsl code blocks as SVG",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "obsidian-plugin",
+    "timeline",
+    "dsl",
+    "wasm",
+    "svg"
+  ],
+  "author": "keroway",
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^22.0.0",
+    "builtin-modules": "^5.0.0",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.0.0",
+    "obsidian": "latest",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.0.0"
+  },
+  "dependencies": {
+    "@keroway/tdsl-wasm": "^1.12.0"
+  }
+}
