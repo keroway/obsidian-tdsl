@@ -12,6 +12,11 @@ async function ensureWasm(): Promise<void> {
   wasmReady = true;
 }
 
+/** Returns true when the source contains an `import wikidata` block. */
+function hasWikidataImport(source: string): boolean {
+  return /^\s*import\s+wikidata\b/m.test(source);
+}
+
 class TdslPreview extends MarkdownRenderChild {
   private readonly source: string;
 
@@ -21,38 +26,51 @@ class TdslPreview extends MarkdownRenderChild {
   }
 
   async onload(): Promise<void> {
+    const wrapper = this.containerEl.createDiv({ cls: 'tdsl-preview' });
+
     try {
       await ensureWasm();
-      // check_source returns JSON array of diagnostics
+
+      // check_source returns JSON: [{severity, message, line, col}]
       const diagnosticsJson = check_source(this.source);
       const diagnostics: Array<{ severity: string; message: string; line: number; col: number }> =
         JSON.parse(diagnosticsJson);
       const errors = diagnostics.filter((d) => d.severity === 'error');
 
       if (errors.length > 0) {
-        this.showErrors(errors.map((e) => `Line ${e.line}: ${e.message}`));
+        this.showErrors(
+          wrapper,
+          errors.map((e) => (e.line > 0 ? `Line ${e.line}: ${e.message}` : e.message)),
+        );
         return;
       }
 
       const svg = render_svg_from_source(this.source, 0);
-      const wrapper = this.containerEl.createDiv({ cls: 'tdsl-preview' });
-      // Parse as SVG/XML (not HTML) to avoid innerHTML XSS concerns.
-      // DOMParser with 'image/svg+xml' does not execute scripts or event handlers.
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(svg, 'image/svg+xml');
-      const svgEl = doc.documentElement;
-      if (svgEl instanceof SVGElement) {
-        wrapper.appendChild(document.adoptNode(svgEl));
-      } else {
-        this.showErrors(['Internal error: renderer returned invalid SVG']);
+
+      // Parse as SVG/XML — avoids innerHTML and does not execute scripts or event handlers.
+      const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+      const parseError = doc.querySelector('parsererror');
+      if (parseError) {
+        this.showErrors(wrapper, ['Internal error: renderer returned invalid SVG']);
+        return;
+      }
+      wrapper.appendChild(document.adoptNode(doc.documentElement));
+
+      // Warn when import wikidata blocks are silently skipped (no network in browser).
+      if (hasWikidataImport(this.source)) {
+        const notice = wrapper.createDiv({ cls: 'tdsl-notice' });
+        notice.createSpan({ text: '⚠ ' });
+        notice.createSpan({
+          text: 'import wikidata は Obsidian 内では実行されません。静的アイテムのみ表示されます。',
+        });
       }
     } catch (e) {
-      this.showErrors([String(e)]);
+      this.showErrors(wrapper, [String(e)]);
     }
   }
 
-  private showErrors(messages: string[]): void {
-    this.containerEl.createEl('pre', {
+  private showErrors(container: HTMLElement, messages: string[]): void {
+    container.createEl('pre', {
       text: `Timeline DSL error:\n${messages.join('\n')}`,
       cls: 'tdsl-error',
     });
@@ -62,8 +80,7 @@ class TdslPreview extends MarkdownRenderChild {
 export default class TimelineDslPlugin extends Plugin {
   async onload(): Promise<void> {
     this.registerMarkdownCodeBlockProcessor('tdsl', (_source, el, ctx) => {
-      const child = new TdslPreview(el, _source);
-      ctx.addChild(child);
+      ctx.addChild(new TdslPreview(el, _source));
     });
   }
 }
