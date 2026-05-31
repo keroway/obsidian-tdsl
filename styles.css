@@ -1,14 +1,69 @@
 /* Timeline DSL plugin styles */
 
+/* ── Container ── */
 .tdsl-preview {
   overflow-x: auto;
+  border-radius: 4px;
+  padding: 4px;
 }
 
 .tdsl-preview svg {
+  display: block;
   max-width: 100%;
   height: auto;
 }
 
+/* ── SVG elements — light mode (default) ──
+ *
+ * The render_svg_from_source WASM function embeds a minimal <style> block that sets
+ * font-family, font-sizes, and a few stroke/fill values. The selectors below use a
+ * higher-specificity prefix (.tdsl-preview) so they win in the cascade.
+ */
+.tdsl-preview .tdsl-lane-band-even { fill: #fff; }
+.tdsl-preview .tdsl-lane-band-odd  { fill: #f5f5f7; }
+
+.tdsl-preview .tdsl-axis-baseline  { stroke: #888; stroke-width: 1; }
+.tdsl-preview .tdsl-axis-tick      { stroke: #e0e0e0; stroke-width: 1; }
+.tdsl-preview .tdsl-axis-month-tick { stroke: #ccc; stroke-width: 1; }
+.tdsl-preview .tdsl-axis-text      { fill: #666; font-size: 11px; }
+.tdsl-preview .tdsl-axis-day-text  { fill: #888; font-size: 9px; }
+
+.tdsl-preview .tdsl-lane-label     { fill: #333; font-size: 13px; font-weight: 500; }
+.tdsl-preview .tdsl-item-label     { fill: #fff; font-size: 11px; font-weight: 500; pointer-events: none; }
+.tdsl-preview .tdsl-group-label    { fill: #444; }
+.tdsl-preview .tdsl-group-separator { stroke: #aaa; stroke-width: 1; }
+
+.tdsl-preview .tdsl-span:hover         { fill-opacity: 1; }
+.tdsl-preview .tdsl-event-range:hover  { fill-opacity: 1; }
+.tdsl-preview .tdsl-event-dot:hover    { fill: #1a73e8; }
+.tdsl-preview .tdsl-event-stem         { stroke: #aaa; stroke-width: 1; stroke-dasharray: 2 2; }
+.tdsl-preview .tdsl-event-hit          { fill: transparent; cursor: pointer; }
+
+/* ── SVG elements — dark mode ──
+ *
+ * Obsidian sets `body.theme-dark` on dark mode. Two-segment selectors
+ * (.theme-dark .tdsl-preview .class) beat the single-segment SVG-internal styles.
+ */
+.theme-dark .tdsl-preview { background: transparent; }
+
+.theme-dark .tdsl-preview .tdsl-lane-band-even { fill: #1e1e2e; }
+.theme-dark .tdsl-preview .tdsl-lane-band-odd  { fill: #181825; }
+
+.theme-dark .tdsl-preview .tdsl-axis-baseline   { stroke: #585b70; }
+.theme-dark .tdsl-preview .tdsl-axis-tick       { stroke: #313244; }
+.theme-dark .tdsl-preview .tdsl-axis-month-tick { stroke: #45475a; }
+.theme-dark .tdsl-preview .tdsl-axis-day-tick   { stroke: #313244; }
+.theme-dark .tdsl-preview .tdsl-axis-text       { fill: #a6adc8; }
+.theme-dark .tdsl-preview .tdsl-axis-day-text   { fill: #7f849c; }
+
+.theme-dark .tdsl-preview .tdsl-lane-label      { fill: #cdd6f4; }
+.theme-dark .tdsl-preview .tdsl-item-label      { fill: #fff; }
+.theme-dark .tdsl-preview .tdsl-group-label     { fill: #cdd6f4; }
+.theme-dark .tdsl-preview .tdsl-group-separator { stroke: #585b70; }
+.theme-dark .tdsl-preview .tdsl-event-dot       { stroke: #1e1e2e; }
+.theme-dark .tdsl-preview .tdsl-event-stem      { stroke: #585b70; }
+
+/* ── Error / notice callouts ── */
 .tdsl-error {
   color: var(--text-error);
   background: var(--background-modifier-error);
@@ -16,4 +71,17 @@
   padding: 0.5em 1em;
   white-space: pre-wrap;
   font-size: 0.9em;
+  border-radius: 2px;
+}
+
+.tdsl-notice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.82em;
+  color: var(--text-muted);
+  background: var(--background-modifier-hover);
 }
