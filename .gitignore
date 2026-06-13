@@ -2,3 +2,20 @@ node_modules/
 main.js
 *.js.map
 .DS_Store
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.secret
+*.pem
+*.key
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
