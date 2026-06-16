@@ -197,3 +197,5 @@ CI runs lint → typecheck → build and verifies that `main.js` is produced. Se
 ## License
 
 MIT © keroway
+
+Third-party licenses for bundled dependencies are listed in [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md).
