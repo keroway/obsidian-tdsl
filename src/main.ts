@@ -17,6 +17,12 @@ function hasWikidataImport(source: string): boolean {
   return /^\s*import\s+wikidata\b/m.test(source);
 }
 
+/** Extracts the timeline title from a `timeline "..."` line, or null. */
+function extractTimelineTitle(source: string): string | null {
+  const m = source.match(/^\s*timeline\s+"([^"]*)"/m);
+  return m && m[1].trim() ? m[1].trim() : null;
+}
+
 class TdslPreview extends MarkdownRenderChild {
   private readonly source: string;
 
@@ -54,7 +60,12 @@ class TdslPreview extends MarkdownRenderChild {
         this.showErrors(wrapper, ['Internal error: renderer returned invalid SVG']);
         return;
       }
-      wrapper.appendChild(document.adoptNode(doc.documentElement));
+      // Attach accessibility attributes before adopting the node into the document.
+      // Using setAttribute avoids innerHTML and keeps the XSS-safe invariant intact.
+      const root = doc.documentElement;
+      root.setAttribute('role', 'img');
+      root.setAttribute('aria-label', extractTimelineTitle(this.source) ?? 'Timeline');
+      wrapper.appendChild(document.adoptNode(root));
 
       // Warn when import wikidata blocks are silently skipped (no network in browser).
       if (hasWikidataImport(this.source)) {
