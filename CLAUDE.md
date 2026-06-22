@@ -66,13 +66,15 @@ Obsidian プラグインのインストール手順はこの 3 ファイルを v
 - `package.json` → `"version"`
 - `versions.json` → キー（プラグインバージョン）と値（minAppVersion）
 
-どれか 1 つでもズレると Obsidian のプラグイン更新チェックが誤動作する。バージョンを上げるときは 3 ファイルを同時に更新すること。
+どれか 1 つでもズレると Obsidian のプラグイン更新チェックが誤動作する。
+バージョンを上げるときは `npm version patch` / `npm version minor` /
+`npm version major` を使い、`version-bump.mjs` 経由で 3 ファイルを同時に更新すること。
 
 ---
 
 ## アーキテクチャ概要
 
-```
+```text
 src/
   main.ts      — プラグインエントリポイント。Plugin クラスと MarkdownRenderChild を定義
   wasm.d.ts    — esbuild binary loader 向け .wasm 型宣言
@@ -83,5 +85,6 @@ versions.json  — バージョン↔minAppVersion マッピング
 ```
 
 外部依存：
+
 - `@keroway/tdsl-wasm` — Rust/WASM レンダラー（`check_source` / `render_svg_from_source`）
 - `obsidian` — Obsidian プラグイン API（`external` として esbuild からは除外）
