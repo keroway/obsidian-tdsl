@@ -3,6 +3,13 @@ import init, { check_source, render_svg_from_source } from '@keroway/tdsl-wasm';
 // esbuild inlines the WASM binary via `loader: { '.wasm': 'binary' }`
 // so init() receives a BufferSource directly instead of fetching a URL.
 import wasmBytes from '@keroway/tdsl-wasm/tdsl_wasm_bg.wasm';
+import {
+  hasWikidataImport,
+  extractTimelineTitle,
+  parseDiagnostics,
+  filterErrors,
+  formatDiagnosticMessages,
+} from './utils';
 
 let wasmReady = false;
 
@@ -10,17 +17,6 @@ async function ensureWasm(): Promise<void> {
   if (wasmReady) return;
   await init(wasmBytes as unknown as Parameters<typeof init>[0]);
   wasmReady = true;
-}
-
-/** Returns true when the source contains an `import wikidata` block. */
-function hasWikidataImport(source: string): boolean {
-  return /^\s*import\s+wikidata\b/m.test(source);
-}
-
-/** Extracts the timeline title from a `timeline "..."` line, or null. */
-function extractTimelineTitle(source: string): string | null {
-  const m = source.match(/^\s*timeline\s+"([^"]*)"/m);
-  return m && m[1].trim() ? m[1].trim() : null;
 }
 
 class TdslPreview extends MarkdownRenderChild {
@@ -39,15 +35,10 @@ class TdslPreview extends MarkdownRenderChild {
 
       // check_source returns JSON: [{severity, message, line, col}]
       const diagnosticsJson = check_source(this.source);
-      const diagnostics: Array<{ severity: string; message: string; line: number; col: number }> =
-        JSON.parse(diagnosticsJson);
-      const errors = diagnostics.filter((d) => d.severity === 'error');
+      const errors = filterErrors(parseDiagnostics(diagnosticsJson));
 
       if (errors.length > 0) {
-        this.showErrors(
-          wrapper,
-          errors.map((e) => (e.line > 0 ? `Line ${e.line}: ${e.message}` : e.message)),
-        );
+        this.showErrors(wrapper, formatDiagnosticMessages(errors));
         return;
       }
 
