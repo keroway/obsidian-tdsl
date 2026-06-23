@@ -153,19 +153,40 @@ Wikidata 連携が必要な場合は、[tdsl CLI](https://github.com/keroway/tim
 
 現時点では Obsidian コミュニティプラグインディレクトリへの申請準備中です。公開後は **設定 → コミュニティプラグイン → 閲覧** で `Timeline DSL` を検索してインストールできるようになります。
 
+### 手動インストール（GitHub Release）
+
+1. [Releases ページ](https://github.com/keroway/obsidian-tdsl/releases) から最新リリースの以下 3 ファイルをダウンロード:
+   - `main.js`
+   - `manifest.json`
+   - `styles.css`
+2. Vault にプラグインディレクトリを作成（存在しない場合）:
+
+   ```sh
+   mkdir -p <vault>/.obsidian/plugins/obsidian-tdsl/
+   ```
+
+3. ダウンロードした 3 ファイルをそのディレクトリにコピー。
+4. Obsidian で **設定 → コミュニティプラグイン → インストール済みプラグイン** から **Timeline DSL** を有効化
+
+> Obsidian 1.4.0 以上が必要です。
+
 ### 手動インストール（開発ビルド）
 
 1. このリポジトリをクローン
 2. 依存関係をインストールしてビルド:
+
    ```sh
    npm install
    npm run build
    ```
+
 3. 生成された 3 ファイルを Vault にコピー:
+
    ```sh
    # <vault> は自分の Vault のパスに置き換えてください
    cp main.js manifest.json styles.css <vault>/.obsidian/plugins/obsidian-tdsl/
    ```
+
 4. Obsidian で **設定 → コミュニティプラグイン → インストール済みプラグイン** から **Timeline DSL** を有効化
 
 > Obsidian 1.4.0 以上が必要です。

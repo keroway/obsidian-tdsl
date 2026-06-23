@@ -155,19 +155,40 @@ For full Wikidata integration, use the [tdsl CLI](https://github.com/keroway/tim
 
 The plugin is not yet listed in the Obsidian Community Plugin directory. Once published, it will be installable from **Settings → Community plugins → Browse** by searching for `Timeline DSL`.
 
+### Manual installation (GitHub Release)
+
+1. Go to the [Releases page](https://github.com/keroway/obsidian-tdsl/releases) and download the latest release assets:
+   - `main.js`
+   - `manifest.json`
+   - `styles.css`
+2. Create the plugin directory in your vault (if it does not exist):
+
+   ```sh
+   mkdir -p <vault>/.obsidian/plugins/obsidian-tdsl/
+   ```
+
+3. Copy the three downloaded files into that directory.
+4. In Obsidian: **Settings → Community plugins → Installed plugins** → enable **Timeline DSL**
+
+> Requires Obsidian ≥ 1.4.0.
+
 ### Manual installation (development build)
 
 1. Clone this repository
 2. Install dependencies and build:
+
    ```sh
    npm install
    npm run build
    ```
+
 3. Copy the three output files into your vault:
+
    ```sh
    # replace <vault> with your actual vault path
    cp main.js manifest.json styles.css <vault>/.obsidian/plugins/obsidian-tdsl/
    ```
+
 4. In Obsidian: **Settings → Community plugins → Installed plugins** → enable **Timeline DSL**
 
 > Requires Obsidian ≥ 1.4.0.
