@@ -1,0 +1,26 @@
+# https://editorconfig.org
+# Baseline editor settings. Biome (biome.json) is the source of truth for
+# JS/TS/JSON/CSS formatting; this file covers the file types Biome does not
+# format (YAML, Markdown) and keeps non-Biome editors consistent.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Code formatted by Biome — tab indentation (Biome default, matches biome.json).
+[*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc,css}]
+indent_style = tab
+
+# YAML requires spaces; Biome does not format YAML.
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown — trailing spaces can be meaningful (hard line breaks).
+[*.md]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = false

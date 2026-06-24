@@ -5,11 +5,26 @@ Obsidian 用 Timeline DSL プラグイン。`.tdsl` コードブロックを WAS
 ## コマンド
 
 ```bash
-npm run build       # esbuild で main.js を生成（本番ビルド）
-npm run dev         # ウォッチモードでビルド（開発用）
-npm run typecheck   # tsc --noEmit（型チェックのみ）
-npm run lint        # eslint src
+npm run build         # esbuild で main.js を生成（本番ビルド）
+npm run dev           # ウォッチモードでビルド（開発用）
+npm run typecheck     # tsc --noEmit（型チェックのみ）
+npm run lint          # eslint src（lint のみ）
+npm run format        # biome format --write .（整形を適用）
+npm run format:check  # biome format .（CI 用。未整形があれば失敗）
 ```
+
+## フォーマット方針
+
+フォーマッタは **Biome**（`biome.json`）。lint は引き続き **ESLint** が担当し、
+Biome は **formatter のみ有効**（`linter.enabled: false`）にして役割を分離している。
+
+- 設定は `quoteStyle: double` / `trailingCommas: all` / `semicolons: always` / `indentStyle: tab`。
+  これは pi-lens がエディタ保存時に適用する Biome デフォルトと一致させてあり、
+  ズラすと保存のたびに差分が出続けるので変更しないこと。
+- 対象は JS/TS/JSON/JSONC/CSS。Biome が扱わない YAML / Markdown は `.editorconfig` で
+  インデントを定義している（YAML はスペース 2、コードはタブ）。
+- `main.js`（ビルド成果物）と `.claude/` `.pi/`（エージェントローカル）は対象外。
+- CI（`.github/workflows/ci.yml` の lint ジョブ）で `format:check` が走る。
 
 ---
 

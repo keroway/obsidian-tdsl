@@ -1,37 +1,40 @@
 {
-  "name": "obsidian-tdsl",
-  "version": "0.1.0",
-  "description": "Timeline DSL plugin for Obsidian — renders .tdsl code blocks as SVG",
-  "main": "main.js",
-  "scripts": {
-    "dev": "node esbuild.config.mjs",
-    "build": "node esbuild.config.mjs production",
-    "test": "vitest run",
-    "lint": "eslint src",
-    "typecheck": "tsc --noEmit",
-    "version": "node version-bump.mjs && git add manifest.json versions.json"
-  },
-  "keywords": [
-    "obsidian-plugin",
-    "timeline",
-    "dsl",
-    "wasm",
-    "svg"
-  ],
-  "author": "keroway",
-  "license": "MIT",
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^26.0.0",
-    "builtin-modules": "^5.0.0",
-    "esbuild": "^0.28.1",
-    "eslint": "^10.5.0",
-    "obsidian": "latest",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.61.0",
-    "vitest": "^4.1.9"
-  },
-  "dependencies": {
-    "@keroway/tdsl-wasm": "^1.19.0"
-  }
+	"name": "obsidian-tdsl",
+	"version": "0.1.0",
+	"description": "Timeline DSL plugin for Obsidian — renders .tdsl code blocks as SVG",
+	"main": "main.js",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "node esbuild.config.mjs production",
+		"test": "vitest run",
+		"lint": "eslint src",
+		"format": "biome format --write .",
+		"format:check": "biome format .",
+		"typecheck": "tsc --noEmit",
+		"version": "node version-bump.mjs && git add manifest.json versions.json"
+	},
+	"keywords": [
+		"obsidian-plugin",
+		"timeline",
+		"dsl",
+		"wasm",
+		"svg"
+	],
+	"author": "keroway",
+	"license": "MIT",
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.1",
+		"@eslint/js": "^10.0.1",
+		"@types/node": "^26.0.0",
+		"builtin-modules": "^5.0.0",
+		"esbuild": "^0.28.1",
+		"eslint": "^10.5.0",
+		"obsidian": "latest",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.61.0",
+		"vitest": "^4.1.9"
+	},
+	"dependencies": {
+		"@keroway/tdsl-wasm": "^1.19.0"
+	}
 }
