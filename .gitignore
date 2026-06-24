@@ -17,5 +17,9 @@ main.js
 *.swp
 *.swo
 
+# Pi coding agent — local mesh / agent config (per-developer, not shared)
+.pi/
+.claude/settings.local.json
+
 # OS
 Thumbs.db
