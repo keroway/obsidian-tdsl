@@ -18,6 +18,11 @@ export interface Diagnostic {
 export interface RenderDirectives {
 	/** pixels-per-year passed to the renderer; `undefined` => auto. */
 	scale?: number;
+	/**
+	 * `scale: fit` => shrink the SVG to the note width (opt-in to the old
+	 * `max-width: 100%` behaviour). Mutually exclusive with a numeric `scale`.
+	 */
+	fit?: boolean;
 	grid?: "none" | "decade" | "year" | "month";
 	theme?: "default" | "dark" | "print" | "pastel";
 	orientation?: "horizontal" | "vertical";
@@ -46,8 +51,16 @@ export function parseRenderDirectives(source: string): RenderDirectives {
 		const val = raw.toLowerCase();
 		switch (key) {
 			case "scale": {
+				if (val === "fit") {
+					out.fit = true;
+					out.scale = undefined;
+					break;
+				}
 				const n = Number(raw);
-				if (Number.isFinite(n) && n > 0) out.scale = n;
+				if (Number.isFinite(n) && n > 0) {
+					out.scale = n;
+					out.fit = false;
+				}
 				break;
 			}
 			case "grid":

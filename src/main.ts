@@ -57,6 +57,9 @@ class TdslPreview extends MarkdownRenderChild {
 			if (directives.events !== undefined)
 				opts.show_event_labels = directives.events;
 			if (directives.table !== undefined) opts.show_table = directives.table;
+			// `//! scale: fit` opts the block into shrink-to-note-width (vs. natural
+			// size + horizontal scroll). The renderer still uses auto scale.
+			if (directives.fit) wrapper.addClass("tdsl-fit");
 			const svg = render_svg_from_source_with_options(
 				this.source,
 				directives.scale ?? 0,

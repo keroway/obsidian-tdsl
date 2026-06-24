@@ -21,6 +21,17 @@
 	max-width: none;
 }
 
+/*
+ * `//! scale: fit` opt-in: shrink the SVG to fit the note width (no horizontal
+ * scroll). Labels scale down with the graphic, so this trades readability for
+ * a complete at-a-glance view. Set via the `tdsl-fit` class in main.ts.
+ */
+.tdsl-preview.tdsl-fit svg {
+	width: 100%;
+	max-width: 100%;
+	height: auto;
+}
+
 /* ── SVG elements — light mode (default) ──
  *
  * The render_svg_from_source WASM function embeds a minimal <style> block that sets

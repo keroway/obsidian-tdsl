@@ -123,7 +123,7 @@ span main 10..50 "An era" {};
 
 | Directive | Values | Effect |
 |---|---|---|
-| `scale` | positive number | pixels per year. Higher = wider / more readable. Omit for auto. |
+| `scale` | positive number, or `fit` | pixels per year. Higher = wider / more readable. `fit` shrinks the timeline to the note width (no horizontal scroll). Omit for auto. |
 | `grid` | `none`, `decade`, `year`, `month` | gridline density |
 | `theme` | `default`, `dark`, `print`, `pastel` | built-in colour theme |
 | `events` | `on` / `off` | show labels next to `event` / `event_range` items |
@@ -132,7 +132,9 @@ span main 10..50 "An era" {};
 
 The timeline renders at its natural size; if it is wider than the note column it
 scrolls horizontally rather than shrinking (which would make labels unreadable).
-Use `scale` to make a sparse timeline span a wider area.
+Use a numeric `scale` to make a sparse timeline span a wider area, or
+`//! scale: fit` to shrink it to the note width for an at-a-glance view (labels
+scale down with the graphic).
 
 ### Full example
 
