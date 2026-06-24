@@ -33,16 +33,21 @@ Write a `tdsl` fenced code block in any note:
 ````markdown
 ```tdsl
 timeline "Heian Period" {
-  unit year
-  range 794 to 1185
+  unit year;
+  range 794..1185;
 }
 
 lane "Emperor" as emperor {}
 
-span emperor 781..806 "Kanmu" {}
-span emperor 806..809 "Heizei" {}
-span emperor 809..823 "Saga" {}
+span emperor 781..806 "Kanmu" {};
+span emperor 806..809 "Heizei" {};
+span emperor 809..823 "Saga" {};
 ```
+
+> **Syntax notes:** every property inside the `timeline { … }` block ends with `;`,
+> ranges use `start..end` (not `start to end`), and each `span` / `event` /
+> `event_range` statement ends with a trailing `;` after its `{ … }` block.
+> `lane` and `group` declarations take **no** trailing `;`.
 ````
 
 ### Supported DSL features in Obsidian
@@ -91,15 +96,43 @@ group "Ancient China" {
 Three types of time elements attached to a lane:
 
 ```
-// Duration (start..end)
-span han -206..220 "Han Dynasty" { tags ["dynasty"]; }
+// Duration (start..end) — note the trailing ; after the block
+span han -206..220 "Han Dynasty" { tags ["dynasty"]; };
 
 // Point event
-event han -209 "Dazexiang Uprising" {}
+event han -209 "Dazexiang Uprising" {};
 
 // Range event (wars, disasters, etc.)
-event_range han 184..204 "Yellow Turban Rebellion" { tags ["war"]; }
+event_range han 184..204 "Yellow Turban Rebellion" { tags ["war"]; };
 ```
+
+#### Rendering options (`//!` directives)
+
+Because Obsidian only passes the code-block body to the renderer, per-diagram
+options are written as `//!` comment lines (ordinary DSL comments the compiler
+ignores). Place them anywhere in the block:
+
+```tdsl
+//! scale: 3
+//! grid: decade
+//! events: on
+timeline "Demo" { unit year; range 0..100; }
+lane "Main" as main {}
+span main 10..50 "An era" {};
+```
+
+| Directive | Values | Effect |
+|---|---|---|
+| `scale` | positive number | pixels per year. Higher = wider / more readable. Omit for auto. |
+| `grid` | `none`, `decade`, `year`, `month` | gridline density |
+| `theme` | `default`, `dark`, `print`, `pastel` | built-in colour theme |
+| `events` | `on` / `off` | show labels next to `event` / `event_range` items |
+| `table` | `on` / `off` | render the accompanying data table |
+| `orientation` | `horizontal`, `vertical` | layout direction |
+
+The timeline renders at its natural size; if it is wider than the note column it
+scrolls horizontally rather than shrinking (which would make labels unreadable).
+Use `scale` to make a sparse timeline span a wider area.
 
 ### Full example
 
@@ -124,15 +157,15 @@ group "Military Government" {
     lane "Edo Shogunate"       as edo      { kind military; order 4; }
 }
 
-span emperor 710..794 "Nara Period" { tags ["imperial"]; }
-span emperor 794..1185 "Heian Period" { tags ["imperial"]; }
+span emperor 710..794 "Nara Period" { tags ["imperial"]; };
+span emperor 794..1185 "Heian Period" { tags ["imperial"]; };
 
-span kamakura  1185..1336 "Kamakura Shogunate" { tags ["military"]; }
-span muromachi 1336..1573 "Muromachi Shogunate" { tags ["military"]; }
-span edo       1603..1868 "Edo Shogunate" { tags ["military"]; }
+span kamakura  1185..1336 "Kamakura Shogunate" { tags ["military"]; };
+span muromachi 1336..1573 "Muromachi Shogunate" { tags ["military"]; };
+span edo       1603..1868 "Edo Shogunate" { tags ["military"]; };
 
-event kamakura 1185 "Minamoto no Yoritomo appointed Shogun" {}
-event edo      1868 "Meiji Restoration" {}
+event kamakura 1185 "Minamoto no Yoritomo appointed Shogun" {};
+event edo      1868 "Meiji Restoration" {};
 ```
 
 ## Limitations

@@ -33,16 +33,21 @@
 ````markdown
 ```tdsl
 timeline "平安時代" {
-  unit year
-  range 794 to 1185
+  unit year;
+  range 794..1185;
 }
 
 lane "天皇" as emperor {}
 
-span emperor 781..806 "桓武天皇" {}
-span emperor 806..809 "平城天皇" {}
-span emperor 809..823 "嵯峨天皇" {}
+span emperor 781..806 "桓武天皇" {};
+span emperor 806..809 "平城天皇" {};
+span emperor 809..823 "嵯峨天皇" {};
 ```
+
+> **構文の注意:** `timeline { … }` ブロック内の各プロパティは `;` で終わります。
+> 範囲は `start..end`（`start to end` ではありません）。
+> `span` / `event` / `event_range` は `{ … }` ブロックの後ろに `;` が必要です。
+> `lane` / `group` 宣言には末尾の `;` を**付けません**。
 ````
 
 ### Obsidian で使える DSL 構文
@@ -89,15 +94,42 @@ group "古代中国" {
 レーンに配置する 3 種類の時間要素:
 
 ```
-// 期間（start..end）
-span han -206..220 "漢王朝" { tags ["dynasty"]; }
+// 期間（start..end）— ブロックの後ろに ; が必要
+span han -206..220 "漢王朝" { tags ["dynasty"]; };
 
 // 点イベント
-event han -209 "大沢郷の乱" {}
+event han -209 "大沢郷の乱" {};
 
 // 範囲イベント（戦争・災害など）
-event_range han 184..204 "黄巾の乱" { tags ["war"]; }
+event_range han 184..204 "黄巾の乱" { tags ["war"]; };
 ```
+
+#### 描画オプション（`//!` ディレクティブ）
+
+Obsidian はコードブロックの本文しかレンダラに渡さないため、図ごとのオプションは
+`//!` コメント行（コンパイラが無視する通常の DSL コメント）で指定します。
+ブロック内のどこに書いても構いません:
+
+```tdsl
+//! scale: 3
+//! grid: decade
+//! events: on
+timeline "Demo" { unit year; range 0..100; }
+lane "Main" as main {}
+span main 10..50 "ある時代" {};
+```
+
+| ディレクティブ | 値 | 効果 |
+|---|---|---|
+| `scale` | 正の数 | 1 年あたりのピクセル数。大きいほど横に広がり読みやすい。省略で自動 |
+| `grid` | `none`, `decade`, `year`, `month` | グリッド線の密度 |
+| `theme` | `default`, `dark`, `print`, `pastel` | 組み込みカラーテーマ |
+| `events` | `on` / `off` | `event` / `event_range` のラベル表示 |
+| `table` | `on` / `off` | データ表の併記 |
+| `orientation` | `horizontal`, `vertical` | レイアウト方向 |
+
+年表は本来のサイズで描画され、ノート幅より広い場合は縮小せず横スクロールします
+（縮小するとラベルが読めなくなるため）。まばらな年表を広げたいときは `scale` を使ってください。
 
 ### フルサンプル
 
@@ -122,15 +154,15 @@ group "武家政権" {
     lane "江戸幕府" as edo      { kind military; order 4; }
 }
 
-span emperor 710..794 "奈良時代" { tags ["imperial"]; }
-span emperor 794..1185 "平安時代" { tags ["imperial"]; }
+span emperor 710..794 "奈良時代" { tags ["imperial"]; };
+span emperor 794..1185 "平安時代" { tags ["imperial"]; };
 
-span kamakura  1185..1336 "鎌倉幕府" { tags ["military"]; }
-span muromachi 1336..1573 "室町幕府" { tags ["military"]; }
-span edo       1603..1868 "江戸幕府" { tags ["military"]; }
+span kamakura  1185..1336 "鎌倉幕府" { tags ["military"]; };
+span muromachi 1336..1573 "室町幕府" { tags ["military"]; };
+span edo       1603..1868 "江戸幕府" { tags ["military"]; };
 
-event kamakura 1185 "源頼朝、征夷大将軍就任" {}
-event edo      1868 "明治維新" {}
+event kamakura 1185 "源頼朝、征夷大将軍就任" {};
+event edo      1868 "明治維新" {};
 ```
 
 ## 制限事項
