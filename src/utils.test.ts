@@ -21,12 +21,29 @@ describe("parseRenderDirectives", () => {
 		const src = `//! scale: 3\n//! grid: decade\n//! theme: dark\n//! orientation: vertical\n//! events: on\n//! table: off\ntimeline "T" {}`;
 		expect(parseRenderDirectives(src)).toEqual({
 			scale: 3,
+			fit: false,
 			grid: "decade",
 			theme: "dark",
 			orientation: "vertical",
 			events: true,
 			table: false,
 		});
+	});
+
+	it("parses `scale: fit` as fit=true with no numeric scale", () => {
+		const d = parseRenderDirectives(`//! scale: fit\ntimeline "T" {}`);
+		expect(d.fit).toBe(true);
+		expect(d.scale).toBeUndefined();
+	});
+
+	it("treats `scale: fit` case-insensitively", () => {
+		expect(parseRenderDirectives(`//! scale: FIT`).fit).toBe(true);
+	});
+
+	it("a numeric scale sets fit=false (mutually exclusive)", () => {
+		const d = parseRenderDirectives(`//! scale: 4`);
+		expect(d.scale).toBe(4);
+		expect(d.fit).toBe(false);
 	});
 
 	it("ignores unknown keys and out-of-range values", () => {
