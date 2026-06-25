@@ -6,7 +6,81 @@ import {
 	filterErrors,
 	formatDiagnosticMessages,
 	parseRenderDirectives,
+	resolveRenderOptions,
+	DEFAULT_SETTINGS,
+	type TdslSettings,
 } from "./utils";
+
+// ----------------------------------------------------------------------------
+// resolveRenderOptions (directive > setting > built-in)
+// ----------------------------------------------------------------------------
+
+describe("resolveRenderOptions", () => {
+	it("falls back to built-in defaults with no directives and default settings", () => {
+		expect(resolveRenderOptions({})).toEqual({
+			scale: 0,
+			fit: false,
+			grid: "none",
+			events: false,
+		});
+	});
+
+	it("applies plugin settings when no directive is present", () => {
+		const settings: TdslSettings = {
+			theme: "pastel",
+			grid: "decade",
+			scale: 3,
+			events: true,
+		};
+		expect(resolveRenderOptions({}, settings)).toEqual({
+			scale: 3,
+			fit: false,
+			grid: "decade",
+			theme: "pastel",
+			events: true,
+		});
+	});
+
+	it("lets a block directive override the plugin setting", () => {
+		const settings: TdslSettings = {
+			theme: "pastel",
+			grid: "decade",
+			scale: 3,
+			events: true,
+		};
+		const r = resolveRenderOptions(
+			{ grid: "month", theme: "dark", scale: 5, events: false },
+			settings,
+		);
+		expect(r).toMatchObject({
+			grid: "month",
+			theme: "dark",
+			scale: 5,
+			events: false,
+			fit: false,
+		});
+	});
+
+	it("theme: auto leaves the renderer theme unset", () => {
+		const r = resolveRenderOptions({}, { ...DEFAULT_SETTINGS, theme: "auto" });
+		expect(r.theme).toBeUndefined();
+	});
+
+	it("settings scale: fit produces fit=true / scale=0", () => {
+		const r = resolveRenderOptions({}, { ...DEFAULT_SETTINGS, scale: "fit" });
+		expect(r.fit).toBe(true);
+		expect(r.scale).toBe(0);
+	});
+
+	it("directive fit overrides a numeric settings scale", () => {
+		const r = resolveRenderOptions(
+			{ fit: true },
+			{ ...DEFAULT_SETTINGS, scale: 8 },
+		);
+		expect(r.fit).toBe(true);
+		expect(r.scale).toBe(0);
+	});
+});
 
 // ----------------------------------------------------------------------------
 // parseRenderDirectives

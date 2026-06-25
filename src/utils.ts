@@ -84,6 +84,85 @@ export function parseRenderDirectives(source: string): RenderDirectives {
 	return out;
 }
 
+/**
+ * Plugin-level defaults, configured in the settings tab and persisted via
+ * `Plugin.loadData()` / `saveData()`. Per-block `//!` directives always win
+ * over these.
+ */
+export interface TdslSettings {
+	/** `"auto"` => do not force a renderer theme (let plugin CSS drive light/dark). */
+	theme: "auto" | "default" | "dark" | "print" | "pastel";
+	grid: "none" | "decade" | "year" | "month";
+	/** `"auto"` => renderer auto scale; `"fit"` => shrink to note width; number => px/year. */
+	scale: "auto" | "fit" | number;
+	events: boolean;
+}
+
+export const DEFAULT_SETTINGS: TdslSettings = {
+	theme: "auto",
+	grid: "none",
+	scale: "auto",
+	events: false,
+};
+
+/**
+ * Effective render parameters after merging per-block directives with the
+ * plugin settings. Consumed by main.ts to build `JsRenderOptions` + the scale
+ * argument + the `tdsl-fit` class.
+ */
+export interface ResolvedRender {
+	/** pixels-per-year for the renderer; `0` = auto. */
+	scale: number;
+	/** shrink-to-note-width (CSS), renderer still uses auto scale. */
+	fit: boolean;
+	grid?: "none" | "decade" | "year" | "month";
+	theme?: "default" | "dark" | "print" | "pastel";
+	orientation?: "horizontal" | "vertical";
+	events?: boolean;
+	table?: boolean;
+}
+
+/**
+ * Merges per-block directives over plugin settings (directive > setting > built-in).
+ * Pure function — no Obsidian/WASM dependency — so the precedence rules are unit-testable.
+ */
+export function resolveRenderOptions(
+	directives: RenderDirectives,
+	settings: TdslSettings = DEFAULT_SETTINGS,
+): ResolvedRender {
+	const resolved: ResolvedRender = { scale: 0, fit: false };
+
+	// scale / fit: directive wins; else fall back to the settings default.
+	if (directives.fit) {
+		resolved.fit = true;
+	} else if (directives.scale !== undefined) {
+		resolved.scale = directives.scale;
+	} else if (settings.scale === "fit") {
+		resolved.fit = true;
+	} else if (typeof settings.scale === "number") {
+		resolved.scale = settings.scale;
+	}
+
+	// grid: directive wins; else the settings default ("none" is a valid renderer value).
+	resolved.grid = directives.grid ?? settings.grid;
+
+	// theme: directive wins; else an explicit (non-"auto") settings theme; else leave unset.
+	if (directives.theme) {
+		resolved.theme = directives.theme;
+	} else if (settings.theme !== "auto") {
+		resolved.theme = settings.theme;
+	}
+
+	// events: directive wins; else the settings default.
+	resolved.events = directives.events ?? settings.events;
+
+	// orientation / table: directive-only (no settings counterpart).
+	if (directives.orientation) resolved.orientation = directives.orientation;
+	if (directives.table !== undefined) resolved.table = directives.table;
+
+	return resolved;
+}
+
 /** Returns true when the source contains an `import wikidata` block. */
 export function hasWikidataImport(source: string): boolean {
 	return /^\s*import\s+wikidata\b/m.test(source);

@@ -136,6 +136,21 @@ Use a numeric `scale` to make a sparse timeline span a wider area, or
 `//! scale: fit` to shrink it to the note width for an at-a-glance view (labels
 scale down with the graphic).
 
+#### Default options (settings tab)
+
+**Settings → Community plugins → Timeline DSL** lets you set vault-wide defaults
+so you don't repeat the same directive in every block:
+
+| Setting | Values | Default |
+|---|---|---|
+| Default theme | `auto`, `default`, `dark`, `print`, `pastel` | `auto` (follow Obsidian light/dark via plugin CSS) |
+| Default grid | `none`, `decade`, `year`, `month` | `none` |
+| Default scale | `auto`, `fit`, or a positive number | `auto` |
+| Show event labels by default | on / off | off |
+
+Resolution order is **block `//!` directive > settings default > built-in**.
+Changes apply when you reopen the affected note.
+
 ### Full example
 
 ```tdsl
