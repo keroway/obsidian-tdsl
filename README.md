@@ -11,11 +11,9 @@ An [Obsidian](https://obsidian.md) plugin that renders [Timeline DSL](https://gi
 
 ## Preview
 
-<!-- Replace with actual screenshots once available -->
-<!-- Light mode: docs/assets/preview-light.png -->
-<!-- Dark mode:  docs/assets/preview-dark.png -->
+![Timeline DSL rendered in Obsidian (light mode)](docs/assets/preview-light.png)
 
-> **Note:** Screenshots coming soon. The plugin renders `tdsl` code blocks as SVG timelines with full dark mode support.
+![Timeline DSL rendered in Obsidian (dark mode)](docs/assets/preview-dark.png)
 
 ## Features
 

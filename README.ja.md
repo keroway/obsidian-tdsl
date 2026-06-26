@@ -11,11 +11,9 @@
 
 ## プレビュー
 
-<!-- 実際のスクリーンショットができ次第差し替え -->
-<!-- ライトモード: docs/assets/preview-light.png -->
-<!-- ダークモード: docs/assets/preview-dark.png -->
+![Obsidian でのレンダリング（ライトモード）](docs/assets/preview-light.png)
 
-> **Note:** スクリーンショットは近日追加予定。プラグインは `tdsl` コードブロックをダークモード対応の SVG 年表として描画します。
+![Obsidian でのレンダリング（ダークモード）](docs/assets/preview-dark.png)
 
 ## 機能
 
