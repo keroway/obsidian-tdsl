@@ -8,7 +8,9 @@ export type WasmInitializer = () => Promise<void>;
  * `init()` concurrently. If initialization fails, the in-flight promise is reset
  * so a later render can retry.
  */
-export function createWasmInitializer(initialize: WasmInitializer): WasmInitializer {
+export function createWasmInitializer(
+	initialize: WasmInitializer,
+): WasmInitializer {
 	let ready = false;
 	let initPromise: Promise<void> | null = null;
 
