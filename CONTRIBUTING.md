@@ -95,6 +95,8 @@ refactor: refactor without behaviour change
 style: formatting only
 ```
 
-## Upstream dependency
+## Upstream dependencies
 
 This plugin tracks `@keroway/tdsl-wasm` releases. When a new version of [keroway/timeline-dsl](https://github.com/keroway/timeline-dsl) is published to npm, update `package.json` and test that the new DSL syntax works correctly in Obsidian.
+
+The `obsidian` dev dependency is pinned to the API typings version used for local and CI verification. Update it intentionally with `npm install --save-dev --save-exact obsidian@<version>`, then run the full verification suite and smoke-test the plugin in Obsidian.
