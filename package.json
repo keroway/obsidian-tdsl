@@ -35,6 +35,6 @@
 		"vitest": "^4.1.9"
 	},
 	"dependencies": {
-		"@keroway/tdsl-wasm": "^1.19.0"
+		"@keroway/tdsl-wasm": "^1.22.0"
 	}
 }
