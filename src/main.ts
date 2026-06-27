@@ -11,6 +11,7 @@ import init, {
 	check_source,
 	format_source,
 	render_svg_from_source_with_options,
+	render_html_from_source_with_options,
 	JsRenderOptions,
 } from "@keroway/tdsl-wasm";
 // esbuild inlines the WASM binary via `loader: { '.wasm': 'binary' }`
@@ -75,7 +76,8 @@ class TdslPreview extends MarkdownRenderChild {
 			if (r.theme) opts.theme = r.theme;
 			if (r.orientation) opts.orientation = r.orientation;
 			if (r.events !== undefined) opts.show_event_labels = r.events;
-			if (r.table !== undefined) opts.show_table = r.table;
+			// NOTE: show_table is HTML-only in the upstream renderer (SVG/PNG/PDF ignore it).
+			// We handle the table separately via render_html_from_source_with_options below.
 			if (r.laneHeight > 0) opts.lane_height = r.laneHeight;
 			// `fit` opts the block into shrink-to-note-width (vs. natural size +
 			// horizontal scroll). The renderer still uses auto scale.
@@ -104,6 +106,29 @@ class TdslPreview extends MarkdownRenderChild {
 				extractTimelineTitle(this.source) ?? "Timeline",
 			);
 			wrapper.appendChild(document.adoptNode(root));
+
+			// When `table: on`, render the data table via the HTML path and insert it below the SVG.
+			// Use DOMParser (text/html) and adopt only the <table> element to stay XSS-safe.
+			if (r.table) {
+				const tableOpts = new JsRenderOptions();
+				if (r.grid) tableOpts.grid = r.grid;
+				if (r.theme) tableOpts.theme = r.theme;
+				if (r.orientation) tableOpts.orientation = r.orientation;
+				tableOpts.show_event_labels = r.events ?? false;
+				tableOpts.show_table = true;
+				const htmlStr = render_html_from_source_with_options(
+					this.source,
+					tableOpts,
+				);
+				const htmlDoc = new DOMParser().parseFromString(htmlStr, "text/html");
+				const tableEl = htmlDoc.querySelector("table");
+				if (tableEl) {
+					const tableWrapper = wrapper.createDiv({
+						cls: "tdsl-table-wrapper",
+					});
+					tableWrapper.appendChild(document.adoptNode(tableEl));
+				}
+			}
 
 			// Warn when import wikidata blocks are silently skipped (no network in browser).
 			if (hasWikidataImport(this.source)) {

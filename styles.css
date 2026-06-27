@@ -193,3 +193,32 @@
 	color: var(--text-accent);
 	background: var(--background-modifier-hover);
 }
+
+/* ── Data table (//! table: on) ── */
+.tdsl-table-wrapper {
+	margin-top: 8px;
+	overflow-x: auto;
+}
+
+.tdsl-table-wrapper table {
+	border-collapse: collapse;
+	font-size: 0.85em;
+	width: max-content;
+	min-width: 100%;
+}
+
+.tdsl-table-wrapper th,
+.tdsl-table-wrapper td {
+	border: 1px solid var(--background-modifier-border);
+	padding: 4px 10px;
+	text-align: left;
+}
+
+.tdsl-table-wrapper th {
+	background: var(--background-secondary);
+	font-weight: 600;
+}
+
+.tdsl-table-wrapper tr:nth-child(even) td {
+	background: var(--background-primary-alt);
+}
