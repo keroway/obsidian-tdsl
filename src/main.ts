@@ -10,6 +10,7 @@ import {
 import init, {
 	check_source,
 	format_source,
+	lint_source,
 	render_svg_from_source_with_options,
 	render_html_from_source_with_options,
 	JsRenderOptions,
@@ -25,6 +26,8 @@ import {
 	filterWarnings,
 	filterInfos,
 	formatDiagnosticMessages,
+	parseLintIssues,
+	formatLintIssues,
 	parseRenderDirectives,
 	resolveRenderOptions,
 	DEFAULT_SETTINGS,
@@ -145,6 +148,31 @@ class TdslPreview extends MarkdownRenderChild {
 			}
 			for (const d of infos) {
 				this.showNotice(wrapper, "info", d);
+			}
+
+			// Run lint_source and display issues below the SVG.
+			// lint_source never throws (it returns a parse_error entry on failure),
+			// so this is safe to run after a successful render.
+			try {
+				const lintJson = lint_source(this.source);
+				const lintIssues = parseLintIssues(lintJson).filter(
+					(i) => i.code !== "parse_error",
+				);
+				const messages = formatLintIssues(lintIssues);
+				if (messages.length > 0) {
+					const lintBanner = wrapper.createDiv({
+						cls: "tdsl-lint-banner",
+					});
+					for (const msg of messages) {
+						const row = lintBanner.createDiv({
+							cls: "tdsl-notice tdsl-notice-warning",
+						});
+						row.createSpan({ text: "⚠ " });
+						row.createSpan({ text: msg });
+					}
+				}
+			} catch {
+				// Lint is non-critical: silently ignore failures.
 			}
 		} catch (e) {
 			this.showErrors(wrapper, [String(e)]);

@@ -224,3 +224,38 @@ export function formatDiagnosticMessages(errors: Diagnostic[]): string[] {
 		e.line > 0 ? `Line ${e.line}: ${e.message}` : e.message,
 	);
 }
+
+// ---------------------------------------------------------------------------
+// Lint helpers
+// ---------------------------------------------------------------------------
+
+export interface LintIssue {
+	/** Short rule identifier, e.g. `start_gt_end`, `invalid_tags`. */
+	code: string;
+	severity: "error" | "warning";
+	/** 1-based line number; 0 when no position available. */
+	line: number;
+	message: string;
+	/** Whether `lint_fix_source` can auto-fix this issue. */
+	fixable: boolean;
+}
+
+/**
+ * Parses the JSON string returned by `lint_source` into a LintIssue array.
+ * Pure function — can be unit-tested without WASM.
+ */
+export function parseLintIssues(json: string): LintIssue[] {
+	return JSON.parse(json) as LintIssue[];
+}
+
+/**
+ * Formats lint issues into human-readable strings for display.
+ * Includes a `[code]` prefix, line number when > 0, and a ✏ badge when fixable.
+ */
+export function formatLintIssues(issues: LintIssue[]): string[] {
+	return issues.map((i) => {
+		const loc = i.line > 0 ? ` Line ${i.line}:` : "";
+		const fix = i.fixable ? " ✏" : "";
+		return `[${i.code}]${loc} ${i.message}${fix}`;
+	});
+}

@@ -7,6 +7,8 @@ import {
 	filterWarnings,
 	filterInfos,
 	formatDiagnosticMessages,
+	parseLintIssues,
+	formatLintIssues,
 	parseRenderDirectives,
 	resolveRenderOptions,
 	DEFAULT_SETTINGS,
@@ -378,5 +380,87 @@ describe("formatDiagnosticMessages", () => {
 
 	it("returns an empty array for empty input", () => {
 		expect(formatDiagnosticMessages([])).toEqual([]);
+	});
+});
+
+// ----------------------------------------------------------------------------
+// parseLintIssues / formatLintIssues
+// ----------------------------------------------------------------------------
+
+describe("parseLintIssues", () => {
+	it("parses an empty array", () => {
+		expect(parseLintIssues("[]")).toEqual([]);
+	});
+
+	it("parses a single lint issue", () => {
+		const json = JSON.stringify([
+			{
+				code: "start_gt_end",
+				severity: "warning",
+				line: 5,
+				message: "start is after end",
+				fixable: true,
+			},
+		]);
+		expect(parseLintIssues(json)).toEqual([
+			{
+				code: "start_gt_end",
+				severity: "warning",
+				line: 5,
+				message: "start is after end",
+				fixable: true,
+			},
+		]);
+	});
+});
+
+describe("formatLintIssues", () => {
+	it("formats an issue with line and fixable flag", () => {
+		const issues = [
+			{
+				code: "start_gt_end",
+				severity: "warning" as const,
+				line: 5,
+				message: "start is after end",
+				fixable: true,
+			},
+		];
+		expect(formatLintIssues(issues)).toEqual([
+			"[start_gt_end] Line 5: start is after end ✏",
+		]);
+	});
+
+	it("omits line prefix when line === 0", () => {
+		const issues = [
+			{
+				code: "missing_id",
+				severity: "warning" as const,
+				line: 0,
+				message: "span is missing id",
+				fixable: false,
+			},
+		];
+		expect(formatLintIssues(issues)).toEqual([
+			"[missing_id] span is missing id",
+		]);
+	});
+
+	it("omits fixable badge when fixable === false", () => {
+		const issues = [
+			{
+				code: "invalid_tags",
+				severity: "warning" as const,
+				line: 3,
+				message: "unknown tag",
+				fixable: false,
+			},
+		];
+		expect(formatLintIssues(issues)).toEqual([
+			"[invalid_tags] Line 3: unknown tag",
+		]);
+	});
+
+	it("returns an empty array for empty input", () => {
+		expect(formatLintIssues([])).toEqual([]);
 	});
 });
