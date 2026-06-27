@@ -34,6 +34,7 @@ import {
 	type TdslSettings,
 } from "./utils";
 import { findTdslFenceAtCursor } from "./fence";
+import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
 import { createWasmInitializer } from "./wasm-init";
 
 const ensureWasm = createWasmInitializer(async () => {
@@ -228,12 +229,7 @@ export default class TimelineDslPlugin extends Plugin {
 		// Re-render all open Markdown previews so the new settings take effect
 		// immediately without requiring the user to reopen the note.
 		this.app.workspace.iterateAllLeaves((leaf) => {
-			const view = leaf.view;
-			if (view.getViewType() === "markdown") {
-				// @ts-expect-error — Obsidian's previewMode is not in the public typings.
-
-				view.previewMode?.rerender(true);
-			}
+			rerenderMarkdownPreviewView(leaf.view);
 		});
 	}
 }
