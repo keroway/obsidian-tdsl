@@ -33,6 +33,7 @@ import {
 	DEFAULT_SETTINGS,
 	type TdslSettings,
 } from "./utils";
+import { findTdslFenceAtCursor } from "./fence";
 import { createWasmInitializer } from "./wasm-init";
 
 const ensureWasm = createWasmInitializer(async () => {
@@ -364,33 +365,21 @@ function parseScaleSetting(raw: string): TdslSettings["scale"] {
  */
 function formatCurrentBlock(editor: Editor): void {
 	const cursor = editor.getCursor();
-	const lineCount = editor.lineCount();
-
-	// Search backwards from cursor for the opening ```tdsl fence.
-	let openLine = -1;
-	for (let i = cursor.line; i >= 0; i--) {
-		if (/^```tdsl\s*$/.test(editor.getLine(i))) {
-			openLine = i;
-			break;
-		}
+	const lines: string[] = [];
+	for (let i = 0; i < editor.lineCount(); i++) {
+		lines.push(editor.getLine(i));
 	}
-	if (openLine === -1) {
+
+	const fence = findTdslFenceAtCursor(lines, cursor.line);
+	if (fence.status === "not-in-block") {
 		new Notice("Timeline DSL: カーソルが tdsl ブロック内にありません。");
 		return;
 	}
-
-	// Search forward from the line after the opener for the closing ``` fence.
-	let closeLine = -1;
-	for (let i = openLine + 1; i < lineCount; i++) {
-		if (/^```\s*$/.test(editor.getLine(i))) {
-			closeLine = i;
-			break;
-		}
-	}
-	if (closeLine === -1) {
+	if (fence.status === "missing-close") {
 		new Notice("Timeline DSL: tdsl ブロックの閉じ素が見つかりません。");
 		return;
 	}
+	const { openLine, closeLine } = fence.range;
 
 	// Extract the body (lines between the fences).
 	const bodyLines: string[] = [];
