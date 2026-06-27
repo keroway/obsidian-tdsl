@@ -134,6 +134,16 @@ export default class TimelineDslPlugin extends Plugin {
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
+		// Re-render all open Markdown previews so the new settings take effect
+		// immediately without requiring the user to reopen the note.
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			const view = leaf.view;
+			if (view.getViewType() === "markdown") {
+				// @ts-expect-error — Obsidian's previewMode is not in the public typings.
+
+				view.previewMode?.rerender(true);
+			}
+		});
 	}
 }
 
@@ -150,7 +160,7 @@ class TdslSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl("p", {
-			text: "これらは既定値です。各コードブロックの //! ディレクティブが常に優先されます。変更後は対象ノートを開き直すと反映されます。",
+			text: "これらは既定値です。各コードブロックの //! ディレクティブが常に優先されます。",
 			cls: "setting-item-description",
 		});
 
