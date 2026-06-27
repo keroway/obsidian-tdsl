@@ -184,6 +184,16 @@ export function filterErrors(diagnostics: Diagnostic[]): Diagnostic[] {
 	return diagnostics.filter((d) => d.severity === "error");
 }
 
+/** Returns only the diagnostics whose severity is `"warning"`. */
+export function filterWarnings(diagnostics: Diagnostic[]): Diagnostic[] {
+	return diagnostics.filter((d) => d.severity === "warning");
+}
+
+/** Returns only the diagnostics whose severity is `"info"`. */
+export function filterInfos(diagnostics: Diagnostic[]): Diagnostic[] {
+	return diagnostics.filter((d) => d.severity === "info");
+}
+
 /**
  * Formats error diagnostics into human-readable messages.
  * Includes the line number prefix when `line > 0`.

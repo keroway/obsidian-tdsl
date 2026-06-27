@@ -180,3 +180,16 @@
 	color: var(--text-muted);
 	background: var(--background-modifier-hover);
 }
+
+.tdsl-notice-warning {
+	color: var(--text-warning, var(--text-muted));
+	background: var(
+		--background-modifier-warning,
+		var(--background-modifier-hover)
+	);
+}
+
+.tdsl-notice-info {
+	color: var(--text-accent);
+	background: var(--background-modifier-hover);
+}
