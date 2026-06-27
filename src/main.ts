@@ -33,14 +33,11 @@ import {
 	DEFAULT_SETTINGS,
 	type TdslSettings,
 } from "./utils";
+import { createWasmInitializer } from "./wasm-init";
 
-let wasmReady = false;
-
-async function ensureWasm(): Promise<void> {
-	if (wasmReady) return;
+const ensureWasm = createWasmInitializer(async () => {
 	await init(wasmBytes as unknown as Parameters<typeof init>[0]);
-	wasmReady = true;
-}
+});
 
 class TdslPreview extends MarkdownRenderChild {
 	private readonly source: string;
