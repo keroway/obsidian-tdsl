@@ -22,6 +22,7 @@ describe("resolveRenderOptions", () => {
 			fit: false,
 			grid: "none",
 			events: false,
+			laneHeight: 0,
 		});
 	});
 
@@ -31,6 +32,7 @@ describe("resolveRenderOptions", () => {
 			grid: "decade",
 			scale: 3,
 			events: true,
+			laneHeight: 0,
 		};
 		expect(resolveRenderOptions({}, settings)).toEqual({
 			scale: 3,
@@ -38,6 +40,7 @@ describe("resolveRenderOptions", () => {
 			grid: "decade",
 			theme: "pastel",
 			events: true,
+			laneHeight: 0,
 		});
 	});
 
@@ -47,6 +50,7 @@ describe("resolveRenderOptions", () => {
 			grid: "decade",
 			scale: 3,
 			events: true,
+			laneHeight: 0,
 		};
 		const r = resolveRenderOptions(
 			{ grid: "month", theme: "dark", scale: 5, events: false },
@@ -59,6 +63,23 @@ describe("resolveRenderOptions", () => {
 			events: false,
 			fit: false,
 		});
+	});
+
+	it("lane_height: directive wins over setting", () => {
+		const r = resolveRenderOptions(
+			{ lane_height: 80 },
+			{ ...DEFAULT_SETTINGS, laneHeight: 40 },
+		);
+		expect(r.laneHeight).toBe(80);
+	});
+
+	it("lane_height: falls back to settings when no directive", () => {
+		const r = resolveRenderOptions({}, { ...DEFAULT_SETTINGS, laneHeight: 40 });
+		expect(r.laneHeight).toBe(40);
+	});
+
+	it("lane_height: 0 when both unset", () => {
+		expect(resolveRenderOptions({}).laneHeight).toBe(0);
 	});
 
 	it("theme: auto leaves the renderer theme unset", () => {
@@ -92,7 +113,7 @@ describe("parseRenderDirectives", () => {
 	});
 
 	it("parses all supported directives", () => {
-		const src = `//! scale: 3\n//! grid: decade\n//! theme: dark\n//! orientation: vertical\n//! events: on\n//! table: off\ntimeline "T" {}`;
+		const src = `//! scale: 3\n//! grid: decade\n//! theme: dark\n//! orientation: vertical\n//! events: on\n//! table: off\n//! lane_height: 60\ntimeline "T" {}`;
 		expect(parseRenderDirectives(src)).toEqual({
 			scale: 3,
 			fit: false,
@@ -101,7 +122,25 @@ describe("parseRenderDirectives", () => {
 			orientation: "vertical",
 			events: true,
 			table: false,
+			lane_height: 60,
 		});
+	});
+
+	it("lane_height: parses a positive integer", () => {
+		expect(parseRenderDirectives(`//! lane_height: 40`).lane_height).toBe(40);
+	});
+
+	it("lane_height: truncates to integer", () => {
+		expect(parseRenderDirectives(`//! lane_height: 45.7`).lane_height).toBe(45);
+	});
+
+	it("lane_height: ignores 0 and negative values", () => {
+		expect(
+			parseRenderDirectives(`//! lane_height: 0`).lane_height,
+		).toBeUndefined();
+		expect(
+			parseRenderDirectives(`//! lane_height: -10`).lane_height,
+		).toBeUndefined();
 	});
 
 	it("parses `scale: fit` as fit=true with no numeric scale", () => {

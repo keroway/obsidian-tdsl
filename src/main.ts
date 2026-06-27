@@ -68,6 +68,7 @@ class TdslPreview extends MarkdownRenderChild {
 			if (r.orientation) opts.orientation = r.orientation;
 			if (r.events !== undefined) opts.show_event_labels = r.events;
 			if (r.table !== undefined) opts.show_table = r.table;
+			if (r.laneHeight > 0) opts.lane_height = r.laneHeight;
 			// `fit` opts the block into shrink-to-note-width (vs. natural size +
 			// horizontal scroll). The renderer still uses auto scale.
 			if (r.fit) wrapper.addClass("tdsl-fit");
@@ -215,7 +216,32 @@ class TdslSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}),
 			);
+
+		new Setting(containerEl)
+			.setName("既定 lane 高さ (lane_height)")
+			.setDesc(
+				"正の整数（px）。空欄または 0 でレンダラ既定（60 px）。//! lane_height: N でブロック単位に上書き可能。",
+			)
+			.addText((t) =>
+				t
+					.setPlaceholder("0")
+					.setValue(
+						this.plugin.settings.laneHeight > 0
+							? String(this.plugin.settings.laneHeight)
+							: "",
+					)
+					.onChange(async (raw) => {
+						this.plugin.settings.laneHeight = parseLaneHeightSetting(raw);
+						await this.plugin.saveSettings();
+					}),
+			);
 	}
+}
+
+/** Coerces the free-text lane_height setting into a non-negative integer. */
+function parseLaneHeightSetting(raw: string): number {
+	const n = Math.floor(Number(raw.trim()));
+	return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 /** Coerces the free-text scale setting into `"auto" | "fit" | number`. */
