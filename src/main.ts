@@ -1,12 +1,15 @@
 import {
 	MarkdownRenderChild,
+	Notice,
 	Plugin,
 	PluginSettingTab,
 	Setting,
 	type App,
+	type Editor,
 } from "obsidian";
 import init, {
 	check_source,
+	format_source,
 	render_svg_from_source_with_options,
 	JsRenderOptions,
 } from "@keroway/tdsl-wasm";
@@ -126,6 +129,15 @@ export default class TimelineDslPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor("tdsl", (_source, el, ctx) => {
 			ctx.addChild(new TdslPreview(el, _source, this.settings));
 		});
+
+		this.addCommand({
+			id: "format-tdsl-block",
+			name: "現在の tdsl ブロックを整形",
+			editorCallback: async (editor: Editor) => {
+				await ensureWasm();
+				formatCurrentBlock(editor);
+			},
+		});
 	}
 
 	async loadSettings(): Promise<void> {
@@ -225,4 +237,69 @@ function parseScaleSetting(raw: string): TdslSettings["scale"] {
 	const n = Number(v);
 	if (v !== "" && v !== "auto" && Number.isFinite(n) && n > 0) return n;
 	return "auto";
+}
+
+/**
+ * Finds the \`\`\`tdsl ... \`\`\` fence surrounding the cursor in `editor` and
+ * replaces its body with the output of `format_source`.
+ *
+ * - Locates the opening \`\`\`tdsl line at or before the cursor and the closing
+ *   \`\`\` line after it.
+ * - Calls format_source on the body; on parse failure shows a Notice with the
+ *   error message and leaves the document unchanged.
+ * - Uses Editor.replaceRange so the edit is undoable.
+ */
+function formatCurrentBlock(editor: Editor): void {
+	const cursor = editor.getCursor();
+	const lineCount = editor.lineCount();
+
+	// Search backwards from cursor for the opening ```tdsl fence.
+	let openLine = -1;
+	for (let i = cursor.line; i >= 0; i--) {
+		if (/^```tdsl\s*$/.test(editor.getLine(i))) {
+			openLine = i;
+			break;
+		}
+	}
+	if (openLine === -1) {
+		new Notice("Timeline DSL: カーソルが tdsl ブロック内にありません。");
+		return;
+	}
+
+	// Search forward from the line after the opener for the closing ``` fence.
+	let closeLine = -1;
+	for (let i = openLine + 1; i < lineCount; i++) {
+		if (/^```\s*$/.test(editor.getLine(i))) {
+			closeLine = i;
+			break;
+		}
+	}
+	if (closeLine === -1) {
+		new Notice("Timeline DSL: tdsl ブロックの閉じ素が見つかりません。");
+		return;
+	}
+
+	// Extract the body (lines between the fences).
+	const bodyLines: string[] = [];
+	for (let i = openLine + 1; i < closeLine; i++) {
+		bodyLines.push(editor.getLine(i));
+	}
+	const body = bodyLines.join("\n");
+
+	// Format the body; format_source throws a string error on parse failure.
+	let formatted: string;
+	try {
+		formatted = format_source(body);
+	} catch (e) {
+		new Notice(`Timeline DSL 整形エラー:\n${String(e)}`);
+		return;
+	}
+
+	// Replace the body between the opening and closing fence markers.
+	const from = { line: openLine + 1, ch: 0 };
+	const to = { line: closeLine, ch: 0 };
+	// Ensure there is a trailing newline before the closing ```.
+	const replacement = formatted.endsWith("\n") ? formatted : formatted + "\n";
+	editor.replaceRange(replacement, from, to);
+	new Notice("✔ Timeline DSL ブロックを整形しました。");
 }
