@@ -4,6 +4,8 @@ import {
 	extractTimelineTitle,
 	parseDiagnostics,
 	filterErrors,
+	filterWarnings,
+	filterInfos,
 	formatDiagnosticMessages,
 	parseRenderDirectives,
 	resolveRenderOptions,
@@ -301,6 +303,44 @@ describe("filterErrors", () => {
 
 	it("returns an empty array for an empty input", () => {
 		expect(filterErrors([])).toEqual([]);
+	});
+});
+
+// ----------------------------------------------------------------------------
+// filterWarnings / filterInfos
+// ----------------------------------------------------------------------------
+
+describe("filterWarnings", () => {
+	it('returns only diagnostics with severity "warning"', () => {
+		const diagnostics = [
+			{ severity: "error", message: "e1", line: 1, col: 1 },
+			{ severity: "warning", message: "w1", line: 2, col: 2 },
+			{ severity: "info", message: "i1", line: 3, col: 3 },
+			{ severity: "warning", message: "w2", line: 4, col: 4 },
+		];
+		const result = filterWarnings(diagnostics);
+		expect(result).toHaveLength(2);
+		expect(result.every((d) => d.severity === "warning")).toBe(true);
+	});
+
+	it("returns an empty array for empty input", () => {
+		expect(filterWarnings([])).toEqual([]);
+	});
+});
+
+describe("filterInfos", () => {
+	it('returns only diagnostics with severity "info"', () => {
+		const diagnostics = [
+			{ severity: "error", message: "e1", line: 1, col: 1 },
+			{ severity: "info", message: "i1", line: 2, col: 2 },
+		];
+		const result = filterInfos(diagnostics);
+		expect(result).toHaveLength(1);
+		expect(result[0].severity).toBe("info");
+	});
+
+	it("returns an empty array for empty input", () => {
+		expect(filterInfos([])).toEqual([]);
 	});
 });
 

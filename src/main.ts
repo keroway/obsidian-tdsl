@@ -18,6 +18,8 @@ import {
 	extractTimelineTitle,
 	parseDiagnostics,
 	filterErrors,
+	filterWarnings,
+	filterInfos,
 	formatDiagnosticMessages,
 	parseRenderDirectives,
 	resolveRenderOptions,
@@ -51,7 +53,10 @@ class TdslPreview extends MarkdownRenderChild {
 
 			// check_source returns JSON: [{severity, message, line, col}]
 			const diagnosticsJson = check_source(this.source);
-			const errors = filterErrors(parseDiagnostics(diagnosticsJson));
+			const diagnostics = parseDiagnostics(diagnosticsJson);
+			const errors = filterErrors(diagnostics);
+			const warnings = filterWarnings(diagnostics);
+			const infos = filterInfos(diagnostics);
 
 			if (errors.length > 0) {
 				this.showErrors(wrapper, formatDiagnosticMessages(errors));
@@ -105,6 +110,14 @@ class TdslPreview extends MarkdownRenderChild {
 					text: "import wikidata は Obsidian 内では実行されません。静的アイテムのみ表示されます。",
 				});
 			}
+
+			// Show non-blocking warning/info diagnostics below the SVG.
+			for (const d of warnings) {
+				this.showNotice(wrapper, "warning", d);
+			}
+			for (const d of infos) {
+				this.showNotice(wrapper, "info", d);
+			}
 		} catch (e) {
 			this.showErrors(wrapper, [String(e)]);
 		}
@@ -115,6 +128,20 @@ class TdslPreview extends MarkdownRenderChild {
 			text: `Timeline DSL error:\n${messages.join("\n")}`,
 			cls: "tdsl-error",
 		});
+	}
+
+	private showNotice(
+		container: HTMLElement,
+		kind: "warning" | "info",
+		diag: import("./utils").Diagnostic,
+	): void {
+		const icon = kind === "warning" ? "⚠ " : "ℹ ";
+		const prefix = diag.line > 0 ? `Line ${diag.line}: ` : "";
+		const notice = container.createDiv({
+			cls: `tdsl-notice tdsl-notice-${kind}`,
+		});
+		notice.createSpan({ text: icon });
+		notice.createSpan({ text: `${prefix}${diag.message}` });
 	}
 }
 
