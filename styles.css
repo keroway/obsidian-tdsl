@@ -180,3 +180,78 @@
 	color: var(--text-muted);
 	background: var(--background-modifier-hover);
 }
+
+.tdsl-notice-warning {
+	color: var(--text-warning, var(--text-muted));
+	background: var(
+		--background-modifier-warning,
+		var(--background-modifier-hover)
+	);
+}
+
+.tdsl-notice-info {
+	color: var(--text-accent);
+	background: var(--background-modifier-hover);
+}
+
+/* ── Data table (//! table: on) ── */
+.tdsl-table-wrapper {
+	margin-top: 8px;
+	overflow-x: auto;
+}
+
+.tdsl-table-wrapper table {
+	border-collapse: collapse;
+	font-size: 0.85em;
+	width: max-content;
+	min-width: 100%;
+}
+
+.tdsl-table-wrapper th,
+.tdsl-table-wrapper td {
+	border: 1px solid var(--background-modifier-border);
+	padding: 4px 10px;
+	text-align: left;
+}
+
+.tdsl-table-wrapper th {
+	background: var(--background-secondary);
+	font-weight: 600;
+}
+
+.tdsl-table-wrapper tr:nth-child(even) td {
+	background: var(--background-primary-alt);
+}
+
+/* ── Lane colours — CSS variable overrides (upstream 1.20.0+) ──
+ *
+ * SVG output uses `fill: var(--tdsl-lane-N, #fallback)` in each item element.
+ * Because the SVG is inlined into the Obsidian DOM (not an <img>), host CSS
+ * custom properties cascade into the SVG's scope, so defining these tokens on
+ * .tdsl-preview overrides the renderer's internal :root defaults.
+ *
+ * Light: slightly desaturated hues that match the default palette but align
+ *        better with Obsidian's neutral off-white backgrounds.
+ * Dark:  brighter, higher-contrast hues so lane items pop on dark backdrops.
+ */
+.tdsl-preview {
+	--tdsl-lane-0: #4682b4; /* steel-blue */
+	--tdsl-lane-1: #e67e22; /* carrot */
+	--tdsl-lane-2: #27ae60; /* emerald */
+	--tdsl-lane-3: #8e44ad; /* wisteria */
+	--tdsl-lane-4: #e74c3c; /* alizarin */
+	--tdsl-lane-5: #1abc9c; /* turquoise */
+	--tdsl-lane-6: #f39c12; /* orange */
+	--tdsl-lane-7: #2980b9; /* belize-hole */
+}
+
+.theme-dark .tdsl-preview {
+	--tdsl-lane-0: #5ba3d8;
+	--tdsl-lane-1: #f0983a;
+	--tdsl-lane-2: #3cc174;
+	--tdsl-lane-3: #a55cc7;
+	--tdsl-lane-4: #f05a4a;
+	--tdsl-lane-5: #22d3b6;
+	--tdsl-lane-6: #f7b731;
+	--tdsl-lane-7: #3a97d4;
+}

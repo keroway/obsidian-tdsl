@@ -1,13 +1,18 @@
 import {
 	MarkdownRenderChild,
+	Notice,
 	Plugin,
 	PluginSettingTab,
 	Setting,
 	type App,
+	type Editor,
 } from "obsidian";
 import init, {
 	check_source,
+	format_source,
+	lint_source,
 	render_svg_from_source_with_options,
+	render_html_from_source_with_options,
 	JsRenderOptions,
 } from "@keroway/tdsl-wasm";
 // esbuild inlines the WASM binary via `loader: { '.wasm': 'binary' }`
@@ -18,7 +23,11 @@ import {
 	extractTimelineTitle,
 	parseDiagnostics,
 	filterErrors,
+	filterWarnings,
+	filterInfos,
 	formatDiagnosticMessages,
+	parseLintIssues,
+	formatLintIssues,
 	parseRenderDirectives,
 	resolveRenderOptions,
 	DEFAULT_SETTINGS,
@@ -51,7 +60,10 @@ class TdslPreview extends MarkdownRenderChild {
 
 			// check_source returns JSON: [{severity, message, line, col}]
 			const diagnosticsJson = check_source(this.source);
-			const errors = filterErrors(parseDiagnostics(diagnosticsJson));
+			const diagnostics = parseDiagnostics(diagnosticsJson);
+			const errors = filterErrors(diagnostics);
+			const warnings = filterWarnings(diagnostics);
+			const infos = filterInfos(diagnostics);
 
 			if (errors.length > 0) {
 				this.showErrors(wrapper, formatDiagnosticMessages(errors));
@@ -67,7 +79,9 @@ class TdslPreview extends MarkdownRenderChild {
 			if (r.theme) opts.theme = r.theme;
 			if (r.orientation) opts.orientation = r.orientation;
 			if (r.events !== undefined) opts.show_event_labels = r.events;
-			if (r.table !== undefined) opts.show_table = r.table;
+			// NOTE: show_table is HTML-only in the upstream renderer (SVG/PNG/PDF ignore it).
+			// We handle the table separately via render_html_from_source_with_options below.
+			if (r.laneHeight > 0) opts.lane_height = r.laneHeight;
 			// `fit` opts the block into shrink-to-note-width (vs. natural size +
 			// horizontal scroll). The renderer still uses auto scale.
 			if (r.fit) wrapper.addClass("tdsl-fit");
@@ -96,6 +110,29 @@ class TdslPreview extends MarkdownRenderChild {
 			);
 			wrapper.appendChild(document.adoptNode(root));
 
+			// When `table: on`, render the data table via the HTML path and insert it below the SVG.
+			// Use DOMParser (text/html) and adopt only the <table> element to stay XSS-safe.
+			if (r.table) {
+				const tableOpts = new JsRenderOptions();
+				if (r.grid) tableOpts.grid = r.grid;
+				if (r.theme) tableOpts.theme = r.theme;
+				if (r.orientation) tableOpts.orientation = r.orientation;
+				tableOpts.show_event_labels = r.events ?? false;
+				tableOpts.show_table = true;
+				const htmlStr = render_html_from_source_with_options(
+					this.source,
+					tableOpts,
+				);
+				const htmlDoc = new DOMParser().parseFromString(htmlStr, "text/html");
+				const tableEl = htmlDoc.querySelector("table");
+				if (tableEl) {
+					const tableWrapper = wrapper.createDiv({
+						cls: "tdsl-table-wrapper",
+					});
+					tableWrapper.appendChild(document.adoptNode(tableEl));
+				}
+			}
+
 			// Warn when import wikidata blocks are silently skipped (no network in browser).
 			if (hasWikidataImport(this.source)) {
 				const notice = wrapper.createDiv({ cls: "tdsl-notice" });
@@ -103,6 +140,39 @@ class TdslPreview extends MarkdownRenderChild {
 				notice.createSpan({
 					text: "import wikidata は Obsidian 内では実行されません。静的アイテムのみ表示されます。",
 				});
+			}
+
+			// Show non-blocking warning/info diagnostics below the SVG.
+			for (const d of warnings) {
+				this.showNotice(wrapper, "warning", d);
+			}
+			for (const d of infos) {
+				this.showNotice(wrapper, "info", d);
+			}
+
+			// Run lint_source and display issues below the SVG.
+			// lint_source never throws (it returns a parse_error entry on failure),
+			// so this is safe to run after a successful render.
+			try {
+				const lintJson = lint_source(this.source);
+				const lintIssues = parseLintIssues(lintJson).filter(
+					(i) => i.code !== "parse_error",
+				);
+				const messages = formatLintIssues(lintIssues);
+				if (messages.length > 0) {
+					const lintBanner = wrapper.createDiv({
+						cls: "tdsl-lint-banner",
+					});
+					for (const msg of messages) {
+						const row = lintBanner.createDiv({
+							cls: "tdsl-notice tdsl-notice-warning",
+						});
+						row.createSpan({ text: "⚠ " });
+						row.createSpan({ text: msg });
+					}
+				}
+			} catch {
+				// Lint is non-critical: silently ignore failures.
 			}
 		} catch (e) {
 			this.showErrors(wrapper, [String(e)]);
@@ -115,6 +185,20 @@ class TdslPreview extends MarkdownRenderChild {
 			cls: "tdsl-error",
 		});
 	}
+
+	private showNotice(
+		container: HTMLElement,
+		kind: "warning" | "info",
+		diag: import("./utils").Diagnostic,
+	): void {
+		const icon = kind === "warning" ? "⚠ " : "ℹ ";
+		const prefix = diag.line > 0 ? `Line ${diag.line}: ` : "";
+		const notice = container.createDiv({
+			cls: `tdsl-notice tdsl-notice-${kind}`,
+		});
+		notice.createSpan({ text: icon });
+		notice.createSpan({ text: `${prefix}${diag.message}` });
+	}
 }
 
 export default class TimelineDslPlugin extends Plugin {
@@ -126,6 +210,15 @@ export default class TimelineDslPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor("tdsl", (_source, el, ctx) => {
 			ctx.addChild(new TdslPreview(el, _source, this.settings));
 		});
+
+		this.addCommand({
+			id: "format-tdsl-block",
+			name: "現在の tdsl ブロックを整形",
+			editorCallback: async (editor: Editor) => {
+				await ensureWasm();
+				formatCurrentBlock(editor);
+			},
+		});
 	}
 
 	async loadSettings(): Promise<void> {
@@ -134,6 +227,16 @@ export default class TimelineDslPlugin extends Plugin {
 
 	async saveSettings(): Promise<void> {
 		await this.saveData(this.settings);
+		// Re-render all open Markdown previews so the new settings take effect
+		// immediately without requiring the user to reopen the note.
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			const view = leaf.view;
+			if (view.getViewType() === "markdown") {
+				// @ts-expect-error — Obsidian's previewMode is not in the public typings.
+
+				view.previewMode?.rerender(true);
+			}
+		});
 	}
 }
 
@@ -150,7 +253,7 @@ class TdslSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl("p", {
-			text: "これらは既定値です。各コードブロックの //! ディレクティブが常に優先されます。変更後は対象ノートを開き直すと反映されます。",
+			text: "これらは既定値です。各コードブロックの //! ディレクティブが常に優先されます。",
 			cls: "setting-item-description",
 		});
 
@@ -215,7 +318,32 @@ class TdslSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}),
 			);
+
+		new Setting(containerEl)
+			.setName("既定 lane 高さ (lane_height)")
+			.setDesc(
+				"正の整数（px）。空欄または 0 でレンダラ既定（60 px）。//! lane_height: N でブロック単位に上書き可能。",
+			)
+			.addText((t) =>
+				t
+					.setPlaceholder("0")
+					.setValue(
+						this.plugin.settings.laneHeight > 0
+							? String(this.plugin.settings.laneHeight)
+							: "",
+					)
+					.onChange(async (raw) => {
+						this.plugin.settings.laneHeight = parseLaneHeightSetting(raw);
+						await this.plugin.saveSettings();
+					}),
+			);
 	}
+}
+
+/** Coerces the free-text lane_height setting into a non-negative integer. */
+function parseLaneHeightSetting(raw: string): number {
+	const n = Math.floor(Number(raw.trim()));
+	return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 /** Coerces the free-text scale setting into `"auto" | "fit" | number`. */
@@ -225,4 +353,69 @@ function parseScaleSetting(raw: string): TdslSettings["scale"] {
 	const n = Number(v);
 	if (v !== "" && v !== "auto" && Number.isFinite(n) && n > 0) return n;
 	return "auto";
+}
+
+/**
+ * Finds the \`\`\`tdsl ... \`\`\` fence surrounding the cursor in `editor` and
+ * replaces its body with the output of `format_source`.
+ *
+ * - Locates the opening \`\`\`tdsl line at or before the cursor and the closing
+ *   \`\`\` line after it.
+ * - Calls format_source on the body; on parse failure shows a Notice with the
+ *   error message and leaves the document unchanged.
+ * - Uses Editor.replaceRange so the edit is undoable.
+ */
+function formatCurrentBlock(editor: Editor): void {
+	const cursor = editor.getCursor();
+	const lineCount = editor.lineCount();
+
+	// Search backwards from cursor for the opening ```tdsl fence.
+	let openLine = -1;
+	for (let i = cursor.line; i >= 0; i--) {
+		if (/^```tdsl\s*$/.test(editor.getLine(i))) {
+			openLine = i;
+			break;
+		}
+	}
+	if (openLine === -1) {
+		new Notice("Timeline DSL: カーソルが tdsl ブロック内にありません。");
+		return;
+	}
+
+	// Search forward from the line after the opener for the closing ``` fence.
+	let closeLine = -1;
+	for (let i = openLine + 1; i < lineCount; i++) {
+		if (/^```\s*$/.test(editor.getLine(i))) {
+			closeLine = i;
+			break;
+		}
+	}
+	if (closeLine === -1) {
+		new Notice("Timeline DSL: tdsl ブロックの閉じ素が見つかりません。");
+		return;
+	}
+
+	// Extract the body (lines between the fences).
+	const bodyLines: string[] = [];
+	for (let i = openLine + 1; i < closeLine; i++) {
+		bodyLines.push(editor.getLine(i));
+	}
+	const body = bodyLines.join("\n");
+
+	// Format the body; format_source throws a string error on parse failure.
+	let formatted: string;
+	try {
+		formatted = format_source(body);
+	} catch (e) {
+		new Notice(`Timeline DSL 整形エラー:\n${String(e)}`);
+		return;
+	}
+
+	// Replace the body between the opening and closing fence markers.
+	const from = { line: openLine + 1, ch: 0 };
+	const to = { line: closeLine, ch: 0 };
+	// Ensure there is a trailing newline before the closing ```.
+	const replacement = formatted.endsWith("\n") ? formatted : formatted + "\n";
+	editor.replaceRange(replacement, from, to);
+	new Notice("✔ Timeline DSL ブロックを整形しました。");
 }

@@ -4,7 +4,11 @@ import {
 	extractTimelineTitle,
 	parseDiagnostics,
 	filterErrors,
+	filterWarnings,
+	filterInfos,
 	formatDiagnosticMessages,
+	parseLintIssues,
+	formatLintIssues,
 	parseRenderDirectives,
 	resolveRenderOptions,
 	DEFAULT_SETTINGS,
@@ -22,6 +26,7 @@ describe("resolveRenderOptions", () => {
 			fit: false,
 			grid: "none",
 			events: false,
+			laneHeight: 0,
 		});
 	});
 
@@ -31,6 +36,7 @@ describe("resolveRenderOptions", () => {
 			grid: "decade",
 			scale: 3,
 			events: true,
+			laneHeight: 0,
 		};
 		expect(resolveRenderOptions({}, settings)).toEqual({
 			scale: 3,
@@ -38,6 +44,7 @@ describe("resolveRenderOptions", () => {
 			grid: "decade",
 			theme: "pastel",
 			events: true,
+			laneHeight: 0,
 		});
 	});
 
@@ -47,6 +54,7 @@ describe("resolveRenderOptions", () => {
 			grid: "decade",
 			scale: 3,
 			events: true,
+			laneHeight: 0,
 		};
 		const r = resolveRenderOptions(
 			{ grid: "month", theme: "dark", scale: 5, events: false },
@@ -59,6 +67,23 @@ describe("resolveRenderOptions", () => {
 			events: false,
 			fit: false,
 		});
+	});
+
+	it("lane_height: directive wins over setting", () => {
+		const r = resolveRenderOptions(
+			{ lane_height: 80 },
+			{ ...DEFAULT_SETTINGS, laneHeight: 40 },
+		);
+		expect(r.laneHeight).toBe(80);
+	});
+
+	it("lane_height: falls back to settings when no directive", () => {
+		const r = resolveRenderOptions({}, { ...DEFAULT_SETTINGS, laneHeight: 40 });
+		expect(r.laneHeight).toBe(40);
+	});
+
+	it("lane_height: 0 when both unset", () => {
+		expect(resolveRenderOptions({}).laneHeight).toBe(0);
 	});
 
 	it("theme: auto leaves the renderer theme unset", () => {
@@ -92,7 +117,7 @@ describe("parseRenderDirectives", () => {
 	});
 
 	it("parses all supported directives", () => {
-		const src = `//! scale: 3\n//! grid: decade\n//! theme: dark\n//! orientation: vertical\n//! events: on\n//! table: off\ntimeline "T" {}`;
+		const src = `//! scale: 3\n//! grid: decade\n//! theme: dark\n//! orientation: vertical\n//! events: on\n//! table: off\n//! lane_height: 60\ntimeline "T" {}`;
 		expect(parseRenderDirectives(src)).toEqual({
 			scale: 3,
 			fit: false,
@@ -101,7 +126,25 @@ describe("parseRenderDirectives", () => {
 			orientation: "vertical",
 			events: true,
 			table: false,
+			lane_height: 60,
 		});
+	});
+
+	it("lane_height: parses a positive integer", () => {
+		expect(parseRenderDirectives(`//! lane_height: 40`).lane_height).toBe(40);
+	});
+
+	it("lane_height: truncates to integer", () => {
+		expect(parseRenderDirectives(`//! lane_height: 45.7`).lane_height).toBe(45);
+	});
+
+	it("lane_height: ignores 0 and negative values", () => {
+		expect(
+			parseRenderDirectives(`//! lane_height: 0`).lane_height,
+		).toBeUndefined();
+		expect(
+			parseRenderDirectives(`//! lane_height: -10`).lane_height,
+		).toBeUndefined();
 	});
 
 	it("parses `scale: fit` as fit=true with no numeric scale", () => {
@@ -266,6 +309,44 @@ describe("filterErrors", () => {
 });
 
 // ----------------------------------------------------------------------------
+// filterWarnings / filterInfos
+// ----------------------------------------------------------------------------
+
+describe("filterWarnings", () => {
+	it('returns only diagnostics with severity "warning"', () => {
+		const diagnostics = [
+			{ severity: "error", message: "e1", line: 1, col: 1 },
+			{ severity: "warning", message: "w1", line: 2, col: 2 },
+			{ severity: "info", message: "i1", line: 3, col: 3 },
+			{ severity: "warning", message: "w2", line: 4, col: 4 },
+		];
+		const result = filterWarnings(diagnostics);
+		expect(result).toHaveLength(2);
+		expect(result.every((d) => d.severity === "warning")).toBe(true);
+	});
+
+	it("returns an empty array for empty input", () => {
+		expect(filterWarnings([])).toEqual([]);
+	});
+});
+
+describe("filterInfos", () => {
+	it('returns only diagnostics with severity "info"', () => {
+		const diagnostics = [
+			{ severity: "error", message: "e1", line: 1, col: 1 },
+			{ severity: "info", message: "i1", line: 2, col: 2 },
+		];
+		const result = filterInfos(diagnostics);
+		expect(result).toHaveLength(1);
+		expect(result[0].severity).toBe("info");
+	});
+
+	it("returns an empty array for empty input", () => {
+		expect(filterInfos([])).toEqual([]);
+	});
+});
+
+// ----------------------------------------------------------------------------
 // formatDiagnosticMessages
 // ----------------------------------------------------------------------------
 
@@ -299,5 +380,87 @@ describe("formatDiagnosticMessages", () => {
 
 	it("returns an empty array for empty input", () => {
 		expect(formatDiagnosticMessages([])).toEqual([]);
+	});
+});
+
+// ----------------------------------------------------------------------------
+// parseLintIssues / formatLintIssues
+// ----------------------------------------------------------------------------
+
+describe("parseLintIssues", () => {
+	it("parses an empty array", () => {
+		expect(parseLintIssues("[]")).toEqual([]);
+	});
+
+	it("parses a single lint issue", () => {
+		const json = JSON.stringify([
+			{
+				code: "start_gt_end",
+				severity: "warning",
+				line: 5,
+				message: "start is after end",
+				fixable: true,
+			},
+		]);
+		expect(parseLintIssues(json)).toEqual([
+			{
+				code: "start_gt_end",
+				severity: "warning",
+				line: 5,
+				message: "start is after end",
+				fixable: true,
+			},
+		]);
+	});
+});
+
+describe("formatLintIssues", () => {
+	it("formats an issue with line and fixable flag", () => {
+		const issues = [
+			{
+				code: "start_gt_end",
+				severity: "warning" as const,
+				line: 5,
+				message: "start is after end",
+				fixable: true,
+			},
+		];
+		expect(formatLintIssues(issues)).toEqual([
+			"[start_gt_end] Line 5: start is after end ✏",
+		]);
+	});
+
+	it("omits line prefix when line === 0", () => {
+		const issues = [
+			{
+				code: "missing_id",
+				severity: "warning" as const,
+				line: 0,
+				message: "span is missing id",
+				fixable: false,
+			},
+		];
+		expect(formatLintIssues(issues)).toEqual([
+			"[missing_id] span is missing id",
+		]);
+	});
+
+	it("omits fixable badge when fixable === false", () => {
+		const issues = [
+			{
+				code: "invalid_tags",
+				severity: "warning" as const,
+				line: 3,
+				message: "unknown tag",
+				fixable: false,
+			},
+		];
+		expect(formatLintIssues(issues)).toEqual([
+			"[invalid_tags] Line 3: unknown tag",
+		]);
+	});
+
+	it("returns an empty array for empty input", () => {
+		expect(formatLintIssues([])).toEqual([]);
 	});
 });

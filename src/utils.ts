@@ -30,6 +30,8 @@ export interface RenderDirectives {
 	events?: boolean;
 	/** render the accompanying data table. */
 	table?: boolean;
+	/** vertical pixels per lane; positive integer only. 0 or undefined => renderer default. */
+	lane_height?: number;
 }
 
 const BOOL_TRUE = new Set(["on", "true", "yes", "1"]);
@@ -79,6 +81,11 @@ export function parseRenderDirectives(source: string): RenderDirectives {
 			case "table":
 				out.table = BOOL_TRUE.has(val);
 				break;
+			case "lane_height": {
+				const n = Number(raw);
+				if (Number.isFinite(n) && n > 0) out.lane_height = Math.floor(n);
+				break;
+			}
 		}
 	}
 	return out;
@@ -96,6 +103,8 @@ export interface TdslSettings {
 	/** `"auto"` => renderer auto scale; `"fit"` => shrink to note width; number => px/year. */
 	scale: "auto" | "fit" | number;
 	events: boolean;
+	/** Default vertical pixels per lane (positive integer). 0 => renderer default (60 px). */
+	laneHeight: number;
 }
 
 export const DEFAULT_SETTINGS: TdslSettings = {
@@ -103,6 +112,7 @@ export const DEFAULT_SETTINGS: TdslSettings = {
 	grid: "none",
 	scale: "auto",
 	events: false,
+	laneHeight: 0,
 };
 
 /**
@@ -120,6 +130,8 @@ export interface ResolvedRender {
 	orientation?: "horizontal" | "vertical";
 	events?: boolean;
 	table?: boolean;
+	/** vertical pixels per lane; 0 => renderer default. */
+	laneHeight: number;
 }
 
 /**
@@ -130,7 +142,7 @@ export function resolveRenderOptions(
 	directives: RenderDirectives,
 	settings: TdslSettings = DEFAULT_SETTINGS,
 ): ResolvedRender {
-	const resolved: ResolvedRender = { scale: 0, fit: false };
+	const resolved: ResolvedRender = { scale: 0, fit: false, laneHeight: 0 };
 
 	// scale / fit: directive wins; else fall back to the settings default.
 	if (directives.fit) {
@@ -160,6 +172,15 @@ export function resolveRenderOptions(
 	if (directives.orientation) resolved.orientation = directives.orientation;
 	if (directives.table !== undefined) resolved.table = directives.table;
 
+	// lane_height: directive wins; else the settings default (0 = renderer auto).
+	if (directives.lane_height !== undefined && directives.lane_height > 0) {
+		resolved.laneHeight = directives.lane_height;
+	} else if (settings.laneHeight > 0) {
+		resolved.laneHeight = settings.laneHeight;
+	} else {
+		resolved.laneHeight = 0;
+	}
+
 	return resolved;
 }
 
@@ -184,6 +205,16 @@ export function filterErrors(diagnostics: Diagnostic[]): Diagnostic[] {
 	return diagnostics.filter((d) => d.severity === "error");
 }
 
+/** Returns only the diagnostics whose severity is `"warning"`. */
+export function filterWarnings(diagnostics: Diagnostic[]): Diagnostic[] {
+	return diagnostics.filter((d) => d.severity === "warning");
+}
+
+/** Returns only the diagnostics whose severity is `"info"`. */
+export function filterInfos(diagnostics: Diagnostic[]): Diagnostic[] {
+	return diagnostics.filter((d) => d.severity === "info");
+}
+
 /**
  * Formats error diagnostics into human-readable messages.
  * Includes the line number prefix when `line > 0`.
@@ -192,4 +223,39 @@ export function formatDiagnosticMessages(errors: Diagnostic[]): string[] {
 	return errors.map((e) =>
 		e.line > 0 ? `Line ${e.line}: ${e.message}` : e.message,
 	);
+}
+
+// ---------------------------------------------------------------------------
+// Lint helpers
+// ---------------------------------------------------------------------------
+
+export interface LintIssue {
+	/** Short rule identifier, e.g. `start_gt_end`, `invalid_tags`. */
+	code: string;
+	severity: "error" | "warning";
+	/** 1-based line number; 0 when no position available. */
+	line: number;
+	message: string;
+	/** Whether `lint_fix_source` can auto-fix this issue. */
+	fixable: boolean;
+}
+
+/**
+ * Parses the JSON string returned by `lint_source` into a LintIssue array.
+ * Pure function — can be unit-tested without WASM.
+ */
+export function parseLintIssues(json: string): LintIssue[] {
+	return JSON.parse(json) as LintIssue[];
+}
+
+/**
+ * Formats lint issues into human-readable strings for display.
+ * Includes a `[code]` prefix, line number when > 0, and a ✏ badge when fixable.
+ */
+export function formatLintIssues(issues: LintIssue[]): string[] {
+	return issues.map((i) => {
+		const loc = i.line > 0 ? ` Line ${i.line}:` : "";
+		const fix = i.fixable ? " ✏" : "";
+		return `[${i.code}]${loc} ${i.message}${fix}`;
+	});
 }
