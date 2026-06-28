@@ -11,6 +11,11 @@ import {
 	formatLintIssues,
 	parseRenderDirectives,
 	resolveRenderOptions,
+	parseScaleSetting,
+	parseLaneHeightSetting,
+	extractFenceBody,
+	fenceBodyRange,
+	ensureTrailingNewline,
 	DEFAULT_SETTINGS,
 	type TdslSettings,
 } from "./utils";
@@ -462,5 +467,149 @@ describe("formatLintIssues", () => {
 
 	it("returns an empty array for empty input", () => {
 		expect(formatLintIssues([])).toEqual([]);
+	});
+});
+
+// ----------------------------------------------------------------------------
+// parseScaleSetting
+// ----------------------------------------------------------------------------
+
+describe("parseScaleSetting", () => {
+	it('returns "auto" for empty string', () => {
+		expect(parseScaleSetting("")).toBe("auto");
+	});
+
+	it('returns "auto" for the literal "auto"', () => {
+		expect(parseScaleSetting("auto")).toBe("auto");
+	});
+
+	it('returns "auto" for whitespace-only input', () => {
+		expect(parseScaleSetting("  ")).toBe("auto");
+	});
+
+	it('returns "fit" for "fit"', () => {
+		expect(parseScaleSetting("fit")).toBe("fit");
+	});
+
+	it('returns "fit" regardless of case', () => {
+		expect(parseScaleSetting("FIT")).toBe("fit");
+	});
+
+	it("returns the numeric value for a positive number string", () => {
+		expect(parseScaleSetting("5")).toBe(5);
+	});
+
+	it("returns the numeric value for a decimal positive number", () => {
+		expect(parseScaleSetting("2.5")).toBe(2.5);
+	});
+
+	it('returns "auto" for "0" (zero is not a valid scale)', () => {
+		expect(parseScaleSetting("0")).toBe("auto");
+	});
+
+	it('returns "auto" for a negative number string', () => {
+		expect(parseScaleSetting("-3")).toBe("auto");
+	});
+
+	it('returns "auto" for non-numeric garbage', () => {
+		expect(parseScaleSetting("banana")).toBe("auto");
+	});
+});
+
+// ----------------------------------------------------------------------------
+// parseLaneHeightSetting
+// ----------------------------------------------------------------------------
+
+describe("parseLaneHeightSetting", () => {
+	it("returns 0 for empty string", () => {
+		expect(parseLaneHeightSetting("")).toBe(0);
+	});
+
+	it("returns 0 for whitespace-only input", () => {
+		expect(parseLaneHeightSetting("  ")).toBe(0);
+	});
+
+	it("returns the integer for a positive integer string", () => {
+		expect(parseLaneHeightSetting("40")).toBe(40);
+	});
+
+	it("truncates decimals (floor)", () => {
+		expect(parseLaneHeightSetting("45.9")).toBe(45);
+	});
+
+	it("returns 0 for zero", () => {
+		expect(parseLaneHeightSetting("0")).toBe(0);
+	});
+
+	it("returns 0 for a negative number string", () => {
+		expect(parseLaneHeightSetting("-10")).toBe(0);
+	});
+
+	it("returns 0 for non-numeric garbage", () => {
+		expect(parseLaneHeightSetting("abc")).toBe(0);
+	});
+});
+
+// ----------------------------------------------------------------------------
+// extractFenceBody
+// ----------------------------------------------------------------------------
+
+describe("extractFenceBody", () => {
+	const lines = ["```tdsl", "timeline {}", "lane a {}", "```"];
+
+	it("returns the body lines joined by newline", () => {
+		expect(extractFenceBody(lines, 0, 3)).toBe("timeline {}\nlane a {}");
+	});
+
+	it("returns empty string when the fence has no body", () => {
+		expect(extractFenceBody(["```tdsl", "```"], 0, 1)).toBe("");
+	});
+
+	it("returns a single-line body without a trailing newline", () => {
+		expect(extractFenceBody(["```tdsl", "timeline {}", "```"], 0, 2)).toBe(
+			"timeline {}",
+		);
+	});
+});
+
+// ----------------------------------------------------------------------------
+// fenceBodyRange
+// ----------------------------------------------------------------------------
+
+describe("fenceBodyRange", () => {
+	it("returns from = openLine+1, ch=0 and to = closeLine, ch=0", () => {
+		expect(fenceBodyRange(2, 7)).toEqual({
+			from: { line: 3, ch: 0 },
+			to: { line: 7, ch: 0 },
+		});
+	});
+
+	it("works when openLine is 0", () => {
+		expect(fenceBodyRange(0, 5)).toEqual({
+			from: { line: 1, ch: 0 },
+			to: { line: 5, ch: 0 },
+		});
+	});
+});
+
+// ----------------------------------------------------------------------------
+// ensureTrailingNewline
+// ----------------------------------------------------------------------------
+
+describe("ensureTrailingNewline", () => {
+	it("adds a newline when the text has none", () => {
+		expect(ensureTrailingNewline("hello")).toBe("hello\n");
+	});
+
+	it("does not add a second newline when one already exists", () => {
+		expect(ensureTrailingNewline("hello\n")).toBe("hello\n");
+	});
+
+	it("handles empty string by adding a newline", () => {
+		expect(ensureTrailingNewline("")).toBe("\n");
+	});
+
+	it("preserves internal newlines", () => {
+		expect(ensureTrailingNewline("a\nb\nc")).toBe("a\nb\nc\n");
 	});
 });
