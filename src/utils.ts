@@ -259,3 +259,63 @@ export function formatLintIssues(issues: LintIssue[]): string[] {
 		return `[${i.code}]${loc} ${i.message}${fix}`;
 	});
 }
+
+/** Coerces the free-text `scale` setting value into `"auto" | "fit" | number`. */
+export function parseScaleSetting(raw: string): TdslSettings["scale"] {
+	const v = raw.trim().toLowerCase();
+	if (v === "fit") return "fit";
+	const n = Number(v);
+	if (v !== "" && v !== "auto" && Number.isFinite(n) && n > 0) return n;
+	return "auto";
+}
+
+/** Coerces the free-text `lane_height` setting value into a non-negative integer (0 = renderer default). */
+export function parseLaneHeightSetting(raw: string): number {
+	const n = Math.floor(Number(raw.trim()));
+	return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+// ---------------------------------------------------------------------------
+// Format-command helpers (pure, Obsidian-free, testable)
+// ---------------------------------------------------------------------------
+
+/**
+ * Extracts the body string from a line array given a fence range.
+ * Returns the joined text of lines openLine+1 .. closeLine-1 (exclusive).
+ */
+export function extractFenceBody(
+	lines: readonly string[],
+	openLine: number,
+	closeLine: number,
+): string {
+	const bodyLines: string[] = [];
+	for (let i = openLine + 1; i < closeLine; i++) {
+		bodyLines.push(lines[i] ?? "");
+	}
+	return bodyLines.join("\n");
+}
+
+/**
+ * Returns the editor `from`/`to` positions for the body of a fence block.
+ * `from` is the start of the first body line; `to` is the start of the
+ * closing fence line (so `replaceRange` replaces exactly the body and the
+ * trailing newline before the closing ``` ).
+ */
+export function fenceBodyRange(
+	openLine: number,
+	closeLine: number,
+): { from: { line: number; ch: number }; to: { line: number; ch: number } } {
+	return {
+		from: { line: openLine + 1, ch: 0 },
+		to: { line: closeLine, ch: 0 },
+	};
+}
+
+/**
+ * Ensures `text` ends with exactly one newline character.
+ * Used to guarantee the closing ``` appears on its own line after the
+ * formatted body.
+ */
+export function ensureTrailingNewline(text: string): string {
+	return text.endsWith("\n") ? text : `${text}\n`;
+}

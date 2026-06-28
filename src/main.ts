@@ -30,6 +30,11 @@ import {
 	formatLintIssues,
 	parseRenderDirectives,
 	resolveRenderOptions,
+	parseScaleSetting,
+	parseLaneHeightSetting,
+	extractFenceBody,
+	fenceBodyRange,
+	ensureTrailingNewline,
 	DEFAULT_SETTINGS,
 	type TdslSettings,
 } from "./utils";
@@ -334,21 +339,6 @@ class TdslSettingTab extends PluginSettingTab {
 	}
 }
 
-/** Coerces the free-text lane_height setting into a non-negative integer. */
-function parseLaneHeightSetting(raw: string): number {
-	const n = Math.floor(Number(raw.trim()));
-	return Number.isFinite(n) && n > 0 ? n : 0;
-}
-
-/** Coerces the free-text scale setting into `"auto" | "fit" | number`. */
-function parseScaleSetting(raw: string): TdslSettings["scale"] {
-	const v = raw.trim().toLowerCase();
-	if (v === "fit") return "fit";
-	const n = Number(v);
-	if (v !== "" && v !== "auto" && Number.isFinite(n) && n > 0) return n;
-	return "auto";
-}
-
 /**
  * Finds the \`\`\`tdsl ... \`\`\` fence surrounding the cursor in `editor` and
  * replaces its body with the output of `format_source`.
@@ -377,12 +367,7 @@ function formatCurrentBlock(editor: Editor): void {
 	}
 	const { openLine, closeLine } = fence.range;
 
-	// Extract the body (lines between the fences).
-	const bodyLines: string[] = [];
-	for (let i = openLine + 1; i < closeLine; i++) {
-		bodyLines.push(editor.getLine(i));
-	}
-	const body = bodyLines.join("\n");
+	const body = extractFenceBody(lines, openLine, closeLine);
 
 	// Format the body; format_source throws a string error on parse failure.
 	let formatted: string;
@@ -393,11 +378,7 @@ function formatCurrentBlock(editor: Editor): void {
 		return;
 	}
 
-	// Replace the body between the opening and closing fence markers.
-	const from = { line: openLine + 1, ch: 0 };
-	const to = { line: closeLine, ch: 0 };
-	// Ensure there is a trailing newline before the closing ```.
-	const replacement = formatted.endsWith("\n") ? formatted : formatted + "\n";
-	editor.replaceRange(replacement, from, to);
+	const { from, to } = fenceBodyRange(openLine, closeLine);
+	editor.replaceRange(ensureTrailingNewline(formatted), from, to);
 	new Notice("✔ Timeline DSL ブロックを整形しました。");
 }
