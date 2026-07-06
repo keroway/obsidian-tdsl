@@ -30,6 +30,8 @@ export interface RenderDirectives {
 	events?: boolean;
 	/** render the accompanying data table. */
 	table?: boolean;
+	/** render a static legend panel showing lane and tag colors. */
+	legend?: boolean;
 	/** vertical pixels per lane; positive integer only. 0 or undefined => renderer default. */
 	lane_height?: number;
 }
@@ -81,6 +83,9 @@ export function parseRenderDirectives(source: string): RenderDirectives {
 			case "table":
 				out.table = BOOL_TRUE.has(val);
 				break;
+			case "legend":
+				out.legend = BOOL_TRUE.has(val);
+				break;
 			case "lane_height": {
 				const n = Number(raw);
 				if (Number.isFinite(n) && n > 0) out.lane_height = Math.floor(n);
@@ -130,6 +135,7 @@ export interface ResolvedRender {
 	orientation?: "horizontal" | "vertical";
 	events?: boolean;
 	table?: boolean;
+	legend?: boolean;
 	/** vertical pixels per lane; 0 => renderer default. */
 	laneHeight: number;
 }
@@ -168,9 +174,10 @@ export function resolveRenderOptions(
 	// events: directive wins; else the settings default.
 	resolved.events = directives.events ?? settings.events;
 
-	// orientation / table: directive-only (no settings counterpart).
+	// orientation / table / legend: directive-only (no settings counterpart).
 	if (directives.orientation) resolved.orientation = directives.orientation;
 	if (directives.table !== undefined) resolved.table = directives.table;
+	if (directives.legend !== undefined) resolved.legend = directives.legend;
 
 	// lane_height: directive wins; else the settings default (0 = renderer auto).
 	if (directives.lane_height !== undefined && directives.lane_height > 0) {
@@ -197,7 +204,11 @@ export function extractTimelineTitle(source: string): string | null {
 
 /** Parses the JSON string returned by `check_source` into a Diagnostic array. */
 export function parseDiagnostics(json: string): Diagnostic[] {
-	return JSON.parse(json) as Diagnostic[];
+	try {
+		return JSON.parse(json) as Diagnostic[];
+	} catch {
+		return [];
+	}
 }
 
 /** Returns only the diagnostics whose severity is `"error"`. */
@@ -245,7 +256,11 @@ export interface LintIssue {
  * Pure function — can be unit-tested without WASM.
  */
 export function parseLintIssues(json: string): LintIssue[] {
-	return JSON.parse(json) as LintIssue[];
+	try {
+		return JSON.parse(json) as LintIssue[];
+	} catch {
+		return [];
+	}
 }
 
 /**
