@@ -122,7 +122,7 @@ describe("parseRenderDirectives", () => {
 	});
 
 	it("parses all supported directives", () => {
-		const src = `//! scale: 3\n//! grid: decade\n//! theme: dark\n//! orientation: vertical\n//! events: on\n//! table: off\n//! lane_height: 60\ntimeline "T" {}`;
+		const src = `//! scale: 3\n//! grid: decade\n//! theme: dark\n//! orientation: vertical\n//! events: on\n//! table: off\n//! legend: on\n//! lane_height: 60\ntimeline "T" {}`;
 		expect(parseRenderDirectives(src)).toEqual({
 			scale: 3,
 			fit: false,
@@ -131,6 +131,7 @@ describe("parseRenderDirectives", () => {
 			orientation: "vertical",
 			events: true,
 			table: false,
+			legend: true,
 			lane_height: 60,
 		});
 	});

@@ -125,7 +125,8 @@ span main 10..50 "An era" {};
 | `grid` | `none`, `decade`, `year`, `month` | gridline density |
 | `theme` | `default`, `dark`, `print`, `pastel` | built-in colour theme |
 | `events` | `on` / `off` | show labels next to `event` / `event_range` items |
-| `table` | `on` / `off` | render the accompanying data table |
+| `table` | `on` / `off` | render the accompanying item-listing table (drawn natively in the SVG) |
+| `legend` | `on` / `off` | render a static legend panel showing lane and tag colors |
 | `orientation` | `horizontal`, `vertical` | layout direction |
 
 The timeline renders at its natural size; if it is wider than the note column it
