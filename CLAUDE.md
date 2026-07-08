@@ -75,7 +75,7 @@ wrapper.appendChild(document.adoptNode(doc.documentElement));
 
 ### 配布 3 点セット
 
-Obsidian プラグインのインストール手順はこの 3 ファイルを vault の `.obsidian/plugins/obsidian-tdsl/` にコピーすることを前提にしている：
+Obsidian プラグインのインストール手順はこの 3 ファイルを vault の `.obsidian/plugins/timeline-dsl/` にコピーすることを前提にしている：
 
 - `main.js`（esbuild ビルド成果物、リポジトリにコミット済み）
 - `manifest.json`
