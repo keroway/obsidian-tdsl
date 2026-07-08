@@ -208,7 +208,7 @@ Wikidata 連携が必要な場合は、[tdsl CLI](https://github.com/keroway/tim
 2. Vault にプラグインディレクトリを作成（存在しない場合）:
 
    ```sh
-   mkdir -p <vault>/.obsidian/plugins/obsidian-tdsl/
+   mkdir -p <vault>/.obsidian/plugins/timeline-dsl/
    ```
 
 3. ダウンロードした 3 ファイルをそのディレクトリにコピー。
@@ -230,7 +230,7 @@ Wikidata 連携が必要な場合は、[tdsl CLI](https://github.com/keroway/tim
 
    ```sh
    # <vault> は自分の Vault のパスに置き換えてください
-   cp main.js manifest.json styles.css <vault>/.obsidian/plugins/obsidian-tdsl/
+   cp main.js manifest.json styles.css <vault>/.obsidian/plugins/timeline-dsl/
    ```
 
 4. Obsidian で **設定 → コミュニティプラグイン → インストール済みプラグイン** から **Timeline DSL** を有効化

@@ -213,7 +213,7 @@ The plugin is not yet listed in the Obsidian Community Plugin directory. Once pu
 2. Create the plugin directory in your vault (if it does not exist):
 
    ```sh
-   mkdir -p <vault>/.obsidian/plugins/obsidian-tdsl/
+   mkdir -p <vault>/.obsidian/plugins/timeline-dsl/
    ```
 
 3. Copy the three downloaded files into that directory.
@@ -235,7 +235,7 @@ The plugin is not yet listed in the Obsidian Community Plugin directory. Once pu
 
    ```sh
    # replace <vault> with your actual vault path
-   cp main.js manifest.json styles.css <vault>/.obsidian/plugins/obsidian-tdsl/
+   cp main.js manifest.json styles.css <vault>/.obsidian/plugins/timeline-dsl/
    ```
 
 4. In Obsidian: **Settings → Community plugins → Installed plugins** → enable **Timeline DSL**

@@ -34,7 +34,7 @@ npm run typecheck     # TypeScript type-check without emitting files
 2. Copy `main.js`, `manifest.json`, and `styles.css` into your test vault:
 
    ```sh
-   cp main.js manifest.json styles.css <vault>/.obsidian/plugins/obsidian-tdsl/
+   cp main.js manifest.json styles.css <vault>/.obsidian/plugins/timeline-dsl/
    ```
 
 3. In Obsidian: **Settings → Community plugins** → reload or toggle the plugin
