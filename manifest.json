@@ -1,7 +1,7 @@
 {
 	"id": "timeline-dsl",
 	"name": "Timeline DSL",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"minAppVersion": "1.4.0",
 	"description": "Render .tdsl timeline DSL code blocks as SVG previews in Obsidian.",
 	"author": "keroway",

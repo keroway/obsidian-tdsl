@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-tdsl",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"description": "Timeline DSL plugin for Obsidian — renders .tdsl code blocks as SVG",
 	"main": "main.js",
 	"scripts": {
