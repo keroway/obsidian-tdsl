@@ -24,19 +24,19 @@
 	"author": "keroway",
 	"license": "MIT",
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.2",
+		"@biomejs/biome": "^2.5.3",
 		"@eslint/js": "^10.0.1",
-		"@types/node": "^26.1.0",
-		"@vitest/coverage-v8": "^4.1.9",
+		"@types/node": "^26.1.1",
+		"@vitest/coverage-v8": "^4.1.10",
 		"builtin-modules": "^5.3.0",
 		"esbuild": "^0.28.1",
-		"eslint": "^10.6.0",
+		"eslint": "^10.7.0",
 		"obsidian": "1.13.1",
 		"typescript": "^6.0.3",
-		"typescript-eslint": "^8.62.1",
+		"typescript-eslint": "^8.63.0",
 		"vitest": "^4.1.9"
 	},
 	"dependencies": {
-		"@keroway/tdsl-wasm": "^1.23.0"
+		"@keroway/tdsl-wasm": "^1.24.0"
 	}
 }
