@@ -33,6 +33,7 @@ import {
 	parseLaneHeightSetting,
 	isRecognizedScaleInput,
 	isRecognizedLaneHeightInput,
+	debounce,
 	extractFenceBody,
 	fenceBodyRange,
 	ensureTrailingNewline,
@@ -220,6 +221,13 @@ export default class TimelineDslPlugin extends Plugin {
 
 class TdslSettingTab extends PluginSettingTab {
 	private readonly plugin: TimelineDslPlugin;
+	// Debounces saveSettings() for free-text inputs (scale / lane_height),
+	// since it re-renders every open Markdown preview and would otherwise
+	// fire on every keystroke. Created once so the timer survives across
+	// display() calls (each display() re-renders the tab's DOM).
+	private readonly debouncedSave = debounce(() => {
+		void this.plugin.saveSettings();
+	}, 400);
 
 	constructor(app: App, plugin: TimelineDslPlugin) {
 		super(app, plugin);
@@ -283,10 +291,10 @@ class TdslSettingTab extends PluginSettingTab {
 				t
 					.setPlaceholder("auto")
 					.setValue(String(this.plugin.settings.scale))
-					.onChange(async (raw) => {
+					.onChange((raw) => {
 						const parsed = parseScaleSetting(raw);
 						this.plugin.settings.scale = parsed;
-						await this.plugin.saveSettings();
+						this.debouncedSave();
 						// If the raw input could not be interpreted as auto/fit/a positive
 						// number, it silently falls back to a default — reflect that in the
 						// field so the displayed value never diverges from what was saved.
@@ -322,10 +330,10 @@ class TdslSettingTab extends PluginSettingTab {
 							? String(this.plugin.settings.laneHeight)
 							: "",
 					)
-					.onChange(async (raw) => {
+					.onChange((raw) => {
 						const parsed = parseLaneHeightSetting(raw);
 						this.plugin.settings.laneHeight = parsed;
-						await this.plugin.saveSettings();
+						this.debouncedSave();
 						if (!isRecognizedLaneHeightInput(raw)) {
 							t.setValue(parsed > 0 ? String(parsed) : "");
 							new Notice(
