@@ -21,7 +21,7 @@ An [Obsidian](https://obsidian.md) plugin that renders [Timeline DSL](https://gi
 - **Inline syntax errors** — Parse and semantic errors are shown with line/column numbers inside the note, without leaving the editor
 - **Dark mode support** — Automatically follows Obsidian's `body.theme-dark` class; colour palette adapts to Catppuccin-style dark colours
 - **XSS-safe SVG insertion** — SVG output is parsed via `DOMParser` and inserted with `document.adoptNode`; no `innerHTML`, no script execution
-- **Mobile compatible** — Works on both desktop and mobile Obsidian (`isDesktopOnly: false`)
+- **Mobile-enabled** — `isDesktopOnly: false`; the plugin is not blocked from running on Obsidian Mobile, but has not yet been extensively verified on iOS/Android. Feedback via [GitHub Issues](https://github.com/keroway/obsidian-tdsl/issues) is welcome.
 - **Zero network requests** — The [Timeline DSL WASM](https://www.npmjs.com/package/@keroway/tdsl-wasm) renderer is bundled inline; no external calls at render time
 
 ## Usage
