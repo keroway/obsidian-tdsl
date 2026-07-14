@@ -31,6 +31,8 @@ import {
 	resolveRenderOptions,
 	parseScaleSetting,
 	parseLaneHeightSetting,
+	isRecognizedScaleInput,
+	isRecognizedLaneHeightInput,
 	extractFenceBody,
 	fenceBodyRange,
 	ensureTrailingNewline,
@@ -282,8 +284,18 @@ class TdslSettingTab extends PluginSettingTab {
 					.setPlaceholder("auto")
 					.setValue(String(this.plugin.settings.scale))
 					.onChange(async (raw) => {
-						this.plugin.settings.scale = parseScaleSetting(raw);
+						const parsed = parseScaleSetting(raw);
+						this.plugin.settings.scale = parsed;
 						await this.plugin.saveSettings();
+						// If the raw input could not be interpreted as auto/fit/a positive
+						// number, it silently falls back to a default — reflect that in the
+						// field so the displayed value never diverges from what was saved.
+						if (!isRecognizedScaleInput(raw)) {
+							t.setValue(String(parsed));
+							new Notice(
+								`Timeline DSL: "${raw}" is not a valid scale value. Reset to "${parsed}".`,
+							);
+						}
 					}),
 			);
 
@@ -311,8 +323,17 @@ class TdslSettingTab extends PluginSettingTab {
 							: "",
 					)
 					.onChange(async (raw) => {
-						this.plugin.settings.laneHeight = parseLaneHeightSetting(raw);
+						const parsed = parseLaneHeightSetting(raw);
+						this.plugin.settings.laneHeight = parsed;
 						await this.plugin.saveSettings();
+						if (!isRecognizedLaneHeightInput(raw)) {
+							t.setValue(parsed > 0 ? String(parsed) : "");
+							new Notice(
+								`Timeline DSL: "${raw}" is not a valid lane height. Reset to "${
+									parsed > 0 ? parsed : "renderer default"
+								}".`,
+							);
+						}
 					}),
 			);
 	}
