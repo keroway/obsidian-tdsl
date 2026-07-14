@@ -41,4 +41,31 @@ describe("findTdslFenceAtCursor", () => {
 			status: "not-in-block",
 		});
 	});
+
+	it("finds a tdsl fence nested inside a callout (blockquote prefix)", () => {
+		expect(
+			findTdslFenceAtCursor(
+				["> [!note]", "> ```tdsl", "> timeline {}", "> ```", "after"],
+				2,
+			),
+		).toEqual({ status: "found", range: { openLine: 1, closeLine: 3 } });
+	});
+
+	it("finds a tdsl fence nested inside an indented list item", () => {
+		expect(
+			findTdslFenceAtCursor(
+				["- item", "  ```tdsl", "  timeline {}", "  ```", "after"],
+				2,
+			),
+		).toEqual({ status: "found", range: { openLine: 1, closeLine: 3 } });
+	});
+
+	it("does not pair a callout-nested open fence with a differently-nested close fence", () => {
+		// The close fence here is NOT prefixed with "> ", so it belongs to a
+		// different (unclosed, in this snippet) nesting level and must not be
+		// treated as the closing fence of the callout-nested block.
+		expect(
+			findTdslFenceAtCursor(["> ```tdsl", "> timeline {}", "```", "after"], 1),
+		).toEqual({ status: "missing-close" });
+	});
 });
