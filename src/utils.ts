@@ -316,6 +316,26 @@ export function isRecognizedLaneHeightInput(raw: string): boolean {
 	return Number.isFinite(n) && n > 0;
 }
 
+/**
+ * Returns a debounced wrapper around `fn`: repeated calls within `waitMs`
+ * of each other collapse into a single call after the last invocation.
+ * Used to avoid triggering a full-vault preview rerender on every keystroke
+ * in the settings text inputs.
+ */
+export function debounce<Args extends unknown[]>(
+	fn: (...args: Args) => void,
+	waitMs: number,
+): (...args: Args) => void {
+	let timer: ReturnType<typeof setTimeout> | null = null;
+	return (...args: Args) => {
+		if (timer !== null) clearTimeout(timer);
+		timer = setTimeout(() => {
+			timer = null;
+			fn(...args);
+		}, waitMs);
+	};
+}
+
 // ---------------------------------------------------------------------------
 // Format-command helpers (pure, Obsidian-free, testable)
 // ---------------------------------------------------------------------------
