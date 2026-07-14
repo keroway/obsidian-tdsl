@@ -8,8 +8,13 @@ export type TdslFenceResult =
 	| { status: "not-in-block" }
 	| { status: "missing-close" };
 
-const TDSL_FENCE_OPEN_RE = /^```tdsl\s*$/;
-const FENCE_CLOSE_RE = /^```\s*$/;
+// Matches an optional run of blockquote markers (`>`) and/or leading
+// whitespace before the fence itself, so tdsl blocks nested inside
+// callouts (`> ` prefix) or indented list items are still recognized.
+// Capture group 1 is the prefix so callers can verify the open/close
+// fence share the same nesting prefix.
+const TDSL_FENCE_OPEN_RE = /^([ \t]*(?:>[ \t]*)*)```tdsl\s*$/;
+const FENCE_CLOSE_RE = /^([ \t]*(?:>[ \t]*)*)```\s*$/;
 
 /**
  * Finds the `tdsl` fenced code block body that contains `cursorLine`.
@@ -23,10 +28,13 @@ export function findTdslFenceAtCursor(
 	cursorLine: number,
 ): TdslFenceResult {
 	let openLine = -1;
+	let openPrefix = "";
 
 	for (let i = cursorLine; i >= 0; i--) {
-		if (TDSL_FENCE_OPEN_RE.test(lines[i] ?? "")) {
+		const m = TDSL_FENCE_OPEN_RE.exec(lines[i] ?? "");
+		if (m) {
 			openLine = i;
+			openPrefix = m[1] ?? "";
 			break;
 		}
 	}
@@ -36,7 +44,11 @@ export function findTdslFenceAtCursor(
 	}
 
 	for (let i = openLine + 1; i < lines.length; i++) {
-		if (FENCE_CLOSE_RE.test(lines[i] ?? "")) {
+		const m = FENCE_CLOSE_RE.exec(lines[i] ?? "");
+		// Only a close fence sharing the same nesting prefix as the open fence
+		// (e.g. both inside the same callout / list indentation) can pair with
+		// it. A differently-nested fence is skipped and the search continues.
+		if (m && (m[1] ?? "") === openPrefix) {
 			if (cursorLine >= i) return { status: "not-in-block" };
 			return { status: "found", range: { openLine, closeLine: i } };
 		}
