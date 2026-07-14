@@ -13,6 +13,8 @@ import {
 	resolveRenderOptions,
 	parseScaleSetting,
 	parseLaneHeightSetting,
+	isRecognizedScaleInput,
+	isRecognizedLaneHeightInput,
 	extractFenceBody,
 	fenceBodyRange,
 	ensureTrailingNewline,
@@ -548,6 +550,44 @@ describe("parseLaneHeightSetting", () => {
 
 	it("returns 0 for non-numeric garbage", () => {
 		expect(parseLaneHeightSetting("abc")).toBe(0);
+	});
+});
+
+// ----------------------------------------------------------------------------
+// isRecognizedScaleInput / isRecognizedLaneHeightInput
+// ----------------------------------------------------------------------------
+
+describe("isRecognizedScaleInput", () => {
+	it("accepts empty, auto, fit, and positive numbers", () => {
+		expect(isRecognizedScaleInput("")).toBe(true);
+		expect(isRecognizedScaleInput("  ")).toBe(true);
+		expect(isRecognizedScaleInput("auto")).toBe(true);
+		expect(isRecognizedScaleInput("AUTO")).toBe(true);
+		expect(isRecognizedScaleInput("fit")).toBe(true);
+		expect(isRecognizedScaleInput("FIT")).toBe(true);
+		expect(isRecognizedScaleInput("5")).toBe(true);
+		expect(isRecognizedScaleInput("2.5")).toBe(true);
+	});
+
+	it("rejects zero, negative numbers, and garbage", () => {
+		expect(isRecognizedScaleInput("0")).toBe(false);
+		expect(isRecognizedScaleInput("-3")).toBe(false);
+		expect(isRecognizedScaleInput("banana")).toBe(false);
+	});
+});
+
+describe("isRecognizedLaneHeightInput", () => {
+	it("accepts empty and positive integers (or decimals that floor to positive)", () => {
+		expect(isRecognizedLaneHeightInput("")).toBe(true);
+		expect(isRecognizedLaneHeightInput("  ")).toBe(true);
+		expect(isRecognizedLaneHeightInput("40")).toBe(true);
+		expect(isRecognizedLaneHeightInput("45.9")).toBe(true);
+	});
+
+	it("rejects zero, negative numbers, and garbage", () => {
+		expect(isRecognizedLaneHeightInput("0")).toBe(false);
+		expect(isRecognizedLaneHeightInput("-10")).toBe(false);
+		expect(isRecognizedLaneHeightInput("abc")).toBe(false);
 	});
 });
 
