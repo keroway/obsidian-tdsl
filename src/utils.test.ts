@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
+	debounce,
 	hasWikidataImport,
 	extractTimelineTitle,
 	parseDiagnostics,
@@ -13,6 +14,8 @@ import {
 	resolveRenderOptions,
 	parseScaleSetting,
 	parseLaneHeightSetting,
+	isRecognizedScaleInput,
+	isRecognizedLaneHeightInput,
 	extractFenceBody,
 	fenceBodyRange,
 	ensureTrailingNewline,
@@ -552,6 +555,44 @@ describe("parseLaneHeightSetting", () => {
 });
 
 // ----------------------------------------------------------------------------
+// isRecognizedScaleInput / isRecognizedLaneHeightInput
+// ----------------------------------------------------------------------------
+
+describe("isRecognizedScaleInput", () => {
+	it("accepts empty, auto, fit, and positive numbers", () => {
+		expect(isRecognizedScaleInput("")).toBe(true);
+		expect(isRecognizedScaleInput("  ")).toBe(true);
+		expect(isRecognizedScaleInput("auto")).toBe(true);
+		expect(isRecognizedScaleInput("AUTO")).toBe(true);
+		expect(isRecognizedScaleInput("fit")).toBe(true);
+		expect(isRecognizedScaleInput("FIT")).toBe(true);
+		expect(isRecognizedScaleInput("5")).toBe(true);
+		expect(isRecognizedScaleInput("2.5")).toBe(true);
+	});
+
+	it("rejects zero, negative numbers, and garbage", () => {
+		expect(isRecognizedScaleInput("0")).toBe(false);
+		expect(isRecognizedScaleInput("-3")).toBe(false);
+		expect(isRecognizedScaleInput("banana")).toBe(false);
+	});
+});
+
+describe("isRecognizedLaneHeightInput", () => {
+	it("accepts empty and positive integers (or decimals that floor to positive)", () => {
+		expect(isRecognizedLaneHeightInput("")).toBe(true);
+		expect(isRecognizedLaneHeightInput("  ")).toBe(true);
+		expect(isRecognizedLaneHeightInput("40")).toBe(true);
+		expect(isRecognizedLaneHeightInput("45.9")).toBe(true);
+	});
+
+	it("rejects zero, negative numbers, and garbage", () => {
+		expect(isRecognizedLaneHeightInput("0")).toBe(false);
+		expect(isRecognizedLaneHeightInput("-10")).toBe(false);
+		expect(isRecognizedLaneHeightInput("abc")).toBe(false);
+	});
+});
+
+// ----------------------------------------------------------------------------
 // extractFenceBody
 // ----------------------------------------------------------------------------
 
@@ -612,5 +653,49 @@ describe("ensureTrailingNewline", () => {
 
 	it("preserves internal newlines", () => {
 		expect(ensureTrailingNewline("a\nb\nc")).toBe("a\nb\nc\n");
+	});
+});
+
+// ----------------------------------------------------------------------------
+// debounce
+// ----------------------------------------------------------------------------
+
+describe("debounce", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("collapses rapid successive calls into a single trailing call", () => {
+		vi.useFakeTimers();
+		const fn = vi.fn();
+		const debounced = debounce(fn, 400);
+
+		debounced("a");
+		vi.advanceTimersByTime(100);
+		debounced("b");
+		vi.advanceTimersByTime(100);
+		debounced("c");
+
+		expect(fn).not.toHaveBeenCalled();
+
+		vi.advanceTimersByTime(400);
+
+		expect(fn).toHaveBeenCalledTimes(1);
+		expect(fn).toHaveBeenCalledWith("c");
+	});
+
+	it("calls fn again after the wait elapses between separate bursts", () => {
+		vi.useFakeTimers();
+		const fn = vi.fn();
+		const debounced = debounce(fn, 400);
+
+		debounced("first");
+		vi.advanceTimersByTime(400);
+		expect(fn).toHaveBeenCalledTimes(1);
+
+		debounced("second");
+		vi.advanceTimersByTime(400);
+		expect(fn).toHaveBeenCalledTimes(2);
+		expect(fn).toHaveBeenLastCalledWith("second");
 	});
 });

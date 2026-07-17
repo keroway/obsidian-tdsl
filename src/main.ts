@@ -31,6 +31,9 @@ import {
 	resolveRenderOptions,
 	parseScaleSetting,
 	parseLaneHeightSetting,
+	isRecognizedScaleInput,
+	isRecognizedLaneHeightInput,
+	debounce,
 	extractFenceBody,
 	fenceBodyRange,
 	ensureTrailingNewline,
@@ -119,7 +122,7 @@ class TdslPreview extends MarkdownRenderChild {
 				const notice = wrapper.createDiv({ cls: "tdsl-notice" });
 				notice.createSpan({ text: "⚠ " });
 				notice.createSpan({
-					text: "import wikidata は Obsidian 内では実行されません。静的アイテムのみ表示されます。",
+					text: "`import wikidata` is not executed inside Obsidian. Only static items are shown.",
 				});
 			}
 
@@ -194,7 +197,7 @@ export default class TimelineDslPlugin extends Plugin {
 
 		this.addCommand({
 			id: "format-tdsl-block",
-			name: "現在の tdsl ブロックを整形",
+			name: "Format current tdsl block",
 			editorCallback: async (editor: Editor) => {
 				await ensureWasm();
 				formatCurrentBlock(editor);
@@ -218,6 +221,13 @@ export default class TimelineDslPlugin extends Plugin {
 
 class TdslSettingTab extends PluginSettingTab {
 	private readonly plugin: TimelineDslPlugin;
+	// Debounces saveSettings() for free-text inputs (scale / lane_height),
+	// since it re-renders every open Markdown preview and would otherwise
+	// fire on every keystroke. Created once so the timer survives across
+	// display() calls (each display() re-renders the tab's DOM).
+	private readonly debouncedSave = debounce(() => {
+		void this.plugin.saveSettings();
+	}, 400);
 
 	constructor(app: App, plugin: TimelineDslPlugin) {
 		super(app, plugin);
@@ -229,17 +239,19 @@ class TdslSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl("p", {
-			text: "これらは既定値です。各コードブロックの //! ディレクティブが常に優先されます。",
+			text: "These are the defaults. Per-block `//!` directives always take precedence.",
 			cls: "setting-item-description",
 		});
 
 		new Setting(containerEl)
-			.setName("既定テーマ (theme)")
-			.setDesc("auto = Obsidian のライト/ダークに追従（プラグイン CSS で描画）")
+			.setName("Default theme")
+			.setDesc(
+				"`auto` follows Obsidian's light/dark mode (rendered via plugin CSS)",
+			)
 			.addDropdown((d) =>
 				d
 					.addOptions({
-						auto: "auto（追従）",
+						auto: "Auto (follow app theme)",
 						default: "default",
 						dark: "dark",
 						print: "print",
@@ -253,8 +265,8 @@ class TdslSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("既定グリッド (grid)")
-			.setDesc("グリッド線の密度")
+			.setName("Default grid")
+			.setDesc("Density of grid lines")
 			.addDropdown((d) =>
 				d
 					.addOptions({
@@ -271,23 +283,33 @@ class TdslSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("既定スケール (scale)")
+			.setName("Default scale")
 			.setDesc(
-				"auto / fit / 正の数（px per year）。fit はノート幅に縮小（横スクロールなし）。",
+				"`auto` / `fit` / a positive number (px per year). `fit` shrinks to note width (no horizontal scroll).",
 			)
 			.addText((t) =>
 				t
 					.setPlaceholder("auto")
 					.setValue(String(this.plugin.settings.scale))
-					.onChange(async (raw) => {
-						this.plugin.settings.scale = parseScaleSetting(raw);
-						await this.plugin.saveSettings();
+					.onChange((raw) => {
+						const parsed = parseScaleSetting(raw);
+						this.plugin.settings.scale = parsed;
+						this.debouncedSave();
+						// If the raw input could not be interpreted as auto/fit/a positive
+						// number, it silently falls back to a default — reflect that in the
+						// field so the displayed value never diverges from what was saved.
+						if (!isRecognizedScaleInput(raw)) {
+							t.setValue(String(parsed));
+							new Notice(
+								`Timeline DSL: "${raw}" is not a valid scale value. Reset to "${parsed}".`,
+							);
+						}
 					}),
 			);
 
 		new Setting(containerEl)
-			.setName("イベントラベルを既定で表示 (events)")
-			.setDesc("event / event_range にラベルを表示する")
+			.setName("Show event labels by default")
+			.setDesc("Show labels on event / event_range items")
 			.addToggle((tg) =>
 				tg.setValue(this.plugin.settings.events).onChange(async (v) => {
 					this.plugin.settings.events = v;
@@ -296,9 +318,9 @@ class TdslSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("既定 lane 高さ (lane_height)")
+			.setName("Default lane height")
 			.setDesc(
-				"正の整数（px）。空欄または 0 でレンダラ既定（60 px）。//! lane_height: N でブロック単位に上書き可能。",
+				"Positive integer (px). Empty or `0` uses the renderer default (60 px). Override per block with `//! lane_height: N`.",
 			)
 			.addText((t) =>
 				t
@@ -308,9 +330,18 @@ class TdslSettingTab extends PluginSettingTab {
 							? String(this.plugin.settings.laneHeight)
 							: "",
 					)
-					.onChange(async (raw) => {
-						this.plugin.settings.laneHeight = parseLaneHeightSetting(raw);
-						await this.plugin.saveSettings();
+					.onChange((raw) => {
+						const parsed = parseLaneHeightSetting(raw);
+						this.plugin.settings.laneHeight = parsed;
+						this.debouncedSave();
+						if (!isRecognizedLaneHeightInput(raw)) {
+							t.setValue(parsed > 0 ? String(parsed) : "");
+							new Notice(
+								`Timeline DSL: "${raw}" is not a valid lane height. Reset to "${
+									parsed > 0 ? parsed : "renderer default"
+								}".`,
+							);
+						}
 					}),
 			);
 	}
@@ -335,11 +366,13 @@ function formatCurrentBlock(editor: Editor): void {
 
 	const fence = findTdslFenceAtCursor(lines, cursor.line);
 	if (fence.status === "not-in-block") {
-		new Notice("Timeline DSL: カーソルが tdsl ブロック内にありません。");
+		new Notice("Timeline DSL: Cursor is not inside a tdsl block.");
 		return;
 	}
 	if (fence.status === "missing-close") {
-		new Notice("Timeline DSL: tdsl ブロックの閉じ素が見つかりません。");
+		new Notice(
+			"Timeline DSL: Could not find the closing fence of the tdsl block.",
+		);
 		return;
 	}
 	const { openLine, closeLine } = fence.range;
@@ -351,11 +384,11 @@ function formatCurrentBlock(editor: Editor): void {
 	try {
 		formatted = format_source(body);
 	} catch (e) {
-		new Notice(`Timeline DSL 整形エラー:\n${String(e)}`);
+		new Notice(`Timeline DSL format error:\n${String(e)}`);
 		return;
 	}
 
 	const { from, to } = fenceBodyRange(openLine, closeLine);
 	editor.replaceRange(ensureTrailingNewline(formatted), from, to);
-	new Notice("✔ Timeline DSL ブロックを整形しました。");
+	new Notice("✔ Formatted the Timeline DSL block.");
 }

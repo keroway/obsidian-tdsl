@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Mobile claim tone-down** — README no longer asserts the plugin "works" on mobile; `isDesktopOnly: false` means it is not blocked from running on Obsidian Mobile, but this has not been extensively verified on iOS/Android devices or emulators
+
 ## [0.1.0] - 2026-05-31
 
 ### Added
@@ -17,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dark mode support** — `styles.css` uses `body.theme-dark` to apply Catppuccin-style dark colours to the SVG output (backgrounds, axis, labels, spans, events)
 - **XSS-safe SVG insertion** — SVG strings are parsed with `DOMParser` and inserted via `document.adoptNode`; `innerHTML` is never used on untrusted SVG
 - **Wikidata limitation notice** — If the source contains `import wikidata`, a notice is displayed explaining that Wikidata imports are not executed inside Obsidian; only static items are rendered
-- **Mobile support** — `isDesktopOnly: false` in `manifest.json`; the plugin works on Obsidian Mobile
+- **Mobile-enabled** — `isDesktopOnly: false` in `manifest.json`, so the plugin is not blocked from running on Obsidian Mobile (not extensively verified on-device; see Unreleased)
 - **CI workflow** — GitHub Actions runs ESLint → `tsc --noEmit` → esbuild → verifies `main.js` is produced on every push and pull request to `main`
 
 [Unreleased]: https://github.com/keroway/obsidian-tdsl/compare/v0.1.0...HEAD

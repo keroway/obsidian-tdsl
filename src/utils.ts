@@ -290,6 +290,52 @@ export function parseLaneHeightSetting(raw: string): number {
 	return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
+/**
+ * Reports whether `raw` is a value `parseScaleSetting` interprets literally
+ * (empty, `auto`, `fit`, or a positive number) rather than silently falling
+ * back to the `"auto"` default. Used by the settings UI to decide whether to
+ * show a correction notice and rewrite the input field.
+ */
+export function isRecognizedScaleInput(raw: string): boolean {
+	const v = raw.trim().toLowerCase();
+	if (v === "" || v === "auto" || v === "fit") return true;
+	const n = Number(v);
+	return Number.isFinite(n) && n > 0;
+}
+
+/**
+ * Reports whether `raw` is a value `parseLaneHeightSetting` interprets
+ * literally (empty or a positive integer) rather than silently falling back
+ * to the `0` (renderer default) value. Used by the settings UI to decide
+ * whether to show a correction notice and rewrite the input field.
+ */
+export function isRecognizedLaneHeightInput(raw: string): boolean {
+	const trimmed = raw.trim();
+	if (trimmed === "") return true;
+	const n = Math.floor(Number(trimmed));
+	return Number.isFinite(n) && n > 0;
+}
+
+/**
+ * Returns a debounced wrapper around `fn`: repeated calls within `waitMs`
+ * of each other collapse into a single call after the last invocation.
+ * Used to avoid triggering a full-vault preview rerender on every keystroke
+ * in the settings text inputs.
+ */
+export function debounce<Args extends unknown[]>(
+	fn: (...args: Args) => void,
+	waitMs: number,
+): (...args: Args) => void {
+	let timer: ReturnType<typeof setTimeout> | null = null;
+	return (...args: Args) => {
+		if (timer !== null) clearTimeout(timer);
+		timer = setTimeout(() => {
+			timer = null;
+			fn(...args);
+		}, waitMs);
+	};
+}
+
 // ---------------------------------------------------------------------------
 // Format-command helpers (pure, Obsidian-free, testable)
 // ---------------------------------------------------------------------------
