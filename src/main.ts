@@ -1,47 +1,47 @@
-import {
-	MarkdownRenderChild,
-	Notice,
-	Plugin,
-	PluginSettingTab,
-	Setting,
-	type App,
-	type Editor,
-} from "obsidian";
 import init, {
 	check_source,
 	format_source,
+	JsRenderOptions,
 	lint_source,
 	render_svg_from_source_with_options,
-	JsRenderOptions,
 } from "@keroway/tdsl-wasm";
 // esbuild inlines the WASM binary via `loader: { '.wasm': 'binary' }`
 // so init() receives a BufferSource directly instead of fetching a URL.
 import wasmBytes from "@keroway/tdsl-wasm/tdsl_wasm_bg.wasm";
 import {
-	hasWikidataImport,
-	extractTimelineTitle,
-	parseDiagnostics,
-	filterErrors,
-	filterWarnings,
-	filterInfos,
-	formatDiagnosticMessages,
-	parseLintIssues,
-	formatLintIssues,
-	parseRenderDirectives,
-	resolveRenderOptions,
-	parseScaleSetting,
-	parseLaneHeightSetting,
-	isRecognizedScaleInput,
-	isRecognizedLaneHeightInput,
-	debounce,
-	extractFenceBody,
-	fenceBodyRange,
-	ensureTrailingNewline,
-	DEFAULT_SETTINGS,
-	type TdslSettings,
-} from "./utils";
+	type App,
+	type Editor,
+	MarkdownRenderChild,
+	Notice,
+	Plugin,
+	PluginSettingTab,
+	Setting,
+} from "obsidian";
 import { findTdslFenceAtCursor } from "./fence";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
+import {
+	DEFAULT_SETTINGS,
+	debounce,
+	ensureTrailingNewline,
+	extractFenceBody,
+	extractTimelineTitle,
+	fenceBodyRange,
+	filterErrors,
+	filterInfos,
+	filterWarnings,
+	formatDiagnosticMessages,
+	formatLintIssues,
+	hasWikidataImport,
+	isRecognizedLaneHeightInput,
+	isRecognizedScaleInput,
+	parseDiagnostics,
+	parseLaneHeightSetting,
+	parseLintIssues,
+	parseRenderDirectives,
+	parseScaleSetting,
+	resolveRenderOptions,
+	type TdslSettings,
+} from "./utils";
 import { createWasmInitializer } from "./wasm-init";
 
 const ensureWasm = createWasmInitializer(async () => {

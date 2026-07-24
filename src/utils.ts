@@ -49,6 +49,7 @@ export function parseRenderDirectives(source: string): RenderDirectives {
 	const out: RenderDirectives = {};
 	const re = /^[ \t]*\/\/!\s*([a-z_]+)\s*:\s*(.+?)\s*$/gim;
 	let m: RegExpExecArray | null;
+	// biome-ignore lint/suspicious/noAssignInExpressions: idiomatic RegExp.exec loop
 	while ((m = re.exec(source)) !== null) {
 		const key = m[1].toLowerCase();
 		const raw = m[2].trim();
@@ -199,7 +200,7 @@ export function hasWikidataImport(source: string): boolean {
 /** Extracts the timeline title from a `timeline "..."` line, or null. */
 export function extractTimelineTitle(source: string): string | null {
 	const m = source.match(/^\s*timeline\s+"([^"]*)"/m);
-	return m && m[1].trim() ? m[1].trim() : null;
+	return m?.[1].trim() ? m[1].trim() : null;
 }
 
 /** Parses the JSON string returned by `check_source` into a Diagnostic array. */
