@@ -1,0 +1,20 @@
+# lefthook 設定（keroway 標準テンプレート準拠）。
+# https://lefthook.dev/configuration/
+# 導入は package.json の postinstall（`lefthook install`）で行う。
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: biome check (staged files)
+      glob: "*.{ts,js,mjs,json}"
+      run: pnpm exec biome check --write --no-errors-on-unmatched {staged_files}
+      stage_fixed: true
+
+    - name: typecheck
+      glob: "*.ts"
+      run: pnpm exec tsc --noEmit
+
+pre-push:
+  jobs:
+    - name: test
+      run: pnpm test

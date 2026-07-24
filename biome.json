@@ -1,12 +1,12 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
+	"$schema": "node_modules/@biomejs/biome/configuration_schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!main.js", "!**/*.js.map", "!.claude/**", "!.pi/**"]
+		"includes": ["**", "!main.js", "!**/*.js.map", "!.claude", "!.pi"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -14,7 +14,17 @@
 		"lineWidth": 80
 	},
 	"linter": {
-		"enabled": false
+		"enabled": true,
+		"rules": {
+			"preset": "recommended"
+		}
+	},
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
 	},
 	"javascript": {
 		"formatter": {
