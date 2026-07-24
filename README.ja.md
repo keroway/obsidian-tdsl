@@ -222,8 +222,8 @@ Wikidata 連携が必要な場合は、[tdsl CLI](https://github.com/keroway/tim
 2. 依存関係をインストールしてビルド:
 
    ```sh
-   npm install
-   npm run build
+   pnpm install
+   pnpm run build
    ```
 
 3. 生成された 3 ファイルを Vault にコピー:
@@ -240,11 +240,11 @@ Wikidata 連携が必要な場合は、[tdsl CLI](https://github.com/keroway/tim
 ## 開発
 
 ```bash
-npm install          # 依存関係のインストール
-npm run dev          # ウォッチモード（保存時に自動リビルド）
-npm run build        # プロダクションビルド → main.js
-npm run lint         # ESLint（src/ を対象）
-npm run typecheck    # tsc --noEmit
+pnpm install          # 依存関係のインストール
+pnpm run dev          # ウォッチモード（保存時に自動リビルド）
+pnpm run build        # プロダクションビルド → main.js
+pnpm run lint         # Biome lint
+pnpm run typecheck    # tsc --noEmit
 ```
 
 CI は lint → typecheck → build の順に実行し、`main.js` の生成を確認します。詳細は [CONTRIBUTING.md](./CONTRIBUTING.md) を参照してください。

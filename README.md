@@ -227,8 +227,8 @@ The plugin is not yet listed in the Obsidian Community Plugin directory. Once pu
 2. Install dependencies and build:
 
    ```sh
-   npm install
-   npm run build
+   pnpm install
+   pnpm run build
    ```
 
 3. Copy the three output files into your vault:
@@ -245,11 +245,11 @@ The plugin is not yet listed in the Obsidian Community Plugin directory. Once pu
 ## Development
 
 ```bash
-npm install          # install dependencies
-npm run dev          # watch mode (rebuilds on save)
-npm run build        # production build → main.js
-npm run lint         # ESLint (src/)
-npm run typecheck    # tsc --noEmit
+pnpm install          # install dependencies
+pnpm run dev          # watch mode (rebuilds on save)
+pnpm run build        # production build → main.js
+pnpm run lint         # Biome lint
+pnpm run typecheck    # tsc --noEmit
 ```
 
 CI runs lint → typecheck → build and verifies that `main.js` is produced. See [CONTRIBUTING.md](./CONTRIBUTING.md) for a full guide.

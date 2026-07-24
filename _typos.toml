@@ -1,0 +1,4 @@
+# typos (https://github.com/crate-ci/typos) の誤検知除外。
+# "handel" は docs/screenshots.md のサンプル中の作曲家ヘンデル (Handel) の識別子。
+[default.extend-words]
+handel = "handel"
