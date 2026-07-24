@@ -1,0 +1,4 @@
+# Node / pnpm のバージョンピン（keroway 標準）。
+[tools]
+node = "24"
+pnpm = "11"

@@ -1,0 +1,9 @@
+packages:
+  - ./
+
+# pnpm 11: build スクリプト実行の許可リスト（strictDepBuilds はデフォルト有効）。
+# esbuild は optionalDependencies でプラットフォームバイナリを取得するため
+# postinstall 実行は不要。lefthook は git hooks 設置に必要。
+allowBuilds:
+  esbuild: false
+  lefthook: true

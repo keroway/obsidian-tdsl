@@ -5,18 +5,22 @@ Obsidian 用 Timeline DSL プラグイン。`.tdsl` コードブロックを WAS
 ## コマンド
 
 ```bash
-npm run build         # esbuild で main.js を生成（本番ビルド）
-npm run dev           # ウォッチモードでビルド（開発用）
-npm run typecheck     # tsc --noEmit（型チェックのみ）
-npm run lint          # eslint src（lint のみ）
-npm run format        # biome format --write .（整形を適用）
-npm run format:check  # biome format .（CI 用。未整形があれば失敗）
+pnpm run build         # esbuild で main.js を生成（本番ビルド）
+pnpm run dev           # ウォッチモードでビルド（開発用）
+pnpm run typecheck     # tsc --noEmit（型チェックのみ）
+pnpm run lint          # biome lint .（lint のみ）
+pnpm run format        # biome format --write .（整形を適用）
+pnpm run format:check  # biome format .（CI 用。未整形があれば失敗）
+pnpm run check         # biome check + typecheck + test（コミット前の全通し）
 ```
+
+パッケージマネージャは **pnpm 11**、Node は **24**（`mise.toml` でピン）。
+git hooks は **lefthook**（`lefthook.yml`、`pnpm install` 時に自動設置）。
 
 ## フォーマット方針
 
-フォーマッタは **Biome**（`biome.json`）。lint は引き続き **ESLint** が担当し、
-Biome は **formatter のみ有効**（`linter.enabled: false`）にして役割を分離している。
+lint / format ともに **Biome**（`biome.json`、recommended preset）。
+ESLint は撤去済み（ワークスペース標準化で Biome に一本化）。
 
 - 設定は `quoteStyle: double` / `trailingCommas: all` / `semicolons: always` / `indentStyle: tab`。
   これは pi-lens がエディタ保存時に適用する Biome デフォルトと一致させてあり、
@@ -92,8 +96,8 @@ Obsidian プラグインのインストール手順はこの 3 ファイルを v
 - `versions.json` → キー（プラグインバージョン）と値（minAppVersion）
 
 どれか 1 つでもズレると Obsidian のプラグイン更新チェックが誤動作する。
-バージョンを上げるときは `npm version patch` / `npm version minor` /
-`npm version major` を使い、`version-bump.mjs` 経由で 3 ファイルを同時に更新すること。
+バージョンを上げるときは `pnpm version patch` / `pnpm version minor` /
+`pnpm version major` を使い、`version-bump.mjs` 経由で 3 ファイルを同時に更新すること。
 
 ---
 

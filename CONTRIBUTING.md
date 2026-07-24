@@ -6,31 +6,31 @@ Thank you for your interest in contributing!
 
 | Tool | Version |
 |---|---|
-| Node.js | 22 (LTS) |
-| npm | bundled with Node 22 |
+| Node.js | 24 |
+| pnpm | 11 (pinned via `mise.toml` / `packageManager`) |
 
 ## Setup
 
 ```sh
 git clone https://github.com/keroway/obsidian-tdsl.git
 cd obsidian-tdsl
-npm ci
+pnpm install --frozen-lockfile
 ```
 
 ## Development workflow
 
 ```sh
-npm run dev           # watch mode — rebuilds main.js on every save
-npm run build         # one-shot production build
-npm test              # Vitest unit tests
-npm run lint          # ESLint (src/)
-npm run format:check  # Biome formatter check
-npm run typecheck     # TypeScript type-check without emitting files
+pnpm run dev           # watch mode — rebuilds main.js on every save
+pnpm run build         # one-shot production build
+pnpm test              # Vitest unit tests
+pnpm run lint          # Biome lint
+pnpm run format:check  # Biome formatter check
+pnpm run typecheck     # TypeScript type-check without emitting files
 ```
 
 ### Testing in Obsidian
 
-1. Run `npm run build` (or keep `npm run dev` running in a terminal)
+1. Run `pnpm run build` (or keep `pnpm run dev` running in a terminal)
 2. Copy `main.js`, `manifest.json`, and `styles.css` into your test vault:
 
    ```sh
@@ -72,12 +72,12 @@ Key functions used from `@keroway/tdsl-wasm`:
 
 The `.github/workflows/ci.yml` workflow runs on every push and pull request to `main`:
 
-1. `npm ci`
-2. `npm test`
-3. `npm run format:check`
-4. `npm run lint`
-5. `npm run typecheck`
-6. `npm run build`
+1. `pnpm install --frozen-lockfile`
+2. `pnpm test`
+3. `pnpm run format:check`
+4. `pnpm run lint`
+5. `pnpm run typecheck`
+6. `pnpm run build`
 7. `test -f main.js` — verifies the build artefact exists
 
 All CI checks must pass before merging.
@@ -99,4 +99,4 @@ style: formatting only
 
 This plugin tracks `@keroway/tdsl-wasm` releases. When a new version of [keroway/timeline-dsl](https://github.com/keroway/timeline-dsl) is published to npm, update `package.json` and test that the new DSL syntax works correctly in Obsidian.
 
-The `obsidian` dev dependency is pinned to the API typings version used for local and CI verification. Update it intentionally with `npm install --save-dev --save-exact obsidian@<version>`, then run the full verification suite and smoke-test the plugin in Obsidian.
+The `obsidian` dev dependency is pinned to the API typings version used for local and CI verification. Update it intentionally with `pnpm add --save-dev --save-exact obsidian@<version>`, then run the full verification suite and smoke-test the plugin in Obsidian.
