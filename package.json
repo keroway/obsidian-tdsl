@@ -26,18 +26,18 @@
 	"author": "keroway",
 	"license": "MIT",
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.2",
-		"@types/node": "^26.1.0",
-		"@vitest/coverage-v8": "^4.1.9",
+		"@biomejs/biome": "^2.5.5",
+		"@types/node": "^26.1.1",
+		"@vitest/coverage-v8": "^4.1.10",
 		"builtin-modules": "^5.3.0",
 		"esbuild": "^0.28.1",
 		"lefthook": "^2.1.10",
 		"obsidian": "1.13.1",
 		"typescript": "^6.0.3",
-		"vitest": "^4.1.9"
+		"vitest": "^4.1.10"
 	},
 	"packageManager": "pnpm@11.0.8",
 	"dependencies": {
-		"@keroway/tdsl-wasm": "^1.23.0"
+		"@keroway/tdsl-wasm": "^1.27.0"
 	}
 }
