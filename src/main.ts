@@ -80,23 +80,10 @@ class TdslPreview extends MarkdownRenderChild {
 			// A fresh JsRenderOptions is required per call: the WASM frees it after use.
 			const directives = parseRenderDirectives(this.source);
 			const r = resolveRenderOptions(directives, this.settings);
-			const opts = new JsRenderOptions();
-			if (r.grid) opts.grid = r.grid;
-			if (r.theme) opts.theme = r.theme;
-			if (r.orientation) opts.orientation = r.orientation;
-			if (r.events !== undefined) opts.show_event_labels = r.events;
-			// show_table / show_legend render natively into the SVG (upstream 1.23.0+).
-			if (r.table !== undefined) opts.show_table = r.table;
-			if (r.legend !== undefined) opts.show_legend = r.legend;
-			if (r.laneHeight > 0) opts.lane_height = r.laneHeight;
 			// `fit` opts the block into shrink-to-note-width (vs. natural size +
 			// horizontal scroll). The renderer still uses auto scale.
 			if (r.fit) wrapper.addClass("tdsl-fit");
-			const svg = render_svg_from_source_with_options(
-				this.source,
-				r.scale,
-				opts,
-			);
+			const svg = renderSvg(this.source, r);
 
 			// Parse as SVG/XML — avoids innerHTML and does not execute scripts or event handlers.
 			const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
@@ -182,6 +169,40 @@ class TdslPreview extends MarkdownRenderChild {
 		});
 		notice.createSpan({ text: icon });
 		notice.createSpan({ text: `${prefix}${diag.message}` });
+	}
+}
+
+/**
+ * Renders `source` to an SVG string, guaranteeing the `JsRenderOptions`
+ * instance is released on every path.
+ *
+ * A fresh JsRenderOptions is required per call: `render_svg_from_source_with_options`
+ * takes ownership of it. wasm-bindgen transfers that ownership by calling
+ * `__destroy_into_raw()` *before* entering Rust, so the instance is consumed
+ * even when the render itself throws — freeing it again afterwards would be a
+ * double free. Hence the flag: `free()` runs only on the paths that throw
+ * before ownership moves (e.g. an option setter rejecting a value), which are
+ * exactly the paths that would otherwise leak the instance on the WASM heap.
+ */
+function renderSvg(
+	source: string,
+	r: ReturnType<typeof resolveRenderOptions>,
+): string {
+	const opts = new JsRenderOptions();
+	let ownedByJs = true;
+	try {
+		if (r.grid) opts.grid = r.grid;
+		if (r.theme) opts.theme = r.theme;
+		if (r.orientation) opts.orientation = r.orientation;
+		if (r.events !== undefined) opts.show_event_labels = r.events;
+		// show_table / show_legend render natively into the SVG (upstream 1.23.0+).
+		if (r.table !== undefined) opts.show_table = r.table;
+		if (r.legend !== undefined) opts.show_legend = r.legend;
+		if (r.laneHeight > 0) opts.lane_height = r.laneHeight;
+		ownedByJs = false;
+		return render_svg_from_source_with_options(source, r.scale, opts);
+	} finally {
+		if (ownedByJs) opts.free();
 	}
 }
 
