@@ -305,6 +305,28 @@ export function isRecognizedScaleInput(raw: string): boolean {
 }
 
 /**
+ * Resolves a raw `scale` input into the value to store and, when the input was
+ * not interpreted literally, the field value and notice the settings UI should
+ * show as a correction. The settings tab runs this only after typing stops:
+ * validating per keystroke would reject the prefixes of multi-character words
+ * (`f` / `fi` on the way to `fit`) and rewrite the field mid-word.
+ */
+export function commitScaleInput(raw: string): {
+	value: TdslSettings["scale"];
+	correction: { fieldValue: string; notice: string } | null;
+} {
+	const value = parseScaleSetting(raw);
+	if (isRecognizedScaleInput(raw)) return { value, correction: null };
+	return {
+		value,
+		correction: {
+			fieldValue: String(value),
+			notice: `Timeline DSL: "${raw}" is not a valid scale value. Reset to "${value}".`,
+		},
+	};
+}
+
+/**
  * Reports whether `raw` is a value `parseLaneHeightSetting` interprets
  * literally (empty or a positive integer) rather than silently falling back
  * to the `0` (renderer default) value. Used by the settings UI to decide
