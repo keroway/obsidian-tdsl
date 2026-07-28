@@ -706,6 +706,65 @@ describe("debounce", () => {
 		expect(fn).toHaveBeenCalledTimes(2);
 		expect(fn).toHaveBeenLastCalledWith("second");
 	});
+
+	it("cancel() drops a pending call (plugin unload path)", () => {
+		vi.useFakeTimers();
+		const fn = vi.fn();
+		const debounced = debounce(fn, 400);
+
+		debounced("a");
+		debounced.cancel();
+		vi.advanceTimersByTime(1000);
+
+		expect(fn).not.toHaveBeenCalled();
+	});
+
+	it("cancel() is a no-op when nothing is pending", () => {
+		vi.useFakeTimers();
+		const fn = vi.fn();
+		const debounced = debounce(fn, 400);
+
+		debounced.cancel();
+		vi.advanceTimersByTime(1000);
+		expect(fn).not.toHaveBeenCalled();
+
+		// The wrapper stays usable after a cancel.
+		debounced("a");
+		vi.advanceTimersByTime(400);
+		expect(fn).toHaveBeenCalledTimes(1);
+		expect(fn).toHaveBeenCalledWith("a");
+	});
+
+	it("flush() runs the pending call immediately with the latest args", () => {
+		vi.useFakeTimers();
+		const fn = vi.fn();
+		const debounced = debounce(fn, 400);
+
+		debounced("a");
+		debounced("b");
+		debounced.flush();
+
+		expect(fn).toHaveBeenCalledTimes(1);
+		expect(fn).toHaveBeenCalledWith("b");
+
+		// The timer is consumed, so no trailing call follows.
+		vi.advanceTimersByTime(1000);
+		expect(fn).toHaveBeenCalledTimes(1);
+	});
+
+	it("flush() is a no-op when nothing is pending", () => {
+		vi.useFakeTimers();
+		const fn = vi.fn();
+		const debounced = debounce(fn, 400);
+
+		debounced.flush();
+		expect(fn).not.toHaveBeenCalled();
+
+		debounced("a");
+		vi.advanceTimersByTime(400);
+		debounced.flush();
+		expect(fn).toHaveBeenCalledTimes(1);
+	});
 });
 
 // ----------------------------------------------------------------------------

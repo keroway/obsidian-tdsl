@@ -187,10 +187,13 @@ class TdslPreview extends MarkdownRenderChild {
 
 export default class TimelineDslPlugin extends Plugin {
 	settings: TdslSettings = DEFAULT_SETTINGS;
+	// Kept so onunload() can cancel the tab's pending debounced saves.
+	private settingTab: TdslSettingTab | null = null;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
-		this.addSettingTab(new TdslSettingTab(this.app, this));
+		this.settingTab = new TdslSettingTab(this.app, this);
+		this.addSettingTab(this.settingTab);
 		this.registerMarkdownCodeBlockProcessor("tdsl", (_source, el, ctx) => {
 			ctx.addChild(new TdslPreview(el, _source, this.settings));
 		});
@@ -203,6 +206,16 @@ export default class TimelineDslPlugin extends Plugin {
 				formatCurrentBlock(editor);
 			},
 		});
+	}
+
+	onunload(): void {
+		// A keystroke in the settings tab arms a 400ms timer; without this the
+		// timer can still fire after the plugin is disabled and call saveData()
+		// / iterateAllLeaves() on a dead plugin instance. Pending edits are
+		// dropped rather than flushed: writing settings during teardown is the
+		// worse failure mode, and closing the tab (hide()) already flushes them.
+		this.settingTab?.cancelPendingSaves();
+		this.settingTab = null;
 	}
 
 	async loadSettings(): Promise<void> {
@@ -253,6 +266,27 @@ class TdslSettingTab extends PluginSettingTab {
 	constructor(app: App, plugin: TimelineDslPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
+	}
+
+	/**
+	 * Drops both pending debounced saves. Called from the plugin's onunload()
+	 * so no timer outlives the plugin instance.
+	 */
+	cancelPendingSaves(): void {
+		this.debouncedSave.cancel();
+		this.debouncedScaleCommit.cancel();
+	}
+
+	/**
+	 * Closing the settings tab commits whatever was typed last instead of
+	 * waiting out the remaining debounce window — otherwise a value typed and
+	 * immediately followed by closing the tab could be applied at a surprising
+	 * moment (or not at all, if unload follows).
+	 */
+	hide(): void {
+		this.debouncedSave.flush();
+		this.debouncedScaleCommit.flush();
+		super.hide();
 	}
 
 	display(): void {

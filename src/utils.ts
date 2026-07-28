@@ -344,23 +344,58 @@ export function isRecognizedLaneHeightInput(raw: string): boolean {
 }
 
 /**
+ * A debounced function with lifecycle controls: `cancel()` drops a pending
+ * call, `flush()` runs it immediately. Both are no-ops when nothing is pending.
+ */
+export type Debounced<Args extends unknown[]> = ((...args: Args) => void) & {
+	cancel: () => void;
+	flush: () => void;
+};
+
+/**
  * Returns a debounced wrapper around `fn`: repeated calls within `waitMs`
  * of each other collapse into a single call after the last invocation.
  * Used to avoid triggering a full-vault preview rerender on every keystroke
  * in the settings text inputs.
+ *
+ * The returned function carries `cancel()` / `flush()` so owners can settle a
+ * pending call at the end of their lifecycle — without them, a timer armed by
+ * the last keystroke can still fire after the plugin is unloaded.
  */
 export function debounce<Args extends unknown[]>(
 	fn: (...args: Args) => void,
 	waitMs: number,
-): (...args: Args) => void {
+): Debounced<Args> {
 	let timer: ReturnType<typeof setTimeout> | null = null;
-	return (...args: Args) => {
+	let pendingArgs: Args | null = null;
+
+	const debounced = (...args: Args) => {
 		if (timer !== null) clearTimeout(timer);
+		pendingArgs = args;
 		timer = setTimeout(() => {
 			timer = null;
-			fn(...args);
+			const call = pendingArgs as Args;
+			pendingArgs = null;
+			fn(...call);
 		}, waitMs);
 	};
+
+	debounced.cancel = () => {
+		if (timer !== null) clearTimeout(timer);
+		timer = null;
+		pendingArgs = null;
+	};
+
+	debounced.flush = () => {
+		if (timer === null) return;
+		clearTimeout(timer);
+		timer = null;
+		const call = pendingArgs as Args;
+		pendingArgs = null;
+		fn(...call);
+	};
+
+	return debounced;
 }
 
 // ---------------------------------------------------------------------------
