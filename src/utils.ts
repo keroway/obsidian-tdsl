@@ -328,13 +328,17 @@ export function commitScaleInput(raw: string): {
 
 /**
  * Reports whether `raw` is a value `parseLaneHeightSetting` interprets
- * literally (empty or a positive integer) rather than silently falling back
- * to the `0` (renderer default) value. Used by the settings UI to decide
+ * literally (empty, `0`, or a positive integer) rather than silently falling
+ * back to the `0` (renderer default) value. Used by the settings UI to decide
  * whether to show a correction notice and rewrite the input field.
+ *
+ * `0` counts as recognized because the setting is documented as "empty or `0`
+ * uses the renderer default" — parseLaneHeightSetting already maps it to that
+ * default, so treating it as invalid would reject a value the UI advertises.
  */
 export function isRecognizedLaneHeightInput(raw: string): boolean {
 	const trimmed = raw.trim();
-	if (trimmed === "") return true;
+	if (trimmed === "" || trimmed === "0") return true;
 	const n = Math.floor(Number(trimmed));
 	return Number.isFinite(n) && n > 0;
 }

@@ -586,8 +586,15 @@ describe("isRecognizedLaneHeightInput", () => {
 		expect(isRecognizedLaneHeightInput("45.9")).toBe(true);
 	});
 
-	it("rejects zero, negative numbers, and garbage", () => {
-		expect(isRecognizedLaneHeightInput("0")).toBe(false);
+	it("accepts `0`, which the setting documents as the renderer default", () => {
+		expect(isRecognizedLaneHeightInput("0")).toBe(true);
+		expect(isRecognizedLaneHeightInput(" 0 ")).toBe(true);
+		// It resolves to the same value as an empty field, so no correction is due.
+		expect(parseLaneHeightSetting("0")).toBe(0);
+		expect(parseLaneHeightSetting("")).toBe(0);
+	});
+
+	it("rejects negative numbers and garbage", () => {
 		expect(isRecognizedLaneHeightInput("-10")).toBe(false);
 		expect(isRecognizedLaneHeightInput("abc")).toBe(false);
 	});
