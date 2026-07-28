@@ -68,4 +68,67 @@ describe("findTdslFenceAtCursor", () => {
 			findTdslFenceAtCursor(["> ```tdsl", "> timeline {}", "```", "after"], 1),
 		).toEqual({ status: "missing-close" });
 	});
+
+	it("finds a tilde fence (~~~tdsl)", () => {
+		expect(
+			findTdslFenceAtCursor(["~~~tdsl", "timeline {}", "~~~", "after"], 1),
+		).toEqual({ status: "found", range: { openLine: 0, closeLine: 2 } });
+	});
+
+	it("does not close a tilde fence with a backtick fence", () => {
+		expect(findTdslFenceAtCursor(["~~~tdsl", "timeline {}", "```"], 1)).toEqual(
+			{ status: "missing-close" },
+		);
+	});
+
+	it("finds a fence opened with four or more backticks", () => {
+		expect(
+			findTdslFenceAtCursor(["````tdsl", "timeline {}", "````"], 1),
+		).toEqual({ status: "found", range: { openLine: 0, closeLine: 2 } });
+	});
+
+	it("treats a shorter fence line inside a longer fence as body", () => {
+		// CommonMark: the close fence must be at least as long as the open one,
+		// so the ``` line is part of the block body.
+		expect(
+			findTdslFenceAtCursor(
+				["````tdsl", "timeline {}", "```", "still body", "````"],
+				3,
+			),
+		).toEqual({ status: "found", range: { openLine: 0, closeLine: 4 } });
+	});
+
+	it("accepts a longer close fence than the open fence", () => {
+		expect(
+			findTdslFenceAtCursor(["```tdsl", "timeline {}", "`````"], 1),
+		).toEqual({ status: "found", range: { openLine: 0, closeLine: 2 } });
+	});
+
+	it("accepts an extra info string after the language identifier", () => {
+		expect(
+			findTdslFenceAtCursor(["```tdsl extra info", "timeline {}", "```"], 1),
+		).toEqual({ status: "found", range: { openLine: 0, closeLine: 2 } });
+	});
+
+	it("ignores a language whose name merely starts with tdsl", () => {
+		expect(
+			findTdslFenceAtCursor(["```tdslx", "timeline {}", "```"], 1),
+		).toEqual({ status: "not-in-block" });
+	});
+
+	it("does not treat a backtick-containing info string as a tdsl fence", () => {
+		// CommonMark forbids backticks in a backtick fence's info string.
+		expect(
+			findTdslFenceAtCursor(["```tdsl `x`", "timeline {}", "```"], 1),
+		).toEqual({ status: "not-in-block" });
+	});
+
+	it("finds a tilde fence nested inside a callout", () => {
+		expect(
+			findTdslFenceAtCursor(
+				["> [!note]", "> ~~~tdsl", "> timeline {}", "> ~~~", "after"],
+				2,
+			),
+		).toEqual({ status: "found", range: { openLine: 1, closeLine: 3 } });
+	});
 });
