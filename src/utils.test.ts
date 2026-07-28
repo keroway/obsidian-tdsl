@@ -699,3 +699,53 @@ describe("debounce", () => {
 		expect(fn).toHaveBeenLastCalledWith("second");
 	});
 });
+
+// ----------------------------------------------------------------------------
+// Deferred scale-setting validation (settings tab behaviour)
+// ----------------------------------------------------------------------------
+
+/**
+ * Mirrors what the settings tab does once typing stops: parse the raw input and
+ * report a correction when it is not a value `parseScaleSetting` keeps as-is.
+ */
+function commitScale(raw: string): string {
+	const parsed = parseScaleSetting(raw);
+	return isRecognizedScaleInput(raw) ? String(parsed) : `reset:${parsed}`;
+}
+
+describe("scale setting validated after debounce", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("lets `fit` be typed one character at a time without resetting", () => {
+		vi.useFakeTimers();
+		const committed: string[] = [];
+		const commit = debounce((raw: string) => {
+			committed.push(commitScale(raw));
+		}, 400);
+
+		// Keystrokes: "f" and "fi" are not valid on their own, so validating per
+		// keystroke would rewrite the field before "fit" can be completed.
+		for (const raw of ["f", "fi", "fit"]) {
+			commit(raw);
+			vi.advanceTimersByTime(50);
+		}
+		vi.advanceTimersByTime(400);
+
+		expect(committed).toEqual(["fit"]);
+	});
+
+	it("still corrects an input that is invalid once typing stops", () => {
+		vi.useFakeTimers();
+		const committed: string[] = [];
+		const commit = debounce((raw: string) => {
+			committed.push(commitScale(raw));
+		}, 400);
+
+		commit("abc");
+		vi.advanceTimersByTime(400);
+
+		expect(committed).toEqual(["reset:auto"]);
+	});
+});

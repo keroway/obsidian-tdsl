@@ -16,6 +16,7 @@ import {
 	Plugin,
 	PluginSettingTab,
 	Setting,
+	type TextComponent,
 } from "obsidian";
 import { findTdslFenceAtCursor } from "./fence";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
@@ -228,6 +229,30 @@ class TdslSettingTab extends PluginSettingTab {
 	private readonly debouncedSave = debounce(() => {
 		void this.plugin.saveSettings();
 	}, 400);
+	// The scale field accepts multi-character words (`auto` / `fit`), so its
+	// validation must not run per keystroke: typing `f` of `fit` would look
+	// invalid and rewrite the field before the word can be finished. Parsing,
+	// the correction notice and the save are therefore all deferred until
+	// typing stops. The TextComponent is passed in on every call so the
+	// callback always writes back to the field currently on screen (display()
+	// rebuilds the tab's DOM, but this debounce outlives it).
+	private readonly debouncedScaleCommit = debounce(
+		(raw: string, t: TextComponent) => {
+			const parsed = parseScaleSetting(raw);
+			this.plugin.settings.scale = parsed;
+			// If the raw input could not be interpreted as auto/fit/a positive
+			// number, it silently falls back to a default — reflect that in the
+			// field so the displayed value never diverges from what was saved.
+			if (!isRecognizedScaleInput(raw)) {
+				t.setValue(String(parsed));
+				new Notice(
+					`Timeline DSL: "${raw}" is not a valid scale value. Reset to "${parsed}".`,
+				);
+			}
+			void this.plugin.saveSettings();
+		},
+		400,
+	);
 
 	constructor(app: App, plugin: TimelineDslPlugin) {
 		super(app, plugin);
@@ -292,18 +317,7 @@ class TdslSettingTab extends PluginSettingTab {
 					.setPlaceholder("auto")
 					.setValue(String(this.plugin.settings.scale))
 					.onChange((raw) => {
-						const parsed = parseScaleSetting(raw);
-						this.plugin.settings.scale = parsed;
-						this.debouncedSave();
-						// If the raw input could not be interpreted as auto/fit/a positive
-						// number, it silently falls back to a default — reflect that in the
-						// field so the displayed value never diverges from what was saved.
-						if (!isRecognizedScaleInput(raw)) {
-							t.setValue(String(parsed));
-							new Notice(
-								`Timeline DSL: "${raw}" is not a valid scale value. Reset to "${parsed}".`,
-							);
-						}
+						this.debouncedScaleCommit(raw, t);
 					}),
 			);
 
