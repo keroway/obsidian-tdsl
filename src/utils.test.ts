@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+	commitScaleInput,
 	DEFAULT_SETTINGS,
 	debounce,
 	ensureTrailingNewline,
@@ -697,5 +698,92 @@ describe("debounce", () => {
 		vi.advanceTimersByTime(400);
 		expect(fn).toHaveBeenCalledTimes(2);
 		expect(fn).toHaveBeenLastCalledWith("second");
+	});
+});
+
+// ----------------------------------------------------------------------------
+// Deferred scale-setting validation (settings tab behaviour)
+// ----------------------------------------------------------------------------
+
+describe("commitScaleInput", () => {
+	it("keeps recognized values without a correction", () => {
+		expect(commitScaleInput("fit")).toEqual({ value: "fit", correction: null });
+		expect(commitScaleInput("auto")).toEqual({
+			value: "auto",
+			correction: null,
+		});
+		expect(commitScaleInput("")).toEqual({ value: "auto", correction: null });
+		expect(commitScaleInput(" 120 ")).toEqual({ value: 120, correction: null });
+	});
+
+	it("reports the field rewrite and notice for an unrecognized value", () => {
+		expect(commitScaleInput("abc")).toEqual({
+			value: "auto",
+			correction: {
+				fieldValue: "auto",
+				notice:
+					'Timeline DSL: "abc" is not a valid scale value. Reset to "auto".',
+			},
+		});
+	});
+
+	it("reports a correction for the prefixes of `fit`", () => {
+		// Not a bug in itself — it is why the settings tab must not run this per
+		// keystroke. See the debounce test below.
+		expect(commitScaleInput("f").correction).not.toBeNull();
+		expect(commitScaleInput("fi").correction).not.toBeNull();
+	});
+});
+
+describe("scale setting committed after debounce", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("lets `fit` be typed one character at a time without resetting", () => {
+		vi.useFakeTimers();
+		// Stands in for the settings tab: the field value plus the debounced
+		// commit wired exactly as TdslSettingTab wires it.
+		let fieldValue = "";
+		const notices: string[] = [];
+		const commit = debounce((raw: string) => {
+			const { correction } = commitScaleInput(raw);
+			if (correction) {
+				fieldValue = correction.fieldValue;
+				notices.push(correction.notice);
+			}
+		}, 400);
+
+		for (const raw of ["f", "fi", "fit"]) {
+			fieldValue = raw;
+			commit(raw);
+			vi.advanceTimersByTime(50);
+		}
+		vi.advanceTimersByTime(400);
+
+		expect(fieldValue).toBe("fit");
+		expect(notices).toEqual([]);
+	});
+
+	it("still corrects an input that is invalid once typing stops", () => {
+		vi.useFakeTimers();
+		let fieldValue = "";
+		const notices: string[] = [];
+		const commit = debounce((raw: string) => {
+			const { correction } = commitScaleInput(raw);
+			if (correction) {
+				fieldValue = correction.fieldValue;
+				notices.push(correction.notice);
+			}
+		}, 400);
+
+		fieldValue = "abc";
+		commit("abc");
+		vi.advanceTimersByTime(400);
+
+		expect(fieldValue).toBe("auto");
+		expect(notices).toEqual([
+			'Timeline DSL: "abc" is not a valid scale value. Reset to "auto".',
+		]);
 	});
 });

@@ -16,10 +16,12 @@ import {
 	Plugin,
 	PluginSettingTab,
 	Setting,
+	type TextComponent,
 } from "obsidian";
 import { findTdslFenceAtCursor } from "./fence";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
 import {
+	commitScaleInput,
 	DEFAULT_SETTINGS,
 	debounce,
 	ensureTrailingNewline,
@@ -33,12 +35,10 @@ import {
 	formatLintIssues,
 	hasWikidataImport,
 	isRecognizedLaneHeightInput,
-	isRecognizedScaleInput,
 	parseDiagnostics,
 	parseLaneHeightSetting,
 	parseLintIssues,
 	parseRenderDirectives,
-	parseScaleSetting,
 	resolveRenderOptions,
 	type TdslSettings,
 } from "./utils";
@@ -228,6 +228,27 @@ class TdslSettingTab extends PluginSettingTab {
 	private readonly debouncedSave = debounce(() => {
 		void this.plugin.saveSettings();
 	}, 400);
+	// The scale field currently on screen. display() rebuilds the tab's DOM,
+	// so the debounce below must look the component up at fire time rather
+	// than capture the one that was live when the keystroke happened.
+	private scaleInput: TextComponent | null = null;
+	// The scale field accepts multi-character words (`auto` / `fit`), so its
+	// validation must not run per keystroke: typing `f` of `fit` would look
+	// invalid and rewrite the field before the word can be finished. Parsing,
+	// the correction notice and the save are therefore all deferred until
+	// typing stops.
+	private readonly debouncedScaleCommit = debounce((raw: string) => {
+		const { value, correction } = commitScaleInput(raw);
+		this.plugin.settings.scale = value;
+		// If the raw input could not be interpreted as auto/fit/a positive
+		// number, it silently falls back to a default — reflect that in the
+		// field so the displayed value never diverges from what was saved.
+		if (correction) {
+			this.scaleInput?.setValue(correction.fieldValue);
+			new Notice(correction.notice);
+		}
+		void this.plugin.saveSettings();
+	}, 400);
 
 	constructor(app: App, plugin: TimelineDslPlugin) {
 		super(app, plugin);
@@ -287,25 +308,14 @@ class TdslSettingTab extends PluginSettingTab {
 			.setDesc(
 				"`auto` / `fit` / a positive number (px per year). `fit` shrinks to note width (no horizontal scroll).",
 			)
-			.addText((t) =>
-				t
-					.setPlaceholder("auto")
+			.addText((t) => {
+				this.scaleInput = t;
+				t.setPlaceholder("auto")
 					.setValue(String(this.plugin.settings.scale))
 					.onChange((raw) => {
-						const parsed = parseScaleSetting(raw);
-						this.plugin.settings.scale = parsed;
-						this.debouncedSave();
-						// If the raw input could not be interpreted as auto/fit/a positive
-						// number, it silently falls back to a default — reflect that in the
-						// field so the displayed value never diverges from what was saved.
-						if (!isRecognizedScaleInput(raw)) {
-							t.setValue(String(parsed));
-							new Notice(
-								`Timeline DSL: "${raw}" is not a valid scale value. Reset to "${parsed}".`,
-							);
-						}
-					}),
-			);
+						this.debouncedScaleCommit(raw);
+					});
+			});
 
 		new Setting(containerEl)
 			.setName("Show event labels by default")
