@@ -248,10 +248,53 @@ export function filterInfos(diagnostics: Diagnostic[]): Diagnostic[] {
  * Formats error diagnostics into human-readable messages.
  * Includes the line number prefix when `line > 0`.
  */
+/**
+ * A diagnostic split into the pieces the UI renders separately.
+ *
+ * `line` is kept apart from `text` so main.ts can turn the `Line N` segment
+ * into its own clickable element; `joinDiagnosticParts` reassembles the exact
+ * string that segment-less contexts (tests, plain text) expect.
+ */
+export interface DiagnosticParts {
+	/** Text before the line label, e.g. `[missing_id] `. Empty for compile errors. */
+	prefix: string;
+	/** 1-based line within the block; `0` when there is no position. */
+	line: number;
+	/** The message, plus any trailing badge. */
+	text: string;
+}
+
+export function diagnosticParts(e: Diagnostic): DiagnosticParts {
+	return { prefix: "", line: e.line, text: e.message };
+}
+
+export function joinDiagnosticParts(p: DiagnosticParts): string {
+	return p.line > 0
+		? `${p.prefix}Line ${p.line}: ${p.text}`
+		: `${p.prefix}${p.text}`;
+}
+
 export function formatDiagnosticMessages(errors: Diagnostic[]): string[] {
-	return errors.map((e) =>
-		e.line > 0 ? `Line ${e.line}: ${e.message}` : e.message,
-	);
+	return errors.map((e) => joinDiagnosticParts(diagnosticParts(e)));
+}
+
+/**
+ * Maps a diagnostic's line number onto a line in the note.
+ *
+ * Diagnostics count from 1 within the code-block body, while
+ * `MarkdownSectionInformation.lineStart` is the 0-based line of the opening
+ * fence. Body line 1 therefore sits at `lineStart + 1`, which collapses to
+ * `lineStart + blockLine`.
+ *
+ * Returns `null` when the diagnostic carries no position (`line <= 0`), so
+ * callers can leave it unclickable instead of jumping to an arbitrary line.
+ */
+export function resolveEditorLine(
+	sectionLineStart: number,
+	blockLine: number,
+): number | null {
+	if (blockLine <= 0) return null;
+	return sectionLineStart + blockLine;
 }
 
 // ---------------------------------------------------------------------------
@@ -285,12 +328,16 @@ export function parseLintIssues(json: string): LintIssue[] {
  * Formats lint issues into human-readable strings for display.
  * Includes a `[code]` prefix, line number when > 0, and a ✏ badge when fixable.
  */
+export function lintIssueParts(i: LintIssue): DiagnosticParts {
+	return {
+		prefix: `[${i.code}] `,
+		line: i.line,
+		text: `${i.message}${i.fixable ? " ✏" : ""}`,
+	};
+}
+
 export function formatLintIssues(issues: LintIssue[]): string[] {
-	return issues.map((i) => {
-		const loc = i.line > 0 ? ` Line ${i.line}:` : "";
-		const fix = i.fixable ? " ✏" : "";
-		return `[${i.code}]${loc} ${i.message}${fix}`;
-	});
+	return issues.map((i) => joinDiagnosticParts(lintIssueParts(i)));
 }
 
 /** Coerces the free-text `scale` setting value into `"auto" | "fit" | number`. */
