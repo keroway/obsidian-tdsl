@@ -102,6 +102,12 @@ Obsidian プラグインのインストール手順はこの 3 ファイルを v
 バージョンを上げるときは `pnpm version patch` / `pnpm version minor` /
 `pnpm version major` を使い、`version-bump.mjs` 経由で 3 ファイルを同時に更新すること。
 
+加えて **`CHANGELOG.md` に対応するバージョンのエントリを追加する**こと。
+`version-bump.mjs` は CHANGELOG を触らないため、ここだけは手作業になる。
+新しい見出し（`## [x.y.z] - YYYY-MM-DD`）と、ファイル末尾のリンク参照
+（`[Unreleased]` の compare 先を新バージョンへ張り替え、`[x.y.z]` を追加）の
+両方を更新する。実例として 1.0.0 のエントリはリリース後しばらく欠落していた（issue #120）。
+
 ---
 
 ## アーキテクチャ概要
