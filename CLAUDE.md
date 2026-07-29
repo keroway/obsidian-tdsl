@@ -60,10 +60,11 @@ Obsidian は複数の `tdsl` ブロックを同時に描画するため、この
 `@keroway/tdsl-wasm` のエクスポートに依存している：
 
 - `check_source(source: string): string` — 診断 JSON（`[{severity, message, line, col}]`）を返す
-- `render_svg_from_source_with_options(source: string, scale: number, opts: JsRenderOptions): string` — SVG 文字列を返す。`scale` は 1 年あたりピクセル数（`0` で自動）。`opts` は `src/main.ts` の `renderSvg()` が設定する 7 つのフィールドを持つ：
+- `render_svg_from_source_with_options(source: string, scale: number, opts: JsRenderOptions): string` — SVG 文字列を返す。`scale` は 1 年あたりピクセル数（`0` で自動）。`opts` は `src/main.ts` の `renderSvg()` が設定する 8 つのフィールドを持つ：
   - `grid` — `//! grid: ...` / 設定の Default grid
   - `theme` — `//! theme: ...` / 設定の Default theme（`"auto"` は未設定として扱う）
   - `orientation` — `//! orientation: ...` / 設定の Default orientation
+  - `layout_style` — `//! layout_style: ...` / 設定の Default layout style（`"auto"` は未設定として扱う）
   - `show_event_labels` — `//! events: ...` / 設定の Show event labels
   - `show_table` — `//! table: ...` / 設定の Render table
   - `show_legend` — `//! legend: ...` / 設定の Render legend

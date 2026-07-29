@@ -303,6 +303,7 @@ function renderSvg(
 		if (r.grid) opts.grid = r.grid;
 		if (r.theme) opts.theme = r.theme;
 		if (r.orientation) opts.orientation = r.orientation;
+		if (r.layout_style) opts.layout_style = r.layout_style;
 		if (r.events !== undefined) opts.show_event_labels = r.events;
 		// show_table / show_legend render natively into the SVG (upstream 1.23.0+).
 		if (r.table !== undefined) opts.show_table = r.table;
@@ -555,6 +556,27 @@ class TdslSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.orientation)
 					.onChange(async (v) => {
 						this.plugin.settings.orientation = v as TdslSettings["orientation"];
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Default layout style")
+			.setDesc(
+				"Renderer layout style. `auto` uses the renderer default. Override per block with `//! layout_style: …`.",
+			)
+			.addDropdown((d) =>
+				d
+					.addOptions({
+						auto: "auto",
+						timeline: "timeline",
+						gantt: "gantt",
+						"group-bands": "group-bands",
+						zigzag: "zigzag",
+					})
+					.setValue(this.plugin.settings.layoutStyle)
+					.onChange(async (v) => {
+						this.plugin.settings.layoutStyle = v as TdslSettings["layoutStyle"];
 						await this.plugin.saveSettings();
 					}),
 			);
