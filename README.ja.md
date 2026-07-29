@@ -32,7 +32,7 @@
 ```tdsl
 timeline "平安時代" {
   unit year;
-  range 794..1185;
+  range 781..1185;
 }
 
 lane "天皇" as emperor {}
@@ -59,6 +59,7 @@ timeline "中国王朝" {
     title "中国王朝";
     unit year;
     range -500..2000;
+    calendar proleptic_gregorian;
     color_map {
         dynasty: "#3366cc";
         war:     "#cc0000";
@@ -68,6 +69,9 @@ timeline "中国王朝" {
 
 `unit` には `year`（年）、`month`（月）、`day`（日）、`hour`（時）、`minute`（分）、
 `second`（秒）を指定できます。
+
+`calendar` は省略可能で、`proleptic_gregorian`（既定）または `julian` を指定できます。
+日付リテラルの解釈に影響し、省略時は `proleptic_gregorian` と同等です。
 
 日未満の単位を使うときは、範囲を ISO 8601 の日時で書きます。UTC オフセット（または `Z`）は
 **日時リテラルの中**に書きます。`timeline` ブロックにタイムゾーン用のプロパティはありません:
@@ -146,9 +150,12 @@ span main 1603..1868 "江戸時代" {
 
 | オプション | 値 | 効果 |
 |---|---|---|
+| `id` | 識別子文字列 | 項目の安定した識別子。`Fix lint issues in current tdsl block` コマンドは欠落した `id` を自動補完する |
 | `note` | 文字列 | ツールチップ / アクセシブル名に 1 行追加する |
 | `link` | `http://` または `https://` の URL | ツールチップに 1 行として表示される。**クリックはできない**（レンダラは `<a>` を出力しない）。他のスキームはコンパイルエラー |
 | `color` | `#RGB` / `#RGBA` / `#RRGGBB` / `#RRGGBBAA` または単純な CSS 色キーワード | 項目の塗り色を上書きする。レーン色や `color_map` より優先される。`rgb()` / `url()` などは受け付けない |
+| `source` | 文字列 | 出典・典拠の注記。SVG レンダラではツールチップ / アクセシブル名のテキストとして表示される。**リンクにはならない** |
+| `origin` | 文字列 | 項目の由来（例: `manual` / `import`）を示す |
 
 `note` と `link` は項目の `<title>` / `aria-label` / `data-tdsl-tooltip` 属性に載るため、
 ホバー時のブラウザ標準ツールチップとして表示され、スクリーンリーダーからも読み上げられます。
@@ -201,6 +208,16 @@ span main 10..50 "ある時代" {};
 優先順位は **ブロック `//!` ディレクティブ > 設定の既定値 > 組み込み既定**。
 変更は開いている全てのノートに即座に反映されます（開き直す必要はありません）。
 
+### コマンド
+
+マークダウンコードブロックのプレビューに加えて、本プラグインは Obsidian のコマンドパレットに 3 つのコマンドを追加します:
+
+| コマンド | 動作するカーソル位置 | 内容 |
+|---|---|---|
+| `Format current tdsl block` | ` ```tdsl ` ブロック内 | 現在のブロックの DSL 本文を WASM フォーマッタで整形する。**カーソルがブロック内にある必要がある。** |
+| `Fix lint issues in current tdsl block` | ` ```tdsl ` ブロック内 | 現在のブロックに対して自動修正可能な lint ルール（`missing_id` など）を適用する。修正対象が無ければ何もしない。**カーソルがブロック内にある必要がある。** |
+| `Insert timeline template` | ノート内のどこでも | ピッカーを開いて選択したスターター年表（`History` / `Project plan` / `Biography` / `Reading log`）をカーソル位置に挿入する。既存のブロックは不要。 |
+
 ### フルサンプル
 
 ```tdsl
@@ -209,30 +226,30 @@ timeline "日本史" {
     unit year;
     range 710..1868;
     color_map {
-        imperial: "#8b5cf6";
-        military: "#ef4444";
+        dynasty: "#8b5cf6";
+        war:     "#ef4444";
     }
 }
 
 group "朝廷" {
-    lane "天皇" as emperor { kind imperial; order 1; }
+    lane "天皇" as emperor { kind dynasty; order 1; }
 }
 
 group "武家政権" {
-    lane "鎌倉幕府" as kamakura { kind military; order 2; }
-    lane "室町幕府" as muromachi { kind military; order 3; }
-    lane "江戸幕府" as edo      { kind military; order 4; }
+    lane "鎌倉幕府" as kamakura { kind dynasty; order 2; }
+    lane "室町幕府" as muromachi { kind dynasty; order 3; }
+    lane "江戸幕府" as edo      { kind dynasty; order 4; }
 }
 
-span emperor 710..794 "奈良時代" { tags ["imperial"]; };
-span emperor 794..1185 "平安時代" { tags ["imperial"]; };
+span emperor 710..794 "奈良時代" { id "nara"; tags ["dynasty"]; };
+span emperor 794..1185 "平安時代" { id "heian"; tags ["dynasty"]; };
 
-span kamakura  1185..1336 "鎌倉幕府" { tags ["military"]; };
-span muromachi 1336..1573 "室町幕府" { tags ["military"]; };
-span edo       1603..1868 "江戸幕府" { tags ["military"]; };
+span kamakura  1185..1336 "鎌倉幕府" { id "kamakura-shogunate"; tags ["war"]; };
+span muromachi 1336..1573 "室町幕府" { id "muromachi-shogunate"; tags ["war"]; };
+span edo       1603..1868 "江戸幕府" { id "edo-shogunate"; tags ["war"]; };
 
-event kamakura 1185 "源頼朝、征夷大将軍就任" {};
-event edo      1868 "明治維新" {};
+event kamakura 1185 "源頼朝、征夷大将軍就任" { id "yoritomo-appointed"; };
+event edo      1868 "明治維新" { id "meiji-restoration"; };
 ```
 
 ## 制限事項
