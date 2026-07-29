@@ -131,4 +131,36 @@ describe("findTdslFenceAtCursor", () => {
 			),
 		).toEqual({ status: "found", range: { openLine: 1, closeLine: 3 } });
 	});
+
+	it("treats a nested shorter tdsl fence as body of the outer block", () => {
+		// The inner ```tdsl line is body text of the ````tdsl block, so the
+		// outer fence pair is the one to format.
+		expect(
+			findTdslFenceAtCursor(["````tdsl", "```tdsl", "body", "````"], 2),
+		).toEqual({ status: "found", range: { openLine: 0, closeLine: 3 } });
+	});
+
+	it("does not treat a tdsl fence inside another language's block as a block", () => {
+		expect(
+			findTdslFenceAtCursor(
+				["````md", "```tdsl", "timeline {}", "```", "````"],
+				2,
+			),
+		).toEqual({ status: "not-in-block" });
+	});
+
+	it("finds a tdsl block that follows another closed block", () => {
+		expect(
+			findTdslFenceAtCursor(
+				["```js", "console.log(1)", "```", "```tdsl", "timeline {}", "```"],
+				4,
+			),
+		).toEqual({ status: "found", range: { openLine: 3, closeLine: 5 } });
+	});
+
+	it("reports not-in-block when the cursor is inside an unclosed non-tdsl block", () => {
+		expect(findTdslFenceAtCursor(["```js", "console.log(1)"], 1)).toEqual({
+			status: "not-in-block",
+		});
+	});
 });
