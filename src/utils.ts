@@ -109,6 +109,11 @@ export interface TdslSettings {
 	/** `"auto"` => renderer auto scale; `"fit"` => shrink to note width; number => px/year. */
 	scale: "auto" | "fit" | number;
 	events: boolean;
+	orientation: "horizontal" | "vertical";
+	/** Render the accompanying item-listing table inside the SVG. */
+	table: boolean;
+	/** Render a static legend panel showing lane and tag colours. */
+	legend: boolean;
 	/** Default vertical pixels per lane (positive integer). 0 => renderer default (60 px). */
 	laneHeight: number;
 }
@@ -118,6 +123,9 @@ export const DEFAULT_SETTINGS: TdslSettings = {
 	grid: "none",
 	scale: "auto",
 	events: false,
+	orientation: "horizontal",
+	table: false,
+	legend: false,
 	laneHeight: 0,
 };
 
@@ -175,10 +183,10 @@ export function resolveRenderOptions(
 	// events: directive wins; else the settings default.
 	resolved.events = directives.events ?? settings.events;
 
-	// orientation / table / legend: directive-only (no settings counterpart).
-	if (directives.orientation) resolved.orientation = directives.orientation;
-	if (directives.table !== undefined) resolved.table = directives.table;
-	if (directives.legend !== undefined) resolved.legend = directives.legend;
+	// orientation / table / legend: directive wins; else the settings default.
+	resolved.orientation = directives.orientation ?? settings.orientation;
+	resolved.table = directives.table ?? settings.table;
+	resolved.legend = directives.legend ?? settings.legend;
 
 	// lane_height: directive wins; else the settings default (0 = renderer auto).
 	if (directives.lane_height !== undefined && directives.lane_height > 0) {
