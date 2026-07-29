@@ -55,6 +55,9 @@ esbuild はこの設定によって `.wasm` ファイルを `Uint8Array` とし�
 - `check_source(source: string): string` — 診断 JSON（`[{severity, message, line, col}]`）を返す
 - `render_svg_from_source_with_options(source: string, scale: number, opts: JsRenderOptions): string` — SVG 文字列を返す。`scale` は 1 年あたりピクセル数（`0` で自動）。`opts` は `grid` / `theme` / `orientation` / `show_event_labels` / `show_table` を持つ
 - `JsRenderOptions` は **1 回の render 呼び出しで WASM 側に free される**。使い回すと `null pointer passed to rust` でクラッシュするため、呼び出しごとに `new` すること。
+  所有権の移譲は wasm-bindgen が Rust 側へ入る**前**に `__destroy_into_raw()` で行うため、render が
+  throw した場合でもインスタンスは消費済みになる。`src/main.ts` の `renderSvg()` はこの前提で
+  「所有権が移る前に throw した経路だけ `free()` する」フラグを持つ。無条件に `free()` すると二重 free になる。
 
 `scale` / `grid` / `theme` などは `.tdsl` 内の `//! key: value` コメント行（`src/utils.ts` の `parseRenderDirectives`）で指定する。`//` は通常の DSL コメントなのでコンパイラは無視する。
 
