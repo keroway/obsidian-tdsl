@@ -32,7 +32,7 @@ Write a `tdsl` fenced code block in any note:
 ```tdsl
 timeline "Heian Period" {
   unit year;
-  range 794..1185;
+  range 781..1185;
 }
 
 lane "Emperor" as emperor {}
@@ -61,6 +61,7 @@ timeline "Chinese Dynasties" {
     title "Chinese Dynasties";
     unit year;
     range -500..2000;
+    calendar proleptic_gregorian;
     color_map {
         dynasty: "#3366cc";
         war:     "#cc0000";
@@ -69,6 +70,9 @@ timeline "Chinese Dynasties" {
 ```
 
 `unit` accepts `year`, `month`, `day`, `hour`, `minute`, or `second`.
+
+`calendar` is optional and accepts `proleptic_gregorian` (default) or `julian`.
+It affects how date literals are interpreted; omitting it is equivalent to `proleptic_gregorian`.
 
 For sub-day units, write the bounds as ISO 8601 date-times. A UTC offset (or
 `Z`) goes **inside the literal** — there is no separate timezone property on the
@@ -149,9 +153,12 @@ span main 1603..1868 "Edo period" {
 
 | Option | Value | Effect |
 |---|---|---|
+| `id` | identifier string | stable identifier for the item. The `Fix lint issues in current tdsl block` command adds missing ids automatically |
 | `note` | string | extra line in the item's tooltip / accessible label |
 | `link` | `http://` or `https://` URL | shown as a line in the tooltip — **not clickable**; the renderer emits no `<a>` element. Any other scheme is a compile error |
 | `color` | `#RGB` / `#RGBA` / `#RRGGBB` / `#RRGGBBAA`, or a plain CSS colour keyword | overrides the item's fill, taking precedence over the lane colour and `color_map`. Other values (e.g. `rgb()`, `url()`) are rejected |
+| `source` | string | source or provenance note. In the SVG renderer this appears as text in the tooltip / accessible label; it does **not** become a clickable link |
+| `origin` | string | describes where the item came from (e.g. `manual` vs `import`) |
 
 `note` and `link` are surfaced through the item's `<title>`, `aria-label` and
 `data-tdsl-tooltip` attributes, so they show up as a native browser tooltip on
@@ -208,6 +215,16 @@ so you don't repeat the same directive in every block:
 Resolution order is **block `//!` directive > settings default > built-in**.
 Changes apply immediately to every open note — no need to reopen anything.
 
+### Commands
+
+In addition to the Markdown code-block preview, the plugin adds three commands to the Obsidian command palette:
+
+| Command | Where it works | What it does |
+|---|---|---|
+| `Format current tdsl block` | Cursor inside a ` ```tdsl ` block | Re-formats the current block's DSL body using the WASM formatter. **Requires the cursor to be inside the block.** |
+| `Fix lint issues in current tdsl block` | Cursor inside a ` ```tdsl ` block | Applies auto-fixable lint rules (such as `missing_id`) to the current block. Does nothing if there are no fixable issues. **Requires the cursor to be inside the block.** |
+| `Insert timeline template` | Anywhere in the note | Opens a picker that inserts a starter timeline (`History`, `Project plan`, `Biography`, or `Reading log`) at the cursor position. No existing block is needed. |
+
 ### Full example
 
 ```tdsl
@@ -216,30 +233,30 @@ timeline "Japanese History" {
     unit year;
     range 710..1868;
     color_map {
-        imperial: "#8b5cf6";
-        military: "#ef4444";
+        dynasty: "#8b5cf6";
+        war:     "#ef4444";
     }
 }
 
 group "Imperial Court" {
-    lane "Emperor" as emperor { kind imperial; order 1; }
+    lane "Emperor" as emperor { kind dynasty; order 1; }
 }
 
 group "Military Government" {
-    lane "Kamakura Shogunate" as kamakura { kind military; order 2; }
-    lane "Muromachi Shogunate" as muromachi { kind military; order 3; }
-    lane "Edo Shogunate"       as edo      { kind military; order 4; }
+    lane "Kamakura Shogunate" as kamakura { kind dynasty; order 2; }
+    lane "Muromachi Shogunate" as muromachi { kind dynasty; order 3; }
+    lane "Edo Shogunate"       as edo      { kind dynasty; order 4; }
 }
 
-span emperor 710..794 "Nara Period" { tags ["imperial"]; };
-span emperor 794..1185 "Heian Period" { tags ["imperial"]; };
+span emperor 710..794 "Nara Period" { id "nara"; tags ["dynasty"]; };
+span emperor 794..1185 "Heian Period" { id "heian"; tags ["dynasty"]; };
 
-span kamakura  1185..1336 "Kamakura Shogunate" { tags ["military"]; };
-span muromachi 1336..1573 "Muromachi Shogunate" { tags ["military"]; };
-span edo       1603..1868 "Edo Shogunate" { tags ["military"]; };
+span kamakura  1185..1336 "Kamakura Shogunate" { id "kamakura-shogunate"; tags ["war"]; };
+span muromachi 1336..1573 "Muromachi Shogunate" { id "muromachi-shogunate"; tags ["war"]; };
+span edo       1603..1868 "Edo Shogunate" { id "edo-shogunate"; tags ["war"]; };
 
-event kamakura 1185 "Minamoto no Yoritomo appointed Shogun" {};
-event edo      1868 "Meiji Restoration" {};
+event kamakura 1185 "Minamoto no Yoritomo appointed Shogun" { id "yoritomo-appointed"; };
+event edo      1868 "Meiji Restoration" { id "meiji-restoration"; };
 ```
 
 ## Limitations
