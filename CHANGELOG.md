@@ -7,9 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Vault-wide display defaults** — settings can set default orientation and whether to show the table or legend; per-block directives still take precedence ([#133](https://github.com/keroway/obsidian-tdsl/pull/133))
+- **Syntax-reference link for errors** — error displays link to the online grammar reference ([#136](https://github.com/keroway/obsidian-tdsl/pull/136))
+- **Timeline-template command** — `Insert timeline template` inserts one of four starter timelines (history, project, biography, or reading log) at the cursor ([#137](https://github.com/keroway/obsidian-tdsl/pull/137))
+- **Lint-fix command** — `Fix lint issues in current tdsl block` applies fixable lint corrections without creating an undo entry when there is nothing to change ([#138](https://github.com/keroway/obsidian-tdsl/pull/138))
+- **Clickable diagnostic locations** — click or keyboard-activate `Line N` in error, warning, info, or lint output to move to that line in the active note ([#139](https://github.com/keroway/obsidian-tdsl/pull/139))
+
 ### Changed
 
-- **Mobile claim tone-down** — README no longer asserts the plugin "works" on mobile; `isDesktopOnly: false` means it is not blocked from running on Obsidian Mobile, but this has not been extensively verified on iOS/Android devices or emulators
+- **Mobile claim tone-down** — README no longer asserts the plugin "works" on mobile; `isDesktopOnly: false` means it is not blocked from running on Obsidian Mobile, but this has not been extensively verified on iOS/Android devices or emulators ([#92](https://github.com/keroway/obsidian-tdsl/pull/92))
+- **Settings and directive documentation** — README now accurately says settings re-render open previews immediately and documents `lane_height` / Default lane height ([#129](https://github.com/keroway/obsidian-tdsl/pull/129))
+- **Shipped DSL documentation** — README documents hour/minute/second units, datetime UTC offsets, `now`, and `note` / `link` / `color` properties ([#132](https://github.com/keroway/obsidian-tdsl/pull/132))
+- **Settings input responsiveness** — Default scale and lane-height edits wait briefly for typing to stop before saving and re-rendering previews ([#91](https://github.com/keroway/obsidian-tdsl/pull/91))
+- **Print/PDF and forced-colors presentation** — printed timelines fit page width and omit editing-only notices; forced-colors mode preserves lane distinctions ([#140](https://github.com/keroway/obsidian-tdsl/pull/140))
+
+### Fixed
+
+- **Nested timeline formatting** — the format command finds `tdsl` fences inside callouts and indented lists ([#87](https://github.com/keroway/obsidian-tdsl/pull/87))
+- **English plugin UI** — remaining settings, command, and notice strings are translated from Japanese ([#88](https://github.com/keroway/obsidian-tdsl/pull/88))
+- **Invalid default-setting feedback** — invalid scale or lane-height input now explains the fallback and restores the displayed saved value ([#89](https://github.com/keroway/obsidian-tdsl/pull/89))
+- **Default scale entry** — typing `fit` is no longer rejected while the value is incomplete; invalid values are corrected after editing stops ([#123](https://github.com/keroway/obsidian-tdsl/pull/123))
+- **Default lane height `0`** — `0` is accepted as the documented renderer-default value instead of showing an erroneous validation notice ([#124](https://github.com/keroway/obsidian-tdsl/pull/124))
+- **Pending settings saves** — closing the settings tab saves pending edits, while unloading the plugin cancels them to prevent post-unload work ([#125](https://github.com/keroway/obsidian-tdsl/pull/125))
+- **Format command fence compatibility** — formatting recognizes tilde fences, variable-length backtick fences, and `tdsl` info strings with extra arguments ([#126](https://github.com/keroway/obsidian-tdsl/pull/126))
+- **Timeline SVG accessibility** — assistive technologies can access labelled timeline items instead of having them hidden by the root SVG image role ([#127](https://github.com/keroway/obsidian-tdsl/pull/127))
 
 ## [1.0.0] - 2026-07-11
 
