@@ -169,6 +169,8 @@ Obsidian はコードブロックの本文しかレンダラに渡さないた�
 ```tdsl
 //! scale: 3
 //! grid: decade
+//! orientation: vertical
+//! layout_style: gantt
 //! events: on
 timeline "Demo" { unit year; range 0..100; }
 lane "Main" as main {}
@@ -180,9 +182,11 @@ span main 10..50 "ある時代" {};
 | `scale` | 正の数 または `fit` | 1 年あたりのピクセル数。大きいほど横に広がり読みやすい。`fit` はノート幅に縮小（横スクロールなし）。省略で自動 |
 | `grid` | `none`, `decade`, `year`, `month` | グリッド線の密度 |
 | `theme` | `default`, `dark`, `print`, `pastel` | 組み込みカラーテーマ |
+| `orientation` | `horizontal`, `vertical` | レイアウト方向 |
+| `layout_style` | `timeline`, `gantt`, `group-bands`, `zigzag` | レンダラーのレイアウトスタイル。未知の値は無視される。省略でレンダラー既定値 |
 | `events` | `on` / `off` | `event` / `event_range` のラベル表示 |
 | `table` | `on` / `off` | データ表の併記 |
-| `orientation` | `horizontal`, `vertical` | レイアウト方向 |
+| `legend` | `on` / `off` | 凡例の併記 |
 | `lane_height` | 正の整数 | レーン 1 本あたりの縦幅（px）。省略（または `0`）でレンダラー既定値（60px） |
 
 年表は本来のサイズで描画され、ノート幅より広い場合は縮小せず横スクロールします
@@ -201,6 +205,7 @@ span main 10..50 "ある時代" {};
 | 既定スケール | `auto` / `fit` / 正の数 | `auto` |
 | イベントラベルを既定で表示 | on / off | off |
 | 既定のレイアウト方向 | `horizontal`, `vertical` | `horizontal` |
+| 既定レイアウトスタイル | `auto`, `timeline`, `gantt`, `group-bands`, `zigzag` | `auto`（レンダラー既定値） |
 | データ表を既定で表示 | on / off | off |
 | 凡例を既定で表示 | on / off | off |
 | 既定レーン高さ | 空 / `0` または正の整数（px） | `0`（レンダラー既定値 60px） |

@@ -35,6 +35,8 @@ export interface RenderDirectives {
 	grid?: "none" | "decade" | "year" | "month";
 	theme?: "default" | "dark" | "print" | "pastel";
 	orientation?: "horizontal" | "vertical";
+	/** renderer layout style. */
+	layout_style?: "timeline" | "gantt" | "group-bands" | "zigzag";
 	/** show labels next to event / event_range items. */
 	events?: boolean;
 	/** render the accompanying data table. */
@@ -49,6 +51,12 @@ const BOOL_TRUE = new Set(["on", "true", "yes", "1"]);
 const GRID_VALUES = new Set(["none", "decade", "year", "month"]);
 const THEME_VALUES = new Set(["default", "dark", "print", "pastel"]);
 const ORIENTATION_VALUES = new Set(["horizontal", "vertical"]);
+const LAYOUT_STYLE_VALUES = new Set([
+	"timeline",
+	"gantt",
+	"group-bands",
+	"zigzag",
+]);
 
 /**
  * Extracts `//! key: value` directive comments from the source.
@@ -87,6 +95,10 @@ export function parseRenderDirectives(source: string): RenderDirectives {
 				if (ORIENTATION_VALUES.has(val))
 					out.orientation = val as RenderDirectives["orientation"];
 				break;
+			case "layout_style":
+				if (LAYOUT_STYLE_VALUES.has(val))
+					out.layout_style = val as RenderDirectives["layout_style"];
+				break;
 			case "events":
 				out.events = BOOL_TRUE.has(val);
 				break;
@@ -119,6 +131,8 @@ export interface TdslSettings {
 	scale: "auto" | "fit" | number;
 	events: boolean;
 	orientation: "horizontal" | "vertical";
+	/** Default renderer layout style. `"auto"` leaves it to the renderer. */
+	layoutStyle: "auto" | "timeline" | "gantt" | "group-bands" | "zigzag";
 	/** Render the accompanying item-listing table inside the SVG. */
 	table: boolean;
 	/** Render a static legend panel showing lane and tag colours. */
@@ -133,6 +147,7 @@ export const DEFAULT_SETTINGS: TdslSettings = {
 	scale: "auto",
 	events: false,
 	orientation: "horizontal",
+	layoutStyle: "auto",
 	table: false,
 	legend: false,
 	laneHeight: 0,
@@ -151,6 +166,7 @@ export interface ResolvedRender {
 	grid?: "none" | "decade" | "year" | "month";
 	theme?: "default" | "dark" | "print" | "pastel";
 	orientation?: "horizontal" | "vertical";
+	layout_style?: "timeline" | "gantt" | "group-bands" | "zigzag";
 	events?: boolean;
 	table?: boolean;
 	legend?: boolean;
@@ -192,8 +208,11 @@ export function resolveRenderOptions(
 	// events: directive wins; else the settings default.
 	resolved.events = directives.events ?? settings.events;
 
-	// orientation / table / legend: directive wins; else the settings default.
+	// orientation / layout_style / table / legend: directive wins; else the settings default.
 	resolved.orientation = directives.orientation ?? settings.orientation;
+	resolved.layout_style =
+		directives.layout_style ??
+		(settings.layoutStyle === "auto" ? undefined : settings.layoutStyle);
 	resolved.table = directives.table ?? settings.table;
 	resolved.legend = directives.legend ?? settings.legend;
 

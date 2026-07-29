@@ -173,6 +173,8 @@ ignores). Place them anywhere in the block:
 ```tdsl
 //! scale: 3
 //! grid: decade
+//! orientation: vertical
+//! layout_style: gantt
 //! events: on
 timeline "Demo" { unit year; range 0..100; }
 lane "Main" as main {}
@@ -184,10 +186,11 @@ span main 10..50 "An era" {};
 | `scale` | positive number, or `fit` | pixels per year. Higher = wider / more readable. `fit` shrinks the timeline to the note width (no horizontal scroll). Omit for auto. |
 | `grid` | `none`, `decade`, `year`, `month` | gridline density |
 | `theme` | `default`, `dark`, `print`, `pastel` | built-in colour theme |
+| `orientation` | `horizontal`, `vertical` | layout direction |
+| `layout_style` | `timeline`, `gantt`, `group-bands`, `zigzag` | renderer layout style. Unknown values are ignored. Omit for the renderer default. |
 | `events` | `on` / `off` | show labels next to `event` / `event_range` items |
 | `table` | `on` / `off` | render the accompanying item-listing table (drawn natively in the SVG) |
 | `legend` | `on` / `off` | render a static legend panel showing lane and tag colors |
-| `orientation` | `horizontal`, `vertical` | layout direction |
 | `lane_height` | positive integer | vertical pixels per lane. Omit (or `0`) for the renderer default (60 px). |
 
 The timeline renders at its natural size; if it is wider than the note column it
@@ -208,6 +211,7 @@ so you don't repeat the same directive in every block:
 | Default scale | `auto`, `fit`, or a positive number | `auto` |
 | Show event labels by default | on / off | off |
 | Default orientation | `horizontal`, `vertical` | `horizontal` |
+| Default layout style | `auto`, `timeline`, `gantt`, `group-bands`, `zigzag` | `auto` (renderer default) |
 | Show table by default | on / off | off |
 | Show legend by default | on / off | off |
 | Default lane height | empty / `0`, or a positive integer (px) | `0` (renderer default, 60 px) |

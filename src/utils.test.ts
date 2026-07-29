@@ -82,6 +82,7 @@ describe("resolveRenderOptions", () => {
 			grid: "none",
 			events: false,
 			orientation: "horizontal",
+			layout_style: undefined,
 			table: false,
 			legend: false,
 			laneHeight: 0,
@@ -95,6 +96,7 @@ describe("resolveRenderOptions", () => {
 			scale: 3,
 			events: true,
 			orientation: "vertical",
+			layoutStyle: "auto",
 			table: true,
 			legend: true,
 			laneHeight: 0,
@@ -106,6 +108,7 @@ describe("resolveRenderOptions", () => {
 			theme: "pastel",
 			events: true,
 			orientation: "vertical",
+			layout_style: undefined,
 			table: true,
 			legend: true,
 			laneHeight: 0,
@@ -119,6 +122,7 @@ describe("resolveRenderOptions", () => {
 			scale: 3,
 			events: true,
 			orientation: "vertical",
+			layoutStyle: "gantt",
 			table: true,
 			legend: true,
 			laneHeight: 0,
@@ -130,6 +134,7 @@ describe("resolveRenderOptions", () => {
 				scale: 5,
 				events: false,
 				orientation: "horizontal",
+				layout_style: "zigzag",
 				table: false,
 				legend: false,
 			},
@@ -141,6 +146,7 @@ describe("resolveRenderOptions", () => {
 			scale: 5,
 			events: false,
 			orientation: "horizontal",
+			layout_style: "zigzag",
 			table: false,
 			legend: false,
 			fit: false,
@@ -240,13 +246,14 @@ describe("parseRenderDirectives", () => {
 	});
 
 	it("parses all supported directives", () => {
-		const src = `//! scale: 3\n//! grid: decade\n//! theme: dark\n//! orientation: vertical\n//! events: on\n//! table: off\n//! legend: on\n//! lane_height: 60\ntimeline "T" {}`;
+		const src = `//! scale: 3\n//! grid: decade\n//! theme: dark\n//! orientation: vertical\n//! layout_style: gantt\n//! events: on\n//! table: off\n//! legend: on\n//! lane_height: 60\ntimeline "T" {}`;
 		expect(parseRenderDirectives(src)).toEqual({
 			scale: 3,
 			fit: false,
 			grid: "decade",
 			theme: "dark",
 			orientation: "vertical",
+			layout_style: "gantt",
 			events: true,
 			table: false,
 			legend: true,
@@ -288,8 +295,20 @@ describe("parseRenderDirectives", () => {
 	});
 
 	it("ignores unknown keys and out-of-range values", () => {
-		const src = `//! scale: -2\n//! grid: galaxy\n//! foo: bar`;
+		const src = `//! scale: -2\n//! grid: galaxy\n//! layout_style: 3d\n//! foo: bar`;
 		expect(parseRenderDirectives(src)).toEqual({});
+	});
+
+	it("parses layout_style", () => {
+		expect(parseRenderDirectives(`//! layout_style: gantt`).layout_style).toBe(
+			"gantt",
+		);
+		expect(
+			parseRenderDirectives(`//! layout_style: group-bands`).layout_style,
+		).toBe("group-bands");
+		expect(parseRenderDirectives(`//! LAYOUT_STYLE: ZIGZAG`).layout_style).toBe(
+			"zigzag",
+		);
 	});
 
 	it("treats only on/true/yes/1 as truthy for booleans", () => {
