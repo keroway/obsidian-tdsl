@@ -128,6 +128,7 @@ span main 10..50 "An era" {};
 | `table` | `on` / `off` | render the accompanying item-listing table (drawn natively in the SVG) |
 | `legend` | `on` / `off` | render a static legend panel showing lane and tag colors |
 | `orientation` | `horizontal`, `vertical` | layout direction |
+| `lane_height` | positive integer | vertical pixels per lane. Omit (or `0`) for the renderer default (60 px). |
 
 The timeline renders at its natural size; if it is wider than the note column it
 scrolls horizontally rather than shrinking (which would make labels unreadable).
@@ -146,9 +147,10 @@ so you don't repeat the same directive in every block:
 | Default grid | `none`, `decade`, `year`, `month` | `none` |
 | Default scale | `auto`, `fit`, or a positive number | `auto` |
 | Show event labels by default | on / off | off |
+| Default lane height | empty / `0`, or a positive integer (px) | `0` (renderer default, 60 px) |
 
 Resolution order is **block `//!` directive > settings default > built-in**.
-Changes apply when you reopen the affected note.
+Changes apply immediately to every open note — no need to reopen anything.
 
 ### Full example
 
