@@ -4,6 +4,7 @@ import init, {
 	JsRenderOptions,
 	lint_fix_source,
 	lint_source,
+	render_html_from_source_with_options,
 	render_svg_from_source_with_options,
 } from "@keroway/tdsl-wasm";
 // esbuild inlines the WASM binary via `loader: { '.wasm': 'binary' }`
@@ -27,6 +28,7 @@ import { findTdslFenceAtCursor } from "./fence";
 import { idleScheduler } from "./idle-scheduler";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
 import { renderCacheKey, SvgLruCache } from "./render-cache";
+import { resolveStandaloneHtmlRender } from "./standalone-html";
 import {
 	renderTemplateSnippet,
 	TIMELINE_TEMPLATES,
@@ -206,6 +208,14 @@ class TdslPreview extends MarkdownRenderChild {
 		copyButton.addEventListener("click", () => {
 			void this.copySvg(svg);
 		});
+		const copyHtmlButton = toolbar.createEl("button", {
+			text: "Copy standalone HTML",
+			cls: "tdsl-toolbar-button",
+			attr: { type: "button" },
+		});
+		copyHtmlButton.addEventListener("click", () => {
+			void this.copyStandaloneHtml();
+		});
 	}
 
 	private async copySvg(svg: string): Promise<void> {
@@ -219,6 +229,32 @@ class TdslPreview extends MarkdownRenderChild {
 			case "failed":
 				new Notice("Timeline DSL: Could not copy SVG to the clipboard.");
 				break;
+		}
+	}
+
+	private async copyStandaloneHtml(): Promise<void> {
+		try {
+			await ensureWasm();
+			const render = resolveStandaloneHtmlRender(
+				resolveRenderOptions(parseRenderDirectives(this.source), this.settings),
+				document.body.classList.contains("theme-dark"),
+			);
+			const html = renderStandaloneHtml(this.source, render);
+			switch (await copyTextToClipboard(html)) {
+				case "copied":
+					new Notice("✔ Copied standalone timeline HTML to the clipboard.");
+					break;
+				case "unavailable":
+					new Notice("Timeline DSL: Clipboard API is unavailable.");
+					break;
+				case "failed":
+					new Notice(
+						"Timeline DSL: Could not copy standalone HTML to the clipboard.",
+					);
+					break;
+			}
+		} catch {
+			new Notice("Timeline DSL: Could not generate standalone HTML.");
 		}
 	}
 
@@ -345,8 +381,36 @@ function renderSvg(
 	source: string,
 	r: ReturnType<typeof resolveRenderOptions>,
 ): string {
-	const opts = new JsRenderOptions();
+	const opts = createRenderOptions(r);
 	let ownedByJs = true;
+	try {
+		ownedByJs = false;
+		return render_svg_from_source_with_options(source, r.scale, opts);
+	} finally {
+		if (ownedByJs) opts.free();
+	}
+}
+
+/** Renders a portable document with a fresh WASM options instance. */
+function renderStandaloneHtml(
+	source: string,
+	r: ReturnType<typeof resolveRenderOptions>,
+): string {
+	const opts = createRenderOptions(r);
+	let ownedByJs = true;
+	try {
+		ownedByJs = false;
+		return render_html_from_source_with_options(source, opts);
+	} finally {
+		if (ownedByJs) opts.free();
+	}
+}
+
+/** Populates a newly allocated options instance for one ownership-transferring call. */
+function createRenderOptions(
+	r: ReturnType<typeof resolveRenderOptions>,
+): JsRenderOptions {
+	const opts = new JsRenderOptions();
 	try {
 		if (r.grid) opts.grid = r.grid;
 		if (r.theme) opts.theme = r.theme;
@@ -357,10 +421,10 @@ function renderSvg(
 		if (r.table !== undefined) opts.show_table = r.table;
 		if (r.legend !== undefined) opts.show_legend = r.legend;
 		if (r.laneHeight > 0) opts.lane_height = r.laneHeight;
-		ownedByJs = false;
-		return render_svg_from_source_with_options(source, r.scale, opts);
-	} finally {
-		if (ownedByJs) opts.free();
+		return opts;
+	} catch (error) {
+		opts.free();
+		throw error;
 	}
 }
 
