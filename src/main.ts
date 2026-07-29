@@ -22,6 +22,7 @@ import {
 	SuggestModal,
 	type TextComponent,
 } from "obsidian";
+import { copyTextToClipboard } from "./clipboard";
 import { findTdslFenceAtCursor } from "./fence";
 import { idleScheduler } from "./idle-scheduler";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
@@ -133,7 +134,9 @@ class TdslPreview extends MarkdownRenderChild {
 				root,
 				extractTimelineTitle(this.source) ?? "Timeline",
 			);
+			const serializedSvg = new XMLSerializer().serializeToString(root);
 			wrapper.appendChild(document.adoptNode(root));
+			this.addCopySvgToolbar(wrapper, serializedSvg);
 
 			// Warn when import wikidata blocks are silently skipped (no network in browser).
 			if (hasWikidataImport(this.source)) {
@@ -186,6 +189,36 @@ class TdslPreview extends MarkdownRenderChild {
 			}
 		} catch {
 			// Lint failures must not affect a rendered timeline.
+		}
+	}
+
+	/** Adds the reusable-export toolbar after a successful safe SVG adoption. */
+	private addCopySvgToolbar(wrapper: HTMLElement, svg: string): void {
+		const toolbar = wrapper.createDiv({
+			cls: "tdsl-toolbar",
+			attr: { role: "toolbar", "aria-label": "Timeline actions" },
+		});
+		const copyButton = toolbar.createEl("button", {
+			text: "Copy SVG",
+			cls: "tdsl-toolbar-button",
+			attr: { type: "button" },
+		});
+		copyButton.addEventListener("click", () => {
+			void this.copySvg(svg);
+		});
+	}
+
+	private async copySvg(svg: string): Promise<void> {
+		switch (await copyTextToClipboard(svg)) {
+			case "copied":
+				new Notice("✔ Copied timeline SVG to the clipboard.");
+				break;
+			case "unavailable":
+				new Notice("Timeline DSL: Clipboard API is unavailable.");
+				break;
+			case "failed":
+				new Notice("Timeline DSL: Could not copy SVG to the clipboard.");
+				break;
 		}
 	}
 

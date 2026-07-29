@@ -2,9 +2,49 @@
 
 /* ── Container ── */
 .tdsl-preview {
+	position: relative;
 	overflow-x: auto;
 	border-radius: 4px;
 	padding: 4px;
+}
+
+/* Hidden until the diagram is hovered or keyboard-focused, so export actions
+ * stay discoverable without permanently obscuring a compact timeline. */
+.tdsl-toolbar {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	display: flex;
+	gap: 4px;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 120ms ease-in-out;
+}
+
+.tdsl-preview:hover .tdsl-toolbar,
+.tdsl-preview:focus-within .tdsl-toolbar {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.tdsl-toolbar-button {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	padding: 3px 7px;
+	font-size: var(--font-ui-smaller);
+	cursor: pointer;
+	box-shadow: var(--shadow-s);
+}
+
+.tdsl-toolbar-button:hover {
+	background: var(--background-modifier-hover);
+}
+
+.tdsl-toolbar-button:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
 }
 
 /*
@@ -293,7 +333,8 @@
 	 * and the syntax-reference link are all screen-only. */
 	.tdsl-preview .tdsl-notice,
 	.tdsl-preview .tdsl-lint-banner,
-	.tdsl-preview .tdsl-error-help {
+	.tdsl-preview .tdsl-error-help,
+	.tdsl-preview .tdsl-toolbar {
 		display: none;
 	}
 }
