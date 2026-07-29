@@ -68,7 +68,18 @@ timeline "Chinese Dynasties" {
 }
 ```
 
-`unit` accepts `year`, `month`, or `day`.
+`unit` accepts `year`, `month`, `day`, `hour`, `minute`, or `second`.
+
+For sub-day units, write the bounds as ISO 8601 date-times. A UTC offset (or
+`Z`) goes **inside the literal** — there is no separate timezone property on the
+`timeline` block:
+
+```
+timeline "Launch day" {
+    unit hour;
+    range 2026-01-01T00:00:00+09:00..2026-01-02T00:00:00+09:00;
+}
+```
 
 #### `lane` declaration
 
@@ -103,6 +114,48 @@ event han -209 "Dazexiang Uprising" {};
 // Range event (wars, disasters, etc.)
 event_range han 184..204 "Yellow Turban Rebellion" { tags ["war"]; };
 ```
+
+##### `now` — open-ended ranges
+
+`span` and `event_range` accept `now` as the **end** of a range to mean "still
+going". It is not valid as the start, and `event` (a point in time) does not
+take it:
+
+```
+span main 2010..now "Ongoing project" {};
+event_range main 2020..now "Still running" {};
+```
+
+`now` resolves at render time to the current *year* (UTC), so pair it with
+`unit year`. With `unit day` and date literals such as `2026-03-01..now` the end
+still resolves to the year, which produces a "start > end" warning.
+
+Open-ended items also get the `tdsl-item-open-ended` class, so a snippet in your
+vault's CSS can style them (a fading edge, a dashed border) — and their tooltip
+shows the end as "in progress" rather than a number.
+
+##### `note` / `link` / `color` block options
+
+`span`, `event`, and `event_range` blocks accept three extra options (they are
+not available on `lane` / `group`, which only take `kind` and `order`):
+
+```
+span main 1603..1868 "Edo period" {
+    note "Sakoku era";
+    link "https://en.wikipedia.org/wiki/Edo_period";
+    color "#8b5cf6";
+};
+```
+
+| Option | Value | Effect |
+|---|---|---|
+| `note` | string | extra line in the item's tooltip / accessible label |
+| `link` | `http://` or `https://` URL | shown as a line in the tooltip — **not clickable**; the renderer emits no `<a>` element. Any other scheme is a compile error |
+| `color` | `#RGB` / `#RGBA` / `#RRGGBB` / `#RRGGBBAA`, or a plain CSS colour keyword | overrides the item's fill, taking precedence over the lane colour and `color_map`. Other values (e.g. `rgb()`, `url()`) are rejected |
+
+`note` and `link` are surfaced through the item's `<title>`, `aria-label` and
+`data-tdsl-tooltip` attributes, so they show up as a native browser tooltip on
+hover and are announced by screen readers.
 
 #### Rendering options (`//!` directives)
 
