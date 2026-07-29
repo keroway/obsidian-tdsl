@@ -263,3 +263,54 @@
 	--tdsl-lane-6: #f7b731;
 	--tdsl-lane-7: #3a97d4;
 }
+
+/* ── Print / PDF export ──
+ *
+ * On screen a wide timeline scrolls horizontally inside `.tdsl-preview`.
+ * Printing has no scrollbar, so that same overflow silently clips everything
+ * past the page edge. For print we drop the scroll container and let the SVG
+ * scale down to the page width instead — the same trade-off `//! scale: fit`
+ * makes on screen, which is the right one on paper: a smaller-but-complete
+ * diagram beats a full-size one missing its right half.
+ */
+@media print {
+	.tdsl-preview {
+		overflow: visible;
+		/* Keep the diagram together across page breaks where the engine allows it. */
+		break-inside: avoid;
+	}
+
+	/* Overrides the natural-size rule above, and applies whether or not the
+	 * block opted into `tdsl-fit`. */
+	.tdsl-preview svg,
+	.tdsl-preview.tdsl-fit svg {
+		width: 100%;
+		max-width: 100%;
+		height: auto;
+	}
+
+	/* Editing aids, not part of the diagram: warnings, info notices, lint rows
+	 * and the syntax-reference link are all screen-only. */
+	.tdsl-preview .tdsl-notice,
+	.tdsl-preview .tdsl-lint-banner,
+	.tdsl-preview .tdsl-error-help {
+		display: none;
+	}
+}
+
+/* ── Forced colours (Windows high contrast) ──
+ *
+ * The lane palette is the only thing distinguishing one item from another, and
+ * forced-colors collapses every fill to the system colour — turning the whole
+ * timeline into one flat block. Opting these elements out preserves the
+ * distinction; the surrounding chrome still follows the forced palette.
+ */
+@media (forced-colors: active) {
+	.tdsl-preview .tdsl-span,
+	.tdsl-preview .tdsl-event-range,
+	.tdsl-preview .tdsl-event-dot,
+	.tdsl-preview .tdsl-lane-band-even,
+	.tdsl-preview .tdsl-lane-band-odd {
+		forced-color-adjust: none;
+	}
+}
