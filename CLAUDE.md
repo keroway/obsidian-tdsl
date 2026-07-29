@@ -100,7 +100,7 @@ wrapper.appendChild(document.adoptNode(doc.documentElement));
 
 Obsidian プラグインのインストール手順はこの 3 ファイルを vault の `.obsidian/plugins/timeline-dsl/` にコピーすることを前提にしている：
 
-- `main.js`（esbuild ビルド成果物、リポジトリにコミット済み）
+- `main.js`（esbuild ビルド成果物。`.gitignore` 済みで、GitHub Release の資産から入手するかローカルで `pnpm run build` を実行して生成する）
 - `manifest.json`
 - `styles.css`
 
@@ -140,7 +140,7 @@ src/
   wasm.d.ts             — esbuild binary loader 向け .wasm 型宣言
   *.test.ts             — 上記モジュールの Vitest ユニットテスト
 esbuild.config.mjs  — ビルド設定（WASM インライン化・バンドル）
-main.js        — ビルド成果物（コミット済み、vault にコピーして使う）
+main.js        — `.gitignore` 済みのビルド成果物（GitHub Release の資産から入手するか、`pnpm run build` で生成して vault にコピーする）
 manifest.json  — Obsidian プラグインメタデータ
 versions.json  — バージョン↔minAppVersion マッピング
 ```
