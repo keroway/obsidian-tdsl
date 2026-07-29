@@ -418,6 +418,41 @@ class TdslSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Default orientation")
+			.setDesc(
+				"Layout direction. Override per block with `//! orientation: …`.",
+			)
+			.addDropdown((d) =>
+				d
+					.addOptions({ horizontal: "horizontal", vertical: "vertical" })
+					.setValue(this.plugin.settings.orientation)
+					.onChange(async (v) => {
+						this.plugin.settings.orientation = v as TdslSettings["orientation"];
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Show table by default")
+			.setDesc("Render the accompanying item-listing table inside the SVG")
+			.addToggle((tg) =>
+				tg.setValue(this.plugin.settings.table).onChange(async (v) => {
+					this.plugin.settings.table = v;
+					await this.plugin.saveSettings();
+				}),
+			);
+
+		new Setting(containerEl)
+			.setName("Show legend by default")
+			.setDesc("Render a static legend panel showing lane and tag colours")
+			.addToggle((tg) =>
+				tg.setValue(this.plugin.settings.legend).onChange(async (v) => {
+					this.plugin.settings.legend = v;
+					await this.plugin.saveSettings();
+				}),
+			);
+
+		new Setting(containerEl)
 			.setName("Default lane height")
 			.setDesc(
 				"Positive integer (px). Empty or `0` uses the renderer default (60 px). Override per block with `//! lane_height: N`.",

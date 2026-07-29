@@ -35,6 +35,9 @@ describe("resolveRenderOptions", () => {
 			fit: false,
 			grid: "none",
 			events: false,
+			orientation: "horizontal",
+			table: false,
+			legend: false,
 			laneHeight: 0,
 		});
 	});
@@ -45,6 +48,9 @@ describe("resolveRenderOptions", () => {
 			grid: "decade",
 			scale: 3,
 			events: true,
+			orientation: "vertical",
+			table: true,
+			legend: true,
 			laneHeight: 0,
 		};
 		expect(resolveRenderOptions({}, settings)).toEqual({
@@ -53,6 +59,9 @@ describe("resolveRenderOptions", () => {
 			grid: "decade",
 			theme: "pastel",
 			events: true,
+			orientation: "vertical",
+			table: true,
+			legend: true,
 			laneHeight: 0,
 		});
 	});
@@ -63,10 +72,21 @@ describe("resolveRenderOptions", () => {
 			grid: "decade",
 			scale: 3,
 			events: true,
+			orientation: "vertical",
+			table: true,
+			legend: true,
 			laneHeight: 0,
 		};
 		const r = resolveRenderOptions(
-			{ grid: "month", theme: "dark", scale: 5, events: false },
+			{
+				grid: "month",
+				theme: "dark",
+				scale: 5,
+				events: false,
+				orientation: "horizontal",
+				table: false,
+				legend: false,
+			},
 			settings,
 		);
 		expect(r).toMatchObject({
@@ -74,6 +94,9 @@ describe("resolveRenderOptions", () => {
 			theme: "dark",
 			scale: 5,
 			events: false,
+			orientation: "horizontal",
+			table: false,
+			legend: false,
 			fit: false,
 		});
 	});
@@ -104,6 +127,51 @@ describe("resolveRenderOptions", () => {
 		const r = resolveRenderOptions({}, { ...DEFAULT_SETTINGS, scale: "fit" });
 		expect(r.fit).toBe(true);
 		expect(r.scale).toBe(0);
+	});
+
+	it("orientation: falls back to settings when no directive", () => {
+		const r = resolveRenderOptions(
+			{},
+			{ ...DEFAULT_SETTINGS, orientation: "vertical" },
+		);
+		expect(r.orientation).toBe("vertical");
+	});
+
+	it("orientation: directive wins over setting", () => {
+		const r = resolveRenderOptions(
+			{ orientation: "horizontal" },
+			{ ...DEFAULT_SETTINGS, orientation: "vertical" },
+		);
+		expect(r.orientation).toBe("horizontal");
+	});
+
+	it("table / legend: fall back to settings when no directive", () => {
+		const r = resolveRenderOptions(
+			{},
+			{ ...DEFAULT_SETTINGS, table: true, legend: true },
+		);
+		expect(r.table).toBe(true);
+		expect(r.legend).toBe(true);
+	});
+
+	// `false` is a meaningful directive value here, not "unset" — a block must be
+	// able to switch the table/legend back off when the vault default turns them on.
+	it("table / legend: a directive of false overrides a setting of true", () => {
+		const r = resolveRenderOptions(
+			{ table: false, legend: false },
+			{ ...DEFAULT_SETTINGS, table: true, legend: true },
+		);
+		expect(r.table).toBe(false);
+		expect(r.legend).toBe(false);
+	});
+
+	it("table / legend: directive of true overrides a setting of false", () => {
+		const r = resolveRenderOptions(
+			{ table: true, legend: true },
+			{ ...DEFAULT_SETTINGS, table: false, legend: false },
+		);
+		expect(r.table).toBe(true);
+		expect(r.legend).toBe(true);
 	});
 
 	it("directive fit overrides a numeric settings scale", () => {

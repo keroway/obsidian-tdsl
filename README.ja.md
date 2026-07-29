@@ -193,6 +193,9 @@ span main 10..50 "ある時代" {};
 | 既定グリッド | `none`, `decade`, `year`, `month` | `none` |
 | 既定スケール | `auto` / `fit` / 正の数 | `auto` |
 | イベントラベルを既定で表示 | on / off | off |
+| 既定のレイアウト方向 | `horizontal`, `vertical` | `horizontal` |
+| データ表を既定で表示 | on / off | off |
+| 凡例を既定で表示 | on / off | off |
 | 既定レーン高さ | 空 / `0` または正の整数（px） | `0`（レンダラー既定値 60px） |
 
 優先順位は **ブロック `//!` ディレクティブ > 設定の既定値 > 組み込み既定**。

@@ -200,6 +200,9 @@ so you don't repeat the same directive in every block:
 | Default grid | `none`, `decade`, `year`, `month` | `none` |
 | Default scale | `auto`, `fit`, or a positive number | `auto` |
 | Show event labels by default | on / off | off |
+| Default orientation | `horizontal`, `vertical` | `horizontal` |
+| Show table by default | on / off | off |
+| Show legend by default | on / off | off |
 | Default lane height | empty / `0`, or a positive integer (px) | `0` (renderer default, 60 px) |
 
 Resolution order is **block `//!` directive > settings default > built-in**.
