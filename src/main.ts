@@ -23,6 +23,7 @@ import {
 	type TextComponent,
 } from "obsidian";
 import { findTdslFenceAtCursor } from "./fence";
+import { idleScheduler } from "./idle-scheduler";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
 import { renderCacheKey, SvgLruCache } from "./render-cache";
 import {
@@ -69,6 +70,8 @@ class TdslPreview extends MarkdownRenderChild {
 	private readonly settings: TdslSettings;
 	private readonly app: App;
 	private readonly ctx: MarkdownPostProcessorContext;
+	private cancelPendingLint: (() => void) | null = null;
+	private unloaded = false;
 
 	constructor(
 		container: HTMLElement,
@@ -149,33 +152,40 @@ class TdslPreview extends MarkdownRenderChild {
 				this.showNotice(wrapper, "info", d);
 			}
 
-			// Run lint_source and display issues below the SVG.
-			// lint_source never throws (it returns a parse_error entry on failure),
-			// so this is safe to run after a successful render.
-			try {
-				const lintJson = lint_source(this.source);
-				const lintIssues = parseLintIssues(lintJson).filter(
-					(i) => i.code !== "parse_error",
-				);
-				if (lintIssues.length > 0) {
-					const lintBanner = wrapper.createDiv({
-						cls: "tdsl-lint-banner",
-					});
-					for (const issue of lintIssues) {
-						const row = lintBanner.createDiv({
-							cls: "tdsl-notice tdsl-notice-warning",
-						});
-						row.createSpan({ text: "⚠ " });
-						// Same pieces formatLintIssues joins into a string, kept apart so
-						// the `Line N` segment can be its own clickable element.
-						this.appendDiagnosticLine(row, lintIssueParts(issue));
-					}
-				}
-			} catch {
-				// Lint is non-critical: silently ignore failures.
-			}
+			// Lint is auxiliary information, so leave the initial render path free
+			// for the SVG and schedule it once the browser is idle.
+			this.cancelPendingLint = idleScheduler.schedule(() => {
+				this.cancelPendingLint = null;
+				if (this.unloaded) return;
+				this.showLintIssues(wrapper);
+			});
 		} catch (e) {
 			this.showErrors(wrapper, [String(e)]);
+		}
+	}
+
+	onunload(): void {
+		this.unloaded = true;
+		this.cancelPendingLint?.();
+		this.cancelPendingLint = null;
+	}
+
+	private showLintIssues(wrapper: HTMLElement): void {
+		try {
+			const lintIssues = parseLintIssues(lint_source(this.source)).filter(
+				(i) => i.code !== "parse_error",
+			);
+			if (lintIssues.length === 0 || this.unloaded) return;
+			const lintBanner = wrapper.createDiv({ cls: "tdsl-lint-banner" });
+			for (const issue of lintIssues) {
+				const row = lintBanner.createDiv({
+					cls: "tdsl-notice tdsl-notice-warning",
+				});
+				row.createSpan({ text: "⚠ " });
+				this.appendDiagnosticLine(row, lintIssueParts(issue));
+			}
+		} catch {
+			// Lint failures must not affect a rendered timeline.
 		}
 	}
 
