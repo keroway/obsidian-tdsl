@@ -24,6 +24,7 @@ import {
 } from "obsidian";
 import { findTdslFenceAtCursor } from "./fence";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
+import { renderCacheKey, SvgLruCache } from "./render-cache";
 import {
 	renderTemplateSnippet,
 	TIMELINE_TEMPLATES,
@@ -60,6 +61,9 @@ const ensureWasm = createWasmInitializer(async () => {
 	await init(wasmBytes as unknown as Parameters<typeof init>[0]);
 });
 
+// Process-local: previews can reuse an SVG while Obsidian re-renders a block.
+const svgRenderCache = new SvgLruCache();
+
 class TdslPreview extends MarkdownRenderChild {
 	private readonly source: string;
 	private readonly settings: TdslSettings;
@@ -82,33 +86,34 @@ class TdslPreview extends MarkdownRenderChild {
 
 	async onload(): Promise<void> {
 		const wrapper = this.containerEl.createDiv({ cls: "tdsl-preview" });
+		// Resolve before lookup: source plus these effective options determine output.
+		const r = resolveRenderOptions(
+			parseRenderDirectives(this.source),
+			this.settings,
+		);
+		const cacheKey = renderCacheKey(this.source, r);
+		if (r.fit) wrapper.addClass("tdsl-fit");
 
 		try {
-			await ensureWasm();
+			let cached = svgRenderCache.get(cacheKey);
+			if (!cached) {
+				await ensureWasm();
 
-			// check_source returns JSON: [{severity, message, line, col}]
-			const diagnosticsJson = check_source(this.source);
-			const diagnostics = parseDiagnostics(diagnosticsJson);
-			const errors = filterErrors(diagnostics);
-			const warnings = filterWarnings(diagnostics);
-			const infos = filterInfos(diagnostics);
+				// check_source returns JSON: [{severity, message, line, col}]
+				const diagnostics = parseDiagnostics(check_source(this.source));
+				const errors = filterErrors(diagnostics);
+				if (errors.length > 0) {
+					this.showErrorDiagnostics(wrapper, errors);
+					return;
+				}
 
-			if (errors.length > 0) {
-				this.showErrorDiagnostics(wrapper, errors);
-				return;
+				cached = { svg: renderSvg(this.source, r), diagnostics };
+				// Only validated, successfully rendered SVG is cacheable.
+				svgRenderCache.set(cacheKey, cached);
 			}
 
-			// Effective options = per-block `//!` directives over plugin settings.
-			// A fresh JsRenderOptions is required per call: the WASM frees it after use.
-			const directives = parseRenderDirectives(this.source);
-			const r = resolveRenderOptions(directives, this.settings);
-			// `fit` opts the block into shrink-to-note-width (vs. natural size +
-			// horizontal scroll). The renderer still uses auto scale.
-			if (r.fit) wrapper.addClass("tdsl-fit");
-			const svg = renderSvg(this.source, r);
-
 			// Parse as SVG/XML — avoids innerHTML and does not execute scripts or event handlers.
-			const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
+			const doc = new DOMParser().parseFromString(cached.svg, "image/svg+xml");
 			const parseError = doc.querySelector("parsererror");
 			if (parseError) {
 				this.showErrors(wrapper, [
@@ -136,11 +141,11 @@ class TdslPreview extends MarkdownRenderChild {
 				});
 			}
 
-			// Show non-blocking warning/info diagnostics below the SVG.
-			for (const d of warnings) {
+			// Diagnostics are cached with SVG so a hit has the same non-error UI.
+			for (const d of filterWarnings(cached.diagnostics)) {
 				this.showNotice(wrapper, "warning", d);
 			}
-			for (const d of infos) {
+			for (const d of filterInfos(cached.diagnostics)) {
 				this.showNotice(wrapper, "info", d);
 			}
 
