@@ -44,9 +44,16 @@ esbuild はこの設定によって `.wasm` ファイルを `Uint8Array` とし�
 
 `src/wasm.d.ts` の `declare module '*.wasm'` を削除すると、`src/main.ts` の WASM import が TypeScript の型エラーになり `typecheck` が落ちる。
 
-### 遅延初期化フラグ
+### WASM 初期化の single-flight ガード
 
-`src/main.ts` の `ensureWasm()` / `wasmReady` フラグは `init()` の重複呼び出しを防ぐモジュール状態。`wasmReady` チェックを外すと複数のコードブロックが同時にレンダリングされたとき `init()` が並列実行されてクラッシュする。
+`src/main.ts` の `ensureWasm` は `src/wasm-init.ts` の `createWasmInitializer()` が返すクロージャ。
+内部の `ready` / `initPromise` が「同時に走った初期化を 1 本の Promise に束ねる」役割を持つ。
+Obsidian は複数の `tdsl` ブロックを同時に描画するため、このガードを外すと各ブロックが
+「まだ未初期化」と判断して `init()` を並列に呼び、クラッシュする。
+
+初期化が失敗したときは `initPromise` を `null` に戻して次の描画でリトライできるようにしている。
+成功後に `ready` を立てる順序も含めて挙動は `src/wasm-init.test.ts` で固定されているので、
+変更するときはテストを先に読むこと。
 
 ### WASM API シグネチャ
 
@@ -61,7 +68,9 @@ esbuild はこの設定によって `.wasm` ファイルを `Uint8Array` とし�
 
 `scale` / `grid` / `theme` などは `.tdsl` 内の `//! key: value` コメント行（`src/utils.ts` の `parseRenderDirectives`）で指定する。`//` は通常の DSL コメントなのでコンパイラは無視する。
 
-`@keroway/tdsl-wasm ^1.22.0` を前提にしている。メジャーバージョンアップでシグネチャが変わると描画全体が破綻する。依存バージョンを上げるときは API 互換性を必ず確認すること。
+`@keroway/tdsl-wasm ^1.27.0` を前提にしている（`package.json` の `dependencies` が正）。
+メジャーバージョンアップでシグネチャが変わると描画全体が破綻する。依存バージョンを上げるときは
+API 互換性を必ず確認し、この記述も合わせて更新すること。
 
 ### DSL 構文の不変条件（README サンプルの前提）
 
@@ -114,8 +123,15 @@ Obsidian プラグインのインストール手順はこの 3 ファイルを v
 
 ```text
 src/
-  main.ts      — プラグインエントリポイント。Plugin クラスと MarkdownRenderChild を定義
-  wasm.d.ts    — esbuild binary loader 向け .wasm 型宣言
+  main.ts               — プラグインエントリポイント。Plugin クラス・設定タブ・MarkdownRenderChild を定義
+  utils.ts              — 純関数群（`parseRenderDirectives` / 診断の整形 / 設定値の検証）。
+                          Obsidian API にも WASM にも依存しないのでそのままユニットテストできる
+  fence.ts              — エディタ内の `tdsl` フェンス検出（整形コマンドがカーソル位置から範囲を求める）
+  wasm-init.ts          — `createWasmInitializer()`。WASM 初期化の single-flight ガード
+  obsidian-rerender.ts  — 非公開 API `previewMode.rerender()` の薄いラッパー。
+                          設定変更時に開いているプレビューを再描画するために使う
+  wasm.d.ts             — esbuild binary loader 向け .wasm 型宣言
+  *.test.ts             — 上記モジュールの Vitest ユニットテスト
 esbuild.config.mjs  — ビルド設定（WASM インライン化・バンドル）
 main.js        — ビルド成果物（コミット済み、vault にコピーして使う）
 manifest.json  — Obsidian プラグインメタデータ
@@ -124,5 +140,6 @@ versions.json  — バージョン↔minAppVersion マッピング
 
 外部依存：
 
-- `@keroway/tdsl-wasm` — Rust/WASM レンダラー（`check_source` / `render_svg_from_source`）
+- `@keroway/tdsl-wasm` — Rust/WASM レンダラー。`src/main.ts` が import しているのは
+  `init` / `check_source` / `lint_source` / `format_source` / `render_svg_from_source_with_options` / `JsRenderOptions`
 - `obsidian` — Obsidian プラグイン API（`external` として esbuild からは除外）
