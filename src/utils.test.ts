@@ -21,8 +21,27 @@ import {
 	parseRenderDirectives,
 	parseScaleSetting,
 	resolveRenderOptions,
+	SYNTAX_REFERENCE_URL,
 	type TdslSettings,
 } from "./utils";
+
+// ----------------------------------------------------------------------------
+// SYNTAX_REFERENCE_URL
+// ----------------------------------------------------------------------------
+
+describe("SYNTAX_REFERENCE_URL", () => {
+	// This string is shipped into the error UI, where a typo is only visible by
+	// clicking through. Pin the parts that carry meaning.
+	it("is an absolute https URL", () => {
+		const url = new URL(SYNTAX_REFERENCE_URL);
+		expect(url.protocol).toBe("https:");
+		expect(url.hostname).toBe("timeline-dsl-lp.pages.dev");
+	});
+
+	it("points at the English locale (the plugin UI is English)", () => {
+		expect(new URL(SYNTAX_REFERENCE_URL).pathname).toBe("/en/docs/grammar/");
+	});
+});
 
 // ----------------------------------------------------------------------------
 // resolveRenderOptions (directive > setting > built-in)

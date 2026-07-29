@@ -3,6 +3,15 @@
  * These have no Obsidian API or WASM dependencies and can be unit-tested directly.
  */
 
+/**
+ * Grammar reference shown alongside compile errors.
+ *
+ * Points at the `/en/` locale: the Starlight site has `root` = Japanese and
+ * `en` as a sub-path, and every string this plugin renders is English.
+ */
+export const SYNTAX_REFERENCE_URL =
+	"https://timeline-dsl-lp.pages.dev/en/docs/grammar/";
+
 export interface Diagnostic {
 	severity: string;
 	message: string;
