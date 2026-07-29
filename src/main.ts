@@ -2,6 +2,7 @@ import init, {
 	check_source,
 	format_source,
 	JsRenderOptions,
+	lint_fix_source,
 	lint_source,
 	render_svg_from_source_with_options,
 } from "@keroway/tdsl-wasm";
@@ -277,6 +278,15 @@ export default class TimelineDslPlugin extends Plugin {
 			editorCallback: async (editor: Editor) => {
 				await ensureWasm();
 				formatCurrentBlock(editor);
+			},
+		});
+
+		this.addCommand({
+			id: "lint-fix-tdsl-block",
+			name: "Fix lint issues in current tdsl block",
+			editorCallback: async (editor: Editor) => {
+				await ensureWasm();
+				lintFixCurrentBlock(editor);
 			},
 		});
 
@@ -565,7 +575,24 @@ class TemplateSuggestModal extends SuggestModal<TimelineTemplate> {
 	}
 }
 
-function formatCurrentBlock(editor: Editor): void {
+/**
+ * Runs `transform` over the body of the tdsl block under the cursor and writes
+ * the result back.
+ *
+ * Shared by the format and lint-fix commands: both locate the same fence, both
+ * call a WASM function that throws a string on parse failure, and both must
+ * write through Editor.replaceRange so the edit lands on the undo stack.
+ *
+ * `errorLabel` names the operation in the failure Notice; `onApplied` reports
+ * success, and receives whether the transform actually changed anything so a
+ * caller can distinguish "fixed" from "nothing to do".
+ */
+function transformCurrentBlock(
+	editor: Editor,
+	transform: (body: string) => string,
+	errorLabel: string,
+	onApplied: (changed: boolean) => void,
+): void {
 	const cursor = editor.getCursor();
 	const lines: string[] = [];
 	for (let i = 0; i < editor.lineCount(); i++) {
@@ -587,16 +614,43 @@ function formatCurrentBlock(editor: Editor): void {
 
 	const body = extractFenceBody(lines, openLine, closeLine);
 
-	// Format the body; format_source throws a string error on parse failure.
-	let formatted: string;
+	// The WASM entry points throw a string error on parse failure.
+	let result: string;
 	try {
-		formatted = format_source(body);
+		result = transform(body);
 	} catch (e) {
-		new Notice(`Timeline DSL format error:\n${String(e)}`);
+		new Notice(`Timeline DSL ${errorLabel} error:\n${String(e)}`);
+		return;
+	}
+
+	// Skip the write when the transform is a no-op: lint_fix_source returns the
+	// source byte-identical if nothing is fixable, and replacing text with itself
+	// would still push a pointless entry onto the undo stack.
+	const next = ensureTrailingNewline(result);
+	if (next === body) {
+		onApplied(false);
 		return;
 	}
 
 	const { from, to } = fenceBodyRange(openLine, closeLine);
-	editor.replaceRange(ensureTrailingNewline(formatted), from, to);
-	new Notice("✔ Formatted the Timeline DSL block.");
+	editor.replaceRange(next, from, to);
+	onApplied(true);
+}
+
+function formatCurrentBlock(editor: Editor): void {
+	transformCurrentBlock(editor, format_source, "format", () => {
+		new Notice("✔ Formatted the Timeline DSL block.");
+	});
+}
+
+function lintFixCurrentBlock(editor: Editor): void {
+	transformCurrentBlock(editor, lint_fix_source, "lint fix", (changed) => {
+		// lint_fix_source returns the source unchanged when nothing is fixable,
+		// so tell the user which of the two happened rather than claiming a fix.
+		new Notice(
+			changed
+				? "✔ Fixed lint issues in the Timeline DSL block."
+				: "Timeline DSL: No automatically fixable lint issues found.",
+		);
+	});
 }
