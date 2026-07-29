@@ -126,9 +126,13 @@ span main 2010..now "Ongoing project" {};
 event_range main 2020..now "Still running" {};
 ```
 
-`now` resolves at render time to the current *year*, so pair it with
+`now` resolves at render time to the current *year* (UTC), so pair it with
 `unit year`. With `unit day` and date literals such as `2026-03-01..now` the end
 still resolves to the year, which produces a "start > end" warning.
+
+Open-ended items also get the `tdsl-item-open-ended` class, so a snippet in your
+vault's CSS can style them (a fading edge, a dashed border) — and their tooltip
+shows the end as "in progress" rather than a number.
 
 ##### `note` / `link` / `color` block options
 
@@ -146,8 +150,8 @@ span main 1603..1868 "Edo period" {
 | Option | Value | Effect |
 |---|---|---|
 | `note` | string | extra line in the item's tooltip / accessible label |
-| `link` | string (URL) | shown as a line in the tooltip — **not clickable**; the renderer emits no `<a>` element |
-| `color` | string (CSS colour) | overrides the item's fill, taking precedence over the lane colour and `color_map` |
+| `link` | `http://` or `https://` URL | shown as a line in the tooltip — **not clickable**; the renderer emits no `<a>` element. Any other scheme is a compile error |
+| `color` | `#RGB` / `#RGBA` / `#RRGGBB` / `#RRGGBBAA`, or a plain CSS colour keyword | overrides the item's fill, taking precedence over the lane colour and `color_map`. Other values (e.g. `rgb()`, `url()`) are rejected |
 
 `note` and `link` are surfaced through the item's `<title>`, `aria-label` and
 `data-tdsl-tooltip` attributes, so they show up as a native browser tooltip on
