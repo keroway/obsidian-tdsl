@@ -40,6 +40,7 @@ import {
 	parseLintIssues,
 	parseRenderDirectives,
 	resolveRenderOptions,
+	SYNTAX_REFERENCE_URL,
 	type TdslSettings,
 } from "./utils";
 import { createWasmInitializer } from "./wasm-init";
@@ -155,6 +156,16 @@ class TdslPreview extends MarkdownRenderChild {
 		container.createEl("pre", {
 			text: `Timeline DSL error:\n${messages.join("\n")}`,
 			cls: "tdsl-error",
+		});
+		// Sibling of the <pre>, not a child: <pre> holds a text node, and the
+		// grammar reference is the first thing to reach for on a syntax error
+		// (trailing `;` rules, `start..end` vs `start to end`).
+		// createEl keeps this off innerHTML, preserving the XSS-safe invariant.
+		container.createEl("a", {
+			text: "Syntax reference →",
+			cls: "tdsl-error-help",
+			href: SYNTAX_REFERENCE_URL,
+			attr: { target: "_blank", rel: "noopener noreferrer" },
 		});
 	}
 
