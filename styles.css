@@ -169,6 +169,12 @@
 	border-radius: 2px;
 }
 
+/* Secondary line in the "Insert timeline template" picker. */
+.tdsl-template-suggestion-desc {
+	font-size: 0.82em;
+	color: var(--text-muted);
+}
+
 /* Grammar reference link rendered under .tdsl-error. Uses theme variables only,
  * so it follows the vault's light/dark mode like the notice callouts below. */
 .tdsl-error-help {

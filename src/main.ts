@@ -16,10 +16,16 @@ import {
 	Plugin,
 	PluginSettingTab,
 	Setting,
+	SuggestModal,
 	type TextComponent,
 } from "obsidian";
 import { findTdslFenceAtCursor } from "./fence";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
+import {
+	renderTemplateSnippet,
+	TIMELINE_TEMPLATES,
+	type TimelineTemplate,
+} from "./templates";
 import {
 	commitScaleInput,
 	DEFAULT_SETTINGS,
@@ -273,6 +279,16 @@ export default class TimelineDslPlugin extends Plugin {
 				formatCurrentBlock(editor);
 			},
 		});
+
+		this.addCommand({
+			id: "insert-timeline-template",
+			name: "Insert timeline template",
+			// No ensureWasm(): this only writes text into the note. The block
+			// renders (and initialises WASM) through the code-block processor.
+			editorCallback: (editor: Editor) => {
+				new TemplateSuggestModal(this.app, editor).open();
+			},
+		});
 	}
 
 	onunload(): void {
@@ -503,6 +519,52 @@ class TdslSettingTab extends PluginSettingTab {
  *   error message and leaves the document unchanged.
  * - Uses Editor.replaceRange so the edit is undoable.
  */
+/**
+ * Picker for the "Insert timeline template" command.
+ *
+ * Deliberately thin: the template data and the fenced snippet it inserts live
+ * in src/templates.ts as pure functions, because Vitest runs with
+ * `environment: "node"` and cannot instantiate an Obsidian modal. Everything
+ * worth asserting is therefore testable without booting Obsidian.
+ */
+class TemplateSuggestModal extends SuggestModal<TimelineTemplate> {
+	private readonly editor: Editor;
+
+	constructor(app: App, editor: Editor) {
+		super(app);
+		this.editor = editor;
+		this.setPlaceholder("Pick a timeline template…");
+	}
+
+	getSuggestions(query: string): TimelineTemplate[] {
+		const q = query.toLowerCase().trim();
+		if (!q) return [...TIMELINE_TEMPLATES];
+		return TIMELINE_TEMPLATES.filter(
+			(t) =>
+				t.name.toLowerCase().includes(q) ||
+				t.description.toLowerCase().includes(q),
+		);
+	}
+
+	renderSuggestion(template: TimelineTemplate, el: HTMLElement): void {
+		el.createDiv({ text: template.name });
+		el.createDiv({
+			text: template.description,
+			cls: "tdsl-template-suggestion-desc",
+		});
+	}
+
+	onChooseSuggestion(template: TimelineTemplate): void {
+		// replaceRange at the cursor keeps the insert undoable, matching how
+		// formatCurrentBlock edits the document.
+		this.editor.replaceRange(
+			renderTemplateSnippet(template),
+			this.editor.getCursor(),
+		);
+		new Notice(`✔ Inserted the "${template.name}" template.`);
+	}
+}
+
 function formatCurrentBlock(editor: Editor): void {
 	const cursor = editor.getCursor();
 	const lines: string[] = [];
