@@ -20,10 +20,37 @@ import {
 	parseLintIssues,
 	parseRenderDirectives,
 	parseScaleSetting,
+	resolveEditorLine,
 	resolveRenderOptions,
 	SYNTAX_REFERENCE_URL,
 	type TdslSettings,
 } from "./utils";
+
+// ----------------------------------------------------------------------------
+// resolveEditorLine
+// ----------------------------------------------------------------------------
+
+describe("resolveEditorLine", () => {
+	// lineStart is the 0-based line of the ```tdsl fence, so body line 1 is the
+	// line right after it. Getting this off by one sends the cursor to the fence
+	// (or into the previous paragraph) instead of the offending statement.
+	it("maps body line 1 to the line just after the opening fence", () => {
+		expect(resolveEditorLine(10, 1)).toBe(11);
+	});
+
+	it("maps later body lines by the same offset", () => {
+		expect(resolveEditorLine(10, 5)).toBe(15);
+	});
+
+	it("works when the block starts at the top of the note", () => {
+		expect(resolveEditorLine(0, 1)).toBe(1);
+	});
+
+	it("returns null for a diagnostic with no position", () => {
+		expect(resolveEditorLine(10, 0)).toBeNull();
+		expect(resolveEditorLine(10, -1)).toBeNull();
+	});
+});
 
 // ----------------------------------------------------------------------------
 // SYNTAX_REFERENCE_URL

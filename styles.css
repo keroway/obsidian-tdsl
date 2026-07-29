@@ -169,6 +169,21 @@
 	border-radius: 2px;
 }
 
+/* Clickable `Line N` in error / warning / lint rows — jumps the editor cursor
+ * to that line. Styled as a link but kept a <span>, since it navigates within
+ * the note rather than to a URL. */
+.tdsl-line-link {
+	color: var(--text-accent);
+	cursor: pointer;
+	text-decoration: underline dotted;
+}
+
+.tdsl-line-link:hover,
+.tdsl-line-link:focus-visible {
+	color: var(--text-accent-hover, var(--text-accent));
+	text-decoration: underline;
+}
+
 /* Secondary line in the "Insert timeline template" picker. */
 .tdsl-template-suggestion-desc {
 	font-size: 0.82em;

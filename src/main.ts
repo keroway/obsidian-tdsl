@@ -12,7 +12,9 @@ import wasmBytes from "@keroway/tdsl-wasm/tdsl_wasm_bg.wasm";
 import {
 	type App,
 	type Editor,
+	type MarkdownPostProcessorContext,
 	MarkdownRenderChild,
+	MarkdownView,
 	Notice,
 	Plugin,
 	PluginSettingTab,
@@ -30,7 +32,9 @@ import {
 import {
 	commitScaleInput,
 	DEFAULT_SETTINGS,
+	type DiagnosticParts,
 	debounce,
+	diagnosticParts,
 	ensureTrailingNewline,
 	extractFenceBody,
 	extractTimelineTitle,
@@ -38,14 +42,14 @@ import {
 	filterErrors,
 	filterInfos,
 	filterWarnings,
-	formatDiagnosticMessages,
-	formatLintIssues,
 	hasWikidataImport,
 	isRecognizedLaneHeightInput,
+	lintIssueParts,
 	parseDiagnostics,
 	parseLaneHeightSetting,
 	parseLintIssues,
 	parseRenderDirectives,
+	resolveEditorLine,
 	resolveRenderOptions,
 	SYNTAX_REFERENCE_URL,
 	type TdslSettings,
@@ -59,9 +63,19 @@ const ensureWasm = createWasmInitializer(async () => {
 class TdslPreview extends MarkdownRenderChild {
 	private readonly source: string;
 	private readonly settings: TdslSettings;
+	private readonly app: App;
+	private readonly ctx: MarkdownPostProcessorContext;
 
-	constructor(container: HTMLElement, source: string, settings: TdslSettings) {
+	constructor(
+		container: HTMLElement,
+		source: string,
+		settings: TdslSettings,
+		app: App,
+		ctx: MarkdownPostProcessorContext,
+	) {
 		super(container);
+		this.app = app;
+		this.ctx = ctx;
 		this.source = source;
 		this.settings = settings;
 	}
@@ -80,7 +94,7 @@ class TdslPreview extends MarkdownRenderChild {
 			const infos = filterInfos(diagnostics);
 
 			if (errors.length > 0) {
-				this.showErrors(wrapper, formatDiagnosticMessages(errors));
+				this.showErrorDiagnostics(wrapper, errors);
 				return;
 			}
 
@@ -138,17 +152,18 @@ class TdslPreview extends MarkdownRenderChild {
 				const lintIssues = parseLintIssues(lintJson).filter(
 					(i) => i.code !== "parse_error",
 				);
-				const messages = formatLintIssues(lintIssues);
-				if (messages.length > 0) {
+				if (lintIssues.length > 0) {
 					const lintBanner = wrapper.createDiv({
 						cls: "tdsl-lint-banner",
 					});
-					for (const msg of messages) {
+					for (const issue of lintIssues) {
 						const row = lintBanner.createDiv({
 							cls: "tdsl-notice tdsl-notice-warning",
 						});
 						row.createSpan({ text: "⚠ " });
-						row.createSpan({ text: msg });
+						// Same pieces formatLintIssues joins into a string, kept apart so
+						// the `Line N` segment can be its own clickable element.
+						this.appendDiagnosticLine(row, lintIssueParts(issue));
 					}
 				}
 			} catch {
@@ -159,15 +174,91 @@ class TdslPreview extends MarkdownRenderChild {
 		}
 	}
 
+	/**
+	 * Moves the cursor to the note line a diagnostic points at.
+	 *
+	 * Only acts when the active Markdown view is the note this block lives in:
+	 * the same rendered block can sit in a background pane or an embed, and
+	 * jumping the *other* note's cursor would be worse than doing nothing.
+	 */
+	private jumpToBlockLine(blockLine: number): void {
+		const section = this.ctx.getSectionInfo(this.containerEl);
+		if (!section) return;
+
+		const line = resolveEditorLine(section.lineStart, blockLine);
+		if (line === null) return;
+
+		const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!view || view.file?.path !== this.ctx.sourcePath) return;
+
+		const pos = { line, ch: 0 };
+		view.editor.setCursor(pos);
+		view.editor.scrollIntoView({ from: pos, to: pos }, true);
+		view.editor.focus();
+	}
+
+	/**
+	 * Renders `Line N` as a clickable element and the rest as plain text.
+	 *
+	 * Diagnostics arrive with the line number already separated from the
+	 * message, so the label is built here rather than parsed back out of a
+	 * formatted string.
+	 */
+	private appendDiagnosticLine(
+		parent: HTMLElement,
+		parts: DiagnosticParts,
+	): void {
+		const { prefix, line: blockLine, text } = parts;
+		if (prefix) parent.createSpan({ text: prefix });
+		if (blockLine > 0) {
+			const link = parent.createSpan({
+				text: `Line ${blockLine}`,
+				cls: "tdsl-line-link",
+				attr: { role: "button", tabindex: "0" },
+			});
+			link.addEventListener("click", () => this.jumpToBlockLine(blockLine));
+			link.addEventListener("keydown", (ev: KeyboardEvent) => {
+				if (ev.key === "Enter" || ev.key === " ") {
+					ev.preventDefault();
+					this.jumpToBlockLine(blockLine);
+				}
+			});
+			parent.createSpan({ text: `: ${text}` });
+		} else {
+			parent.createSpan({ text });
+		}
+	}
+
+	/** Compile errors, with each `Line N` wired up to jump into the editor. */
+	private showErrorDiagnostics(
+		container: HTMLElement,
+		errors: import("./utils").Diagnostic[],
+	): void {
+		// <pre> accepts phrasing content, so the clickable spans live inside it
+		// and the existing .tdsl-error styling (including white-space: pre-wrap)
+		// still applies. createEl/createSpan keep this off innerHTML.
+		const pre = container.createEl("pre", { cls: "tdsl-error" });
+		pre.createSpan({ text: "Timeline DSL error:\n" });
+		errors.forEach((e, i) => {
+			this.appendDiagnosticLine(pre, diagnosticParts(e));
+			if (i < errors.length - 1) pre.createSpan({ text: "\n" });
+		});
+		this.appendSyntaxReference(container);
+	}
+
 	private showErrors(container: HTMLElement, messages: string[]): void {
 		container.createEl("pre", {
 			text: `Timeline DSL error:\n${messages.join("\n")}`,
 			cls: "tdsl-error",
 		});
-		// Sibling of the <pre>, not a child: <pre> holds a text node, and the
-		// grammar reference is the first thing to reach for on a syntax error
-		// (trailing `;` rules, `start..end` vs `start to end`).
-		// createEl keeps this off innerHTML, preserving the XSS-safe invariant.
+		this.appendSyntaxReference(container);
+	}
+
+	/**
+	 * Sibling of the <pre>: the grammar reference is the first thing to reach
+	 * for on a syntax error (trailing `;` rules, `start..end` vs `start to end`).
+	 */
+	private appendSyntaxReference(container: HTMLElement): void {
 		container.createEl("a", {
 			text: "Syntax reference →",
 			cls: "tdsl-error-help",
@@ -182,12 +273,11 @@ class TdslPreview extends MarkdownRenderChild {
 		diag: import("./utils").Diagnostic,
 	): void {
 		const icon = kind === "warning" ? "⚠ " : "ℹ ";
-		const prefix = diag.line > 0 ? `Line ${diag.line}: ` : "";
 		const notice = container.createDiv({
 			cls: `tdsl-notice tdsl-notice-${kind}`,
 		});
 		notice.createSpan({ text: icon });
-		notice.createSpan({ text: `${prefix}${diag.message}` });
+		this.appendDiagnosticLine(notice, diagnosticParts(diag));
 	}
 }
 
@@ -269,7 +359,7 @@ export default class TimelineDslPlugin extends Plugin {
 		this.settingTab = new TdslSettingTab(this.app, this);
 		this.addSettingTab(this.settingTab);
 		this.registerMarkdownCodeBlockProcessor("tdsl", (_source, el, ctx) => {
-			ctx.addChild(new TdslPreview(el, _source, this.settings));
+			ctx.addChild(new TdslPreview(el, _source, this.settings, this.app, ctx));
 		});
 
 		this.addCommand({
