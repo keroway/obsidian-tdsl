@@ -6,7 +6,7 @@ Thank you for your interest in contributing!
 
 | Tool | Version |
 |---|---|
-| Node.js | 24 |
+| Node.js | 26 |
 | pnpm | 11 (pinned via `mise.toml` / `packageManager`) |
 
 ## Setup
