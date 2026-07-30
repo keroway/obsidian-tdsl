@@ -14,7 +14,7 @@ pnpm run format:check  # biome format .（CI 用。未整形があれば失敗�
 pnpm run check         # biome check + typecheck + test（コミット前の全通し）
 ```
 
-パッケージマネージャは **pnpm 11**、Node は **24**（`mise.toml` でピン）。
+パッケージマネージャは **pnpm 11**、Node は **26**（`mise.toml` でピン）。
 git hooks は **lefthook**（`lefthook.yml`、`pnpm install` 時に自動設置）。
 
 ## フォーマット方針
