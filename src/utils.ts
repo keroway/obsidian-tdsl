@@ -239,6 +239,42 @@ export function extractTimelineTitle(source: string): string | null {
 	return m?.[1].trim() ? m[1].trim() : null;
 }
 
+/**
+ * Lightweight estimate of item count, used to decide whether a diagram is
+ * large enough to guard behind a render confirmation (see
+ * `exceedsLargeDiagramThreshold`). Counts `span` / `event` / `event_range`
+ * keyword occurrences via a single regex pass — `event_range` is tried
+ * before `event` in the alternation so it is consumed whole and not
+ * double-counted as a plain `event`.
+ *
+ * This is deliberately a rough count, not a parse: false positives from a
+ * keyword appearing in a comment or string are acceptable, since the guard
+ * only needs to be right at the "very large diagram" order of magnitude.
+ */
+export function estimateItemCount(source: string): number {
+	const matches = source.match(/\b(?:event_range|event|span)\b/g);
+	return matches ? matches.length : 0;
+}
+
+/**
+ * Threshold (estimated declared items) above which a diagram is guarded
+ * behind a "Render diagram" confirmation instead of rendering immediately.
+ *
+ * Each item contributes several SVG nodes (a band/marker shape, a label
+ * `<text>`, a `<title>`, a transparent hit-area, plus stems/dots for event
+ * items), so 500 items works out to roughly 2000-2500 DOM nodes produced by
+ * a single WASM render + `DOMParser` parse + `adoptNode` call — comfortably
+ * past the point where a slower device can start to notice a stutter while
+ * the note is open. Typical historical timelines (dozens to a few hundred
+ * items, per the README's `range 794..1868` example) stay well under this.
+ */
+export const LARGE_DIAGRAM_ITEM_THRESHOLD = 500;
+
+/** Whether `source` is large enough to guard behind a render confirmation. */
+export function exceedsLargeDiagramThreshold(source: string): boolean {
+	return estimateItemCount(source) > LARGE_DIAGRAM_ITEM_THRESHOLD;
+}
+
 /** Parses the JSON string returned by `check_source` into a Diagnostic array. */
 export function parseDiagnostics(json: string): Diagnostic[] {
 	try {

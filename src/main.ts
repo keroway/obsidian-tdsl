@@ -42,6 +42,7 @@ import {
 	debounce,
 	diagnosticParts,
 	ensureTrailingNewline,
+	exceedsLargeDiagramThreshold,
 	extractFenceBody,
 	extractTimelineTitle,
 	fenceBodyRange,
@@ -76,6 +77,7 @@ class TdslPreview extends MarkdownRenderChild {
 	private readonly ctx: MarkdownPostProcessorContext;
 	private cancelPendingLint: (() => void) | null = null;
 	private unloaded = false;
+	private userAcceptedLargeDiagram = false;
 
 	constructor(
 		container: HTMLElement,
@@ -93,6 +95,22 @@ class TdslPreview extends MarkdownRenderChild {
 
 	async onload(): Promise<void> {
 		const wrapper = this.containerEl.createDiv({ cls: "tdsl-preview" });
+		// A very large diagram's SVG generation, XML parsing, and DOM
+		// construction can block the main thread; guard it behind an explicit
+		// confirmation instead of rendering unconditionally. The check is a
+		// lightweight source scan (no WASM call) so it costs nothing for the
+		// overwhelming majority of diagrams that stay under the threshold.
+		if (
+			!this.userAcceptedLargeDiagram &&
+			exceedsLargeDiagramThreshold(this.source)
+		) {
+			this.showLargeDiagramGuard(wrapper);
+			return;
+		}
+		await this.renderDiagram(wrapper);
+	}
+
+	private async renderDiagram(wrapper: HTMLElement): Promise<void> {
 		// Resolve before lookup: source plus these effective options determine output.
 		const r = resolveRenderOptions(
 			parseRenderDirectives(this.source),
@@ -169,6 +187,31 @@ class TdslPreview extends MarkdownRenderChild {
 		} catch (e) {
 			this.showErrors(wrapper, [String(e)]);
 		}
+	}
+
+	/**
+	 * Shown instead of rendering when `estimateItemCount` exceeds
+	 * `LARGE_DIAGRAM_ITEM_THRESHOLD`. Clicking through re-runs `onload()` via
+	 * the `userAcceptedLargeDiagram` flag, which is per-instance: switching
+	 * away and back to the note re-creates the `MarkdownRenderChild` and asks
+	 * again.
+	 */
+	private showLargeDiagramGuard(wrapper: HTMLElement): void {
+		const notice = wrapper.createDiv({ cls: "tdsl-notice tdsl-notice-info" });
+		notice.createSpan({ text: "ℹ " });
+		notice.createSpan({
+			text: "This is a large diagram. Rendering it may briefly block the UI.",
+		});
+		const button = wrapper.createEl("button", {
+			text: "Render diagram",
+			cls: "tdsl-toolbar-button",
+			attr: { type: "button" },
+		});
+		button.addEventListener("click", () => {
+			this.userAcceptedLargeDiagram = true;
+			wrapper.empty();
+			void this.renderDiagram(wrapper);
+		});
 	}
 
 	onunload(): void {

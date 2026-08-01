@@ -4,6 +4,8 @@ import {
 	DEFAULT_SETTINGS,
 	debounce,
 	ensureTrailingNewline,
+	estimateItemCount,
+	exceedsLargeDiagramThreshold,
 	extractFenceBody,
 	extractTimelineTitle,
 	fenceBodyRange,
@@ -354,6 +356,57 @@ describe("hasWikidataImport", () => {
 
 	it("returns false for an empty string", () => {
 		expect(hasWikidataImport("")).toBe(false);
+	});
+});
+
+// ----------------------------------------------------------------------------
+// estimateItemCount / exceedsLargeDiagramThreshold
+// ----------------------------------------------------------------------------
+
+describe("estimateItemCount", () => {
+	it("counts span, event, and event_range declarations", () => {
+		const source = [
+			'span a 2020 2025 "Era" {};',
+			'event b 2021 "Point" {};',
+			'event_range c 2022 2023 "Range" {};',
+		].join("\n");
+		expect(estimateItemCount(source)).toBe(3);
+	});
+
+	it("does not double-count event_range as both event_range and event", () => {
+		expect(estimateItemCount('event_range c 2022 2023 "Range" {};')).toBe(1);
+	});
+
+	it("returns 0 for a source with no items", () => {
+		expect(
+			estimateItemCount('timeline "Empty"\nunit year;\nrange 0..10;'),
+		).toBe(0);
+	});
+
+	it("returns 0 for an empty string", () => {
+		expect(estimateItemCount("")).toBe(0);
+	});
+});
+
+describe("exceedsLargeDiagramThreshold", () => {
+	it("returns false for a small diagram", () => {
+		expect(exceedsLargeDiagramThreshold('span a 1..2 "x" {};')).toBe(false);
+	});
+
+	it("returns true once the item count exceeds the threshold", () => {
+		const source = Array.from(
+			{ length: 501 },
+			(_, i) => `span s${i} ${i}..${i + 1} "x" {};`,
+		).join("\n");
+		expect(exceedsLargeDiagramThreshold(source)).toBe(true);
+	});
+
+	it("returns false right at the threshold", () => {
+		const source = Array.from(
+			{ length: 500 },
+			(_, i) => `span s${i} ${i}..${i + 1} "x" {};`,
+		).join("\n");
+		expect(exceedsLargeDiagramThreshold(source)).toBe(false);
 	});
 });
 
