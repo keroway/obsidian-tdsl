@@ -177,6 +177,37 @@
 	stroke: var(--background-primary);
 }
 
+/* ── Fullscreen modal (main.ts TdslFullscreenModal) ──
+ *
+ * Sizes the modal to most of the viewport and lets the cloned SVG fill it
+ * (preserving aspect ratio via the SVG's own viewBox), instead of the inline
+ * preview's natural-size + horizontal-scroll behaviour. Pan/zoom inside the
+ * modal is independent of the inline preview's own state (separate DOM node,
+ * separate setupPanZoom() closure). */
+.tdsl-fullscreen-modal {
+	width: 90vw;
+	height: 90vh;
+}
+
+.tdsl-fullscreen-modal .modal-content {
+	height: 100%;
+	padding: 0;
+	display: flex;
+}
+
+.tdsl-preview.tdsl-fullscreen-preview {
+	flex: 1;
+	overflow: hidden;
+	padding: 0;
+	border-radius: 0;
+}
+
+.tdsl-preview.tdsl-fullscreen-preview svg {
+	width: 100%;
+	height: 100%;
+	max-width: none;
+}
+
 /* ── Item tooltip (note / link) ──
  *
  * A real DOM element rather than `::after` generated content: Chromium does
