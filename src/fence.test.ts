@@ -238,4 +238,10 @@ describe("listTdslFenceRanges", () => {
 			listTdslFenceRanges(["~~~tdsl", "timeline {}", "~~~", "after"]),
 		).toEqual([{ openLine: 0, closeLine: 2 }]);
 	});
+
+	it("accepts a longer close fence than the open fence", () => {
+		expect(listTdslFenceRanges(["````tdsl", "timeline {}", "`````"])).toEqual([
+			{ openLine: 0, closeLine: 2 },
+		]);
+	});
 });

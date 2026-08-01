@@ -30,8 +30,16 @@ const TDSL_HIGHLIGHTER = tagHighlighter([
 	{ tag: tags.special(tags.variableName), class: "tdsl-tok-special" },
 ]);
 
-/** Caps how long a single block's synchronous parse may run, in milliseconds. */
-const PARSE_TIMEOUT_MS = 50;
+/**
+ * Caps the *total* synchronous parse time across every visible block in one
+ * `buildDecorations()` call, in milliseconds — not a per-block budget. A note
+ * can have many visible tdsl blocks at once, and a fixed per-block timeout
+ * would let their worst-case parse times add up into a stall proportional to
+ * block count; this instead shrinks each remaining block's budget as the
+ * total is spent, and stops parsing further blocks once it runs out (they
+ * pick up highlighting on the next docChanged/viewportChanged pass).
+ */
+const TOTAL_PARSE_BUDGET_MS = 50;
 
 /**
  * Highlights one tdsl block's body (`[bodyFrom, bodyTo)` in the *host*
@@ -44,21 +52,26 @@ const PARSE_TIMEOUT_MS = 50;
  * cross-block `StreamLanguage` state (`TdslState.inBlockComment`) never
  * leaks between blocks: `EditorState.create` always starts from
  * `tdslLanguage`'s `startState()`, same as a fresh document would.
+ *
+ * Returns false (having highlighted nothing) when the block wasn't parsed
+ * within `budgetMs`, so the caller can stop spending the shared budget on
+ * further blocks.
  */
 function highlightBlock(
 	sourceView: EditorView,
 	builder: RangeSetBuilder<Decoration>,
 	bodyFrom: number,
 	bodyTo: number,
-): void {
-	if (bodyFrom >= bodyTo) return;
+	budgetMs: number,
+): boolean {
+	if (bodyFrom >= bodyTo) return true;
 	const text = sourceView.state.sliceDoc(bodyFrom, bodyTo);
 	const blockState = EditorState.create({
 		doc: text,
 		extensions: [tdslLanguage],
 	});
-	const tree = ensureSyntaxTree(blockState, text.length, PARSE_TIMEOUT_MS);
-	if (!tree) return;
+	const tree = ensureSyntaxTree(blockState, text.length, budgetMs);
+	if (!tree) return false;
 
 	highlightTree(tree, TDSL_HIGHLIGHTER, (from, to, classes) => {
 		builder.add(
@@ -67,6 +80,7 @@ function highlightBlock(
 			Decoration.mark({ class: classes }),
 		);
 	});
+	return true;
 }
 
 /**
@@ -81,6 +95,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 	const lines: string[] = [];
 	for (let i = 1; i <= doc.lines; i++) lines.push(doc.line(i).text);
 
+	const start = performance.now();
 	for (const { openLine, closeLine } of listTdslFenceRanges(lines)) {
 		// 0-indexed `lines` positions -> 1-indexed CodeMirror line numbers.
 		// Body is empty when the open and close fences are adjacent.
@@ -96,7 +111,9 @@ function buildDecorations(view: EditorView): DecorationSet {
 		);
 		if (!inViewport) continue;
 
-		highlightBlock(view, builder, bodyFrom, bodyTo);
+		const remainingBudget = TOTAL_PARSE_BUDGET_MS - (performance.now() - start);
+		if (remainingBudget <= 0) break;
+		highlightBlock(view, builder, bodyFrom, bodyTo, remainingBudget);
 	}
 
 	return builder.finish();
