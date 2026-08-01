@@ -109,3 +109,40 @@ export function findTdslFenceAtCursor(
 
 	return { status: "not-in-block" };
 }
+
+/**
+ * Lists every *closed* `tdsl` fenced code block in the document, as
+ * `{ openLine, closeLine }` pairs (same 0-indexed, half-open-body convention
+ * as `findTdslFenceAtCursor`'s `found` result).
+ *
+ * Unlike `findTdslFenceAtCursor`, an unclosed trailing tdsl block is silently
+ * omitted rather than reported as an error: this function feeds the editor
+ * syntax-highlighting extension, which has nothing useful to highlight (or
+ * decorate) without a close fence, and no cursor position to report a
+ * `missing-close` diagnostic against.
+ */
+export function listTdslFenceRanges(
+	lines: readonly string[],
+): TdslFenceRange[] {
+	const ranges: TdslFenceRange[] = [];
+
+	for (let i = 0; i < lines.length; i++) {
+		const open = parseFence(lines[i] ?? "");
+		if (!open) continue;
+
+		let closeLine = -1;
+		for (let j = i + 1; j < lines.length; j++) {
+			const candidate = parseFence(lines[j] ?? "");
+			if (candidate && closes(open, candidate)) {
+				closeLine = j;
+				break;
+			}
+		}
+
+		if (closeLine === -1) break;
+		if (isTdsl(open)) ranges.push({ openLine: i, closeLine });
+		i = closeLine;
+	}
+
+	return ranges;
+}

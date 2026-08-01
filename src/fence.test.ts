@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findTdslFenceAtCursor } from "./fence";
+import { findTdslFenceAtCursor, listTdslFenceRanges } from "./fence";
 
 describe("findTdslFenceAtCursor", () => {
 	it("finds a tdsl fence when the cursor is on a body line", () => {
@@ -162,5 +162,80 @@ describe("findTdslFenceAtCursor", () => {
 		expect(findTdslFenceAtCursor(["```js", "console.log(1)"], 1)).toEqual({
 			status: "not-in-block",
 		});
+	});
+});
+
+describe("listTdslFenceRanges", () => {
+	it("returns an empty list when the document has no fences", () => {
+		expect(listTdslFenceRanges(["plain markdown", "more text"])).toEqual([]);
+	});
+
+	it("lists a single closed tdsl block", () => {
+		expect(
+			listTdslFenceRanges(["before", "```tdsl", "timeline {}", "```", "after"]),
+		).toEqual([{ openLine: 1, closeLine: 3 }]);
+	});
+
+	it("lists every closed tdsl block in the document", () => {
+		expect(
+			listTdslFenceRanges([
+				"```tdsl",
+				"timeline {}",
+				"```",
+				"between",
+				"```tdsl",
+				"timeline {}",
+				"```",
+			]),
+		).toEqual([
+			{ openLine: 0, closeLine: 2 },
+			{ openLine: 4, closeLine: 6 },
+		]);
+	});
+
+	it("ignores non-tdsl code fences", () => {
+		expect(listTdslFenceRanges(["```js", "console.log(1)", "```"])).toEqual([]);
+	});
+
+	it("omits an unclosed trailing tdsl block instead of erroring", () => {
+		expect(
+			listTdslFenceRanges(["```tdsl", "timeline {}", "still open"]),
+		).toEqual([]);
+	});
+
+	it("still lists a closed tdsl block that precedes an unclosed trailing block", () => {
+		expect(
+			listTdslFenceRanges([
+				"```tdsl",
+				"timeline {}",
+				"```",
+				"```tdsl",
+				"still open",
+			]),
+		).toEqual([{ openLine: 0, closeLine: 2 }]);
+	});
+
+	it("lists a tdsl block nested inside a callout", () => {
+		expect(
+			listTdslFenceRanges([
+				"> [!note]",
+				"> ```tdsl",
+				"> timeline {}",
+				"> ```",
+				"after",
+			]),
+		).toEqual([{ openLine: 1, closeLine: 3 }]);
+	});
+
+	it("does not treat a tdsl fence inside another language's block as a block", () => {
+		expect(
+			listTdslFenceRanges(["````md", "```tdsl", "timeline {}", "```", "````"]),
+		).toEqual([]);
+	});
+
+	it("lists a tilde fence (~~~tdsl)", () => {
+		expect(
+			listTdslFenceRanges(["~~~tdsl", "timeline {}", "~~~", "after"]),
+		).toEqual([{ openLine: 0, closeLine: 2 }]);
 	});
 });

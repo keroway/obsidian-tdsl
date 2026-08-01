@@ -27,6 +27,7 @@ import {
 	TFile,
 } from "obsidian";
 import { copyImageToClipboard, copyTextToClipboard } from "./clipboard";
+import { tdslEditorHighlight } from "./editor-highlight";
 import { findTdslFenceAtCursor } from "./fence";
 import { idleScheduler } from "./idle-scheduler";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
@@ -805,6 +806,9 @@ export default class TimelineDslPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor("tdsl", (_source, el, ctx) => {
 			ctx.addChild(new TdslPreview(el, _source, this.settings, this.app, ctx));
 		});
+		// Colours tdsl blocks in the editor (Live Preview + Source mode); the
+		// read-view processor above has no effect on the editor itself.
+		this.registerEditorExtension(tdslEditorHighlight);
 
 		this.addCommand({
 			id: "format-tdsl-block",
