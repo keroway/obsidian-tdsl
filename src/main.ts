@@ -23,10 +23,11 @@ import {
 	SuggestModal,
 	type TextComponent,
 } from "obsidian";
-import { copyTextToClipboard } from "./clipboard";
+import { copyImageToClipboard, copyTextToClipboard } from "./clipboard";
 import { findTdslFenceAtCursor } from "./fence";
 import { idleScheduler } from "./idle-scheduler";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
+import { svgToPngBlob } from "./png-export";
 import { renderCacheKey, SvgLruCache } from "./render-cache";
 import { resolveStandaloneHtmlRender } from "./standalone-html";
 import {
@@ -217,6 +218,14 @@ class TdslPreview extends MarkdownRenderChild {
 		copyHtmlButton.addEventListener("click", () => {
 			void this.copyStandaloneHtml();
 		});
+		const copyPngButton = toolbar.createEl("button", {
+			text: "Copy PNG",
+			cls: "tdsl-toolbar-button",
+			attr: { type: "button" },
+		});
+		copyPngButton.addEventListener("click", () => {
+			void this.copyPng();
+		});
 	}
 
 	/**
@@ -295,6 +304,39 @@ class TdslPreview extends MarkdownRenderChild {
 			}
 		} catch {
 			new Notice("Timeline DSL: Could not generate standalone HTML.");
+		}
+	}
+
+	/**
+	 * Renders a copy of the SVG with a forced (non-`"auto"`) renderer theme,
+	 * then rasterizes it to PNG for the clipboard.
+	 *
+	 * A forced theme is required because `svgToPngBlob` loads the SVG in an
+	 * isolated `<img>` context that cannot see `.tdsl-preview`'s host CSS —
+	 * the same reason `copyStandaloneHtml` forces a theme above.
+	 */
+	private async copyPng(): Promise<void> {
+		try {
+			await ensureWasm();
+			const render = resolveStandaloneHtmlRender(
+				resolveRenderOptions(parseRenderDirectives(this.source), this.settings),
+				document.body.classList.contains("theme-dark"),
+			);
+			const svg = renderSvg(this.source, render);
+			const blob = await svgToPngBlob(svg);
+			switch (await copyImageToClipboard(blob, "image/png")) {
+				case "copied":
+					new Notice("✔ Copied timeline PNG to the clipboard.");
+					break;
+				case "unavailable":
+					new Notice("Timeline DSL: Clipboard API is unavailable.");
+					break;
+				case "failed":
+					new Notice("Timeline DSL: Could not copy PNG to the clipboard.");
+					break;
+			}
+		} catch {
+			new Notice("Timeline DSL: Could not generate a PNG image.");
 		}
 	}
 
