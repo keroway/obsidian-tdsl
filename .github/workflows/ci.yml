@@ -9,8 +9,87 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      test: ${{ steps.filter.outputs.test }}
+      lint: ${{ steps.filter.outputs.lint }}
+      typecheck: ${{ steps.filter.outputs.typecheck }}
+      build: ${{ steps.filter.outputs.build }}
+      audit: ${{ steps.filter.outputs.audit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Keep required check names stable while avoiding Node setup and dependency
+      # installation when a job cannot be affected by the changed paths.
+      - id: filter
+        name: Classify changed files
+        env:
+          BEFORE: ${{ github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            base="${BASE_SHA}"
+          else
+            base="${BEFORE}"
+          fi
+
+          # A first push has no usable predecessor. Run every verification rather
+          # than risk overlooking a change.
+          if [[ -z "${base}" || "${base}" == "0000000000000000000000000000000000000000" ]]; then
+            changed_files="__all__"
+          else
+            changed_files="$(git diff --name-only "${base}" "${HEAD_SHA}")"
+          fi
+
+          test=false
+          lint=false
+          typecheck=false
+          build=false
+          audit=false
+
+          while IFS= read -r file; do
+            case "${file}" in
+              __all__|.github/workflows/ci.yml|mise.toml)
+                test=true; lint=true; typecheck=true; build=true; audit=true ;;
+              src/**)
+                test=true; lint=true; typecheck=true; build=true ;;
+              esbuild.config.mjs)
+                lint=true; build=true ;;
+              vitest.config.ts)
+                test=true; lint=true; typecheck=true ;;
+              tsconfig.json)
+                lint=true; typecheck=true ;;
+              biome.json|version-bump.mjs|styles.css|manifest.json|versions.json)
+                lint=true ;;
+              package.json|pnpm-lock.yaml|pnpm-workspace.yaml)
+                test=true; lint=true; typecheck=true; build=true; audit=true ;;
+            esac
+          done <<< "${changed_files}"
+
+          {
+            echo "test=${test}"
+            echo "lint=${lint}"
+            echo "typecheck=${typecheck}"
+            echo "build=${build}"
+            echo "audit=${audit}"
+          } >> "${GITHUB_OUTPUT}"
+
   test:
+    needs: changes
+    if: needs.changes.outputs.test == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -33,6 +112,8 @@ jobs:
         run: pnpm test
 
   lint:
+    needs: changes
+    if: needs.changes.outputs.lint == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -58,6 +139,8 @@ jobs:
         run: pnpm run lint
 
   typecheck:
+    needs: changes
+    if: needs.changes.outputs.typecheck == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -80,6 +163,8 @@ jobs:
         run: pnpm run typecheck
 
   build:
+    needs: changes
+    if: needs.changes.outputs.build == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -105,6 +190,8 @@ jobs:
         run: test -f main.js && echo "main.js generated successfully"
 
   audit:
+    needs: changes
+    if: needs.changes.outputs.audit == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

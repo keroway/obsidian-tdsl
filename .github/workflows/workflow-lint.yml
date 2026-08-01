@@ -4,6 +4,9 @@ name: workflow-lint
 on:
   push:
     branches: [main]
+    paths:
+      - ".github/workflows/**"
+      - "**/*.sh"
   pull_request:
     paths:
       - ".github/workflows/**"
