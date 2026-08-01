@@ -59,6 +59,19 @@
 	width: auto;
 	height: auto;
 	max-width: none;
+	cursor: grab;
+	touch-action: none;
+}
+
+/* Set on .tdsl-preview while a drag-pan is in progress (main.ts setupPanZoom).
+ * Suppresses the container's own horizontal scrollbar drag so it doesn't fight
+ * the viewBox-based pan, and shows a grabbing cursor for the duration. */
+.tdsl-preview.tdsl-panning {
+	overflow: hidden;
+}
+
+.tdsl-preview.tdsl-panning svg {
+	cursor: grabbing;
 }
 
 /*
