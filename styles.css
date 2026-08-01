@@ -198,6 +198,32 @@
 	stroke: #585b70;
 }
 
+/* ── Item tooltip (note / link) ──
+ *
+ * A real DOM element rather than `::after` generated content: Chromium does
+ * not paint pseudo-element content on SVG `<g>` elements, so a CSS-only
+ * hover tooltip is not viable here. Positioned via pointermove in main.ts.
+ */
+.tdsl-tooltip {
+	position: absolute;
+	display: none;
+	white-space: pre;
+	max-width: 280px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 4px 8px;
+	font-size: var(--font-ui-smaller);
+	box-shadow: var(--shadow-s);
+	pointer-events: none;
+	z-index: 20;
+}
+
+.tdsl-tooltip-visible {
+	display: block;
+}
+
 /* ── Error / notice callouts ── */
 .tdsl-error {
 	color: var(--text-error);
@@ -334,7 +360,8 @@
 	.tdsl-preview .tdsl-notice,
 	.tdsl-preview .tdsl-lint-banner,
 	.tdsl-preview .tdsl-error-help,
-	.tdsl-preview .tdsl-toolbar {
+	.tdsl-preview .tdsl-toolbar,
+	.tdsl-preview .tdsl-tooltip {
 		display: none;
 	}
 }
