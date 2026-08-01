@@ -15,6 +15,18 @@ importers:
       '@biomejs/biome':
         specifier: ^2.5.5
         version: 2.5.5
+      '@codemirror/language':
+        specifier: ^6.12.4
+        version: 6.12.4
+      '@codemirror/state':
+        specifier: 6.5.0
+        version: 6.5.0
+      '@codemirror/view':
+        specifier: 6.38.6
+        version: 6.38.6
+      '@lezer/highlight':
+        specifier: ^1.2.3
+        version: 1.2.3
       '@types/node':
         specifier: ^26.1.1
         version: 26.1.1
@@ -119,6 +131,9 @@ packages:
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
+
+  '@codemirror/language@6.12.4':
+    resolution: {integrity: sha512-1q4PaT+o6PbgpkJt4Q8Fv5XJxTy4FUZ4MWETtyiDw3J0Pyr9E2vqcKL+k9wcvjNTIsauxvE7OfmWj3FRPHQ76A==}
 
   '@codemirror/state@6.5.0':
     resolution: {integrity: sha512-MwBHVK60IiIHDcoMet78lxt6iw5gJOGSbNbOIVBHWVXIH4/Nq1+GQgLLGgI1KlnN86WDXsPudVaqYHKBIx7Eyw==}
@@ -303,6 +318,15 @@ packages:
 
   '@keroway/tdsl-wasm@1.27.0':
     resolution: {integrity: sha512-ExwdrP9cx0Rkhuvchs40kWjT6lBXUbsfToxZQevFGX/M20BeIwRYIPY26ow8Sva8Tw7pbDzsQcBYpPaHbaheQA==}
+
+  '@lezer/common@1.5.2':
+    resolution: {integrity: sha512-sxQE460fPZyU3sdc8lafxiPwJHBzZRy/udNFynGQky1SePYBdhkBl1kOagA9uT3pxR8K09bOrmTUqA9wb/PjSQ==}
+
+  '@lezer/highlight@1.2.3':
+    resolution: {integrity: sha512-qXdH7UqTvGfdVBINrgKhDsVTJTxactNNxLk7+UMwZhU13lMHaOBlJe9Vqp907ya56Y3+ed2tlqzys7jDkTmW0g==}
+
+  '@lezer/lr@1.4.10':
+    resolution: {integrity: sha512-rnCpTIBafOx4mRp43xOxDJbFipJm/c0cia/V5TiGlhmMa+wsSdoGmUN3w5Bqrks/09Q/D4tNAmWaT8p6NRi77A==}
 
   '@marijn/find-cluster-break@1.0.3':
     resolution: {integrity: sha512-FY+MKLBoTsLNJF/eLWaOsXGdz6uh3Iu1axjPf6TUq92IYumcTcXWHoS747JARLkcdlJ/Waiaxc5wQfFO8jC6NA==}
@@ -1042,6 +1066,15 @@ snapshots:
   '@biomejs/cli-win32-x64@2.5.5':
     optional: true
 
+  '@codemirror/language@6.12.4':
+    dependencies:
+      '@codemirror/state': 6.5.0
+      '@codemirror/view': 6.38.6
+      '@lezer/common': 1.5.2
+      '@lezer/highlight': 1.2.3
+      '@lezer/lr': 1.4.10
+      style-mod: 4.1.3
+
   '@codemirror/state@6.5.0':
     dependencies:
       '@marijn/find-cluster-break': 1.0.3
@@ -1157,6 +1190,16 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   '@keroway/tdsl-wasm@1.27.0': {}
+
+  '@lezer/common@1.5.2': {}
+
+  '@lezer/highlight@1.2.3':
+    dependencies:
+      '@lezer/common': 1.5.2
+
+  '@lezer/lr@1.4.10':
+    dependencies:
+      '@lezer/common': 1.5.2
 
   '@marijn/find-cluster-break@1.0.3': {}
 
