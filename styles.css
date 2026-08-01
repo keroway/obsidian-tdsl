@@ -2,10 +2,27 @@
 
 /* ── Editor syntax highlighting (main.ts tdslEditorHighlight ViewPlugin) ──
  *
- * Class names are assigned by src/editor-highlight.ts (issue #175); this is a
- * minimal baseline using Obsidian's code-highlight CSS variables (with a
- * `--text-*` fallback for themes that don't define them). Full palette
- * parity across light/dark/print/forced-colors is issue #176.
+ * Class names are assigned by src/editor-highlight.ts (issue #175). Colours
+ * are Obsidian's code-highlight CSS variables (with a `--text-*` fallback
+ * for themes that don't define them) rather than literal hex values, so
+ * light/dark parity with other languages' code blocks comes for free: both
+ * `--code-*` and its `--text-*` fallback are theme-provided custom
+ * properties that already resolve differently per active theme/mode — there
+ * is no separate `.theme-dark` override to write here (contrast the SVG lane
+ * palette below, which intentionally picks its own fixed hues per mode).
+ *
+ * Print: not overridden. Obsidian's default print output is the read view
+ * (`.tdsl-preview`, handled by the `@media print` block further down); on
+ * the rare path where the editor DOM itself gets printed, these rules keep
+ * applying as plain `color`/`font-style`, which prints fine unmodified.
+ *
+ * Forced-colors (Windows high contrast): also not overridden, and
+ * deliberately so — unlike the SVG lane fills below (`forced-color-adjust:
+ * none`, needed because colour is their only distinguishing feature), these
+ * are prose colours. Forced-colors mode overrides `color` to the system
+ * foreground automatically, which is the *correct*, most-legible outcome
+ * here; `font-style: italic` / `font-weight: 600` are preserved and keep
+ * distinguishing token kinds without relying on colour.
  */
 .tdsl-tok-keyword {
 	color: var(--code-keyword, var(--text-accent));
@@ -29,6 +46,14 @@
 .tdsl-tok-comment {
 	color: var(--code-comment, var(--text-faint));
 	font-style: italic;
+}
+/* `//! key: value` directives (src/tdsl-language.ts) are meaningful
+ * configuration, not incidental prose — styled distinctly from a plain `//`
+ * comment: not italicized, and using Obsidian's "important annotation"
+ * code-highlight variable (the same one themes use for e.g. `TODO:`). */
+.tdsl-tok-directive {
+	color: var(--code-important, var(--text-accent));
+	font-weight: 600;
 }
 .tdsl-tok-punctuation {
 	color: var(--code-punctuation, var(--text-muted));

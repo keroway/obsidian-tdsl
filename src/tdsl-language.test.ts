@@ -91,6 +91,28 @@ describe("tdslLanguage tokenizer", () => {
 		expect(kw?.type).toBe("keyword");
 	});
 
+	it("tokenizes a //! directive comment distinctly from a plain line comment", () => {
+		const tokens = tokenize("//! scale: fit\ntimeline");
+		expect(tokens[0]?.type).toBe("directive");
+		expect(tokens[0]?.text).toBe("//! scale: fit");
+		const kw = tokens.find((t) => t.text === "timeline");
+		expect(kw?.type).toBe("keyword");
+	});
+
+	it("treats a //! directive with leading whitespace as a directive", () => {
+		expect(significantTokens("  //! grid: year")).toEqual([
+			["directive", "//! grid: year"],
+		]);
+	});
+
+	it("does not treat // followed by ! as a directive when code precedes it on the line", () => {
+		// Matches parseRenderDirectives' `^[ \t]*\/\/!` anchor: only whitespace
+		// may precede `//!` on its line for it to count as a directive.
+		const tokens = tokenize('span 1..2 "x" {} //! not a directive');
+		const trailingComment = tokens.find((t) => t.text.startsWith("//!"));
+		expect(trailingComment?.type).toBe("lineComment");
+	});
+
 	it("tokenizes block comments spanning multiple lines", () => {
 		const tokens = tokenize("/* block\ncomment */\ntimeline");
 		const blockComments = tokens.filter((t) => t.type === "blockComment");

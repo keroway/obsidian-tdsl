@@ -13,9 +13,7 @@ import { tdslLanguage } from "./tdsl-language";
 
 /**
  * Maps `tdslLanguage`'s `tokenTable` tags (see src/tdsl-language.ts) to CSS
- * classes. Colours are assigned in styles.css; palette refinement across
- * light/dark/print/forced-colors is issue #176 — this only decides the
- * class names.
+ * classes. Colours are assigned in styles.css.
  */
 const TDSL_HIGHLIGHTER = tagHighlighter([
 	{ tag: tags.keyword, class: "tdsl-tok-keyword" },
@@ -26,6 +24,9 @@ const TDSL_HIGHLIGHTER = tagHighlighter([
 	{ tag: tags.atom, class: "tdsl-tok-atom" },
 	{ tag: tags.lineComment, class: "tdsl-tok-comment" },
 	{ tag: tags.blockComment, class: "tdsl-tok-comment" },
+	// `//! key: value` directive comments (src/tdsl-language.ts) get their own
+	// class so they read as distinct from a plain `//` comment (issue #176).
+	{ tag: tags.meta, class: "tdsl-tok-directive" },
 	{ tag: tags.punctuation, class: "tdsl-tok-punctuation" },
 	{ tag: tags.special(tags.variableName), class: "tdsl-tok-special" },
 ]);
