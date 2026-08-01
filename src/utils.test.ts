@@ -103,6 +103,7 @@ describe("resolveRenderOptions", () => {
 			table: true,
 			legend: true,
 			laneHeight: 0,
+			panZoom: true,
 		};
 		expect(resolveRenderOptions({}, settings)).toEqual({
 			scale: 3,
@@ -129,6 +130,7 @@ describe("resolveRenderOptions", () => {
 			table: true,
 			legend: true,
 			laneHeight: 0,
+			panZoom: true,
 		};
 		const r = resolveRenderOptions(
 			{
