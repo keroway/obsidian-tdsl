@@ -29,6 +29,14 @@ import { copyImageToClipboard, copyTextToClipboard } from "./clipboard";
 import { findTdslFenceAtCursor } from "./fence";
 import { idleScheduler } from "./idle-scheduler";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
+import {
+	formatViewBox,
+	panViewBox,
+	parseViewBox,
+	resetViewBox,
+	type ViewBox,
+	zoomViewBox,
+} from "./pan-zoom";
 import { svgToPngBlob } from "./png-export";
 import { renderCacheKey, SvgLruCache } from "./render-cache";
 import { resolveStandaloneHtmlRender } from "./standalone-html";
@@ -159,9 +167,11 @@ class TdslPreview extends MarkdownRenderChild {
 				extractTimelineTitle(this.source) ?? "Timeline",
 			);
 			const serializedSvg = new XMLSerializer().serializeToString(root);
-			wrapper.appendChild(document.adoptNode(root));
+			const adopted = document.adoptNode(root) as unknown as SVGSVGElement;
+			wrapper.appendChild(adopted);
 			this.addCopySvgToolbar(wrapper, serializedSvg);
 			this.addItemTooltips(wrapper);
+			setupPanZoom(wrapper, adopted);
 
 			// Warn when import wikidata blocks are silently skipped (no network in browser).
 			if (hasWikidataImport(this.source)) {
@@ -647,6 +657,88 @@ function applyRootAccessibility(
 	const titleEl = doc.createElementNS(SVG_NS, "title");
 	titleEl.textContent = effectiveLabel;
 	root.insertBefore(titleEl, root.firstChild);
+}
+
+const ZOOM_WHEEL_FACTOR = 1.15;
+
+/**
+ * Wires wheel-zoom, drag-pan, and double-click-reset onto a rendered timeline
+ * SVG by rewriting its `viewBox` attribute — no re-render involved.
+ *
+ * Silently does nothing if the SVG has no (or an unparsable) `viewBox`; every
+ * diagram the renderer emits has one, but this guards against a malformed
+ * response instead of throwing out of a render path.
+ */
+function setupPanZoom(wrapper: HTMLElement, svg: SVGSVGElement): void {
+	const original = parseViewBox(svg.getAttribute("viewBox") ?? "");
+	if (!original) return;
+
+	let current: ViewBox = original;
+	const apply = (next: ViewBox) => {
+		current = next;
+		svg.setAttribute("viewBox", formatViewBox(next));
+	};
+
+	const focusFromEvent = (ev: { clientX: number; clientY: number }) => {
+		const rect = svg.getBoundingClientRect();
+		return {
+			x: current.x + ((ev.clientX - rect.left) / rect.width) * current.width,
+			y: current.y + ((ev.clientY - rect.top) / rect.height) * current.height,
+		};
+	};
+
+	svg.addEventListener(
+		"wheel",
+		(ev) => {
+			ev.preventDefault();
+			const factor = ev.deltaY < 0 ? ZOOM_WHEEL_FACTOR : 1 / ZOOM_WHEEL_FACTOR;
+			apply(zoomViewBox(current, original, factor, focusFromEvent(ev)));
+		},
+		{ passive: false },
+	);
+
+	let dragging = false;
+	let lastClientX = 0;
+	let lastClientY = 0;
+
+	svg.addEventListener("pointerdown", (ev) => {
+		if (ev.button !== 0) return;
+		dragging = true;
+		lastClientX = ev.clientX;
+		lastClientY = ev.clientY;
+		svg.setPointerCapture(ev.pointerId);
+		wrapper.addClass("tdsl-panning");
+	});
+
+	svg.addEventListener("pointermove", (ev) => {
+		if (!dragging) return;
+		const rect = svg.getBoundingClientRect();
+		const deltaPx = {
+			x: ev.clientX - lastClientX,
+			y: ev.clientY - lastClientY,
+		};
+		lastClientX = ev.clientX;
+		lastClientY = ev.clientY;
+		apply(
+			panViewBox(current, original, deltaPx, {
+				width: rect.width,
+				height: rect.height,
+			}),
+		);
+	});
+
+	const endDrag = (ev: PointerEvent) => {
+		if (!dragging) return;
+		dragging = false;
+		svg.releasePointerCapture(ev.pointerId);
+		wrapper.removeClass("tdsl-panning");
+	};
+	svg.addEventListener("pointerup", endDrag);
+	svg.addEventListener("pointercancel", endDrag);
+
+	svg.addEventListener("dblclick", () => {
+		apply(resetViewBox(original));
+	});
 }
 
 export default class TimelineDslPlugin extends Plugin {
