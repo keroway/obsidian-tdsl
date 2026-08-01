@@ -1,5 +1,42 @@
 /* Timeline DSL plugin styles */
 
+/* ── Editor syntax highlighting (main.ts tdslEditorHighlight ViewPlugin) ──
+ *
+ * Class names are assigned by src/editor-highlight.ts (issue #175); this is a
+ * minimal baseline using Obsidian's code-highlight CSS variables (with a
+ * `--text-*` fallback for themes that don't define them). Full palette
+ * parity across light/dark/print/forced-colors is issue #176.
+ */
+.tdsl-tok-keyword {
+	color: var(--code-keyword, var(--text-accent));
+}
+.tdsl-tok-definition-keyword {
+	color: var(--code-keyword, var(--text-accent));
+	font-weight: 600;
+}
+.tdsl-tok-modifier {
+	color: var(--code-property, var(--text-normal));
+}
+.tdsl-tok-string {
+	color: var(--code-string, var(--text-normal));
+}
+.tdsl-tok-number {
+	color: var(--code-value, var(--text-normal));
+}
+.tdsl-tok-atom {
+	color: var(--code-value, var(--text-normal));
+}
+.tdsl-tok-comment {
+	color: var(--code-comment, var(--text-faint));
+	font-style: italic;
+}
+.tdsl-tok-punctuation {
+	color: var(--code-punctuation, var(--text-muted));
+}
+.tdsl-tok-special {
+	color: var(--code-function, var(--text-accent));
+}
+
 /* ── Container ── */
 .tdsl-preview {
 	position: relative;
