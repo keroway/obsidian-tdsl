@@ -70,17 +70,14 @@ Key functions used from `@keroway/tdsl-wasm`:
 
 ## CI
 
-The `.github/workflows/ci.yml` workflow runs on every push and pull request to `main`:
+The `.github/workflows/ci.yml` workflow runs on every push and pull request to `main`. It first classifies the changed files, then runs only the checks that can be affected:
 
-1. `pnpm install --frozen-lockfile`
-2. `pnpm test`
-3. `pnpm run format:check`
-4. `pnpm run lint`
-5. `pnpm run typecheck`
-6. `pnpm run build`
-7. `test -f main.js` — verifies the build artefact exists
+- `src/**` and dependency metadata run tests, formatting/linting, type checking, and the build.
+- CSS, manifest, version metadata, and Biome configuration run formatting/linting only.
+- Build, TypeScript, Vitest, dependency, CI, and runtime-version configuration changes enable the relevant checks (CI, dependency, and runtime-version changes run all checks).
+- Documentation-only changes do not set up Node or install dependencies.
 
-All CI checks must pass before merging.
+The individual checks remain `pnpm test`, `pnpm run format:check`, `pnpm run lint`, `pnpm run typecheck`, and `pnpm run build`; the build job also verifies that `main.js` is produced. The jobs retain their existing names, so repository required-check rules continue to work. All checks selected for a change must pass before merging.
 
 ## Commit conventions
 

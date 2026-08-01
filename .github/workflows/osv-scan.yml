@@ -2,8 +2,15 @@
 name: osv-scan
 
 on:
+  # Dependency vulnerability results only change when dependency metadata or the
+  # scanner configuration changes; the weekly scan still catches newly disclosed CVEs.
   push:
     branches: [main]
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/osv-scan.yml"
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
