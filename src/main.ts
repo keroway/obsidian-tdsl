@@ -139,6 +139,7 @@ class TdslPreview extends MarkdownRenderChild {
 			const serializedSvg = new XMLSerializer().serializeToString(root);
 			wrapper.appendChild(document.adoptNode(root));
 			this.addCopySvgToolbar(wrapper, serializedSvg);
+			this.addItemTooltips(wrapper);
 
 			// Warn when import wikidata blocks are silently skipped (no network in browser).
 			if (hasWikidataImport(this.source)) {
@@ -216,6 +217,45 @@ class TdslPreview extends MarkdownRenderChild {
 		copyHtmlButton.addEventListener("click", () => {
 			void this.copyStandaloneHtml();
 		});
+	}
+
+	/**
+	 * Shows `note` / `link` content on hover via a custom tooltip element.
+	 *
+	 * CSS `::after` generated content does not paint on SVG `<g>` elements in
+	 * Chromium, so this is implemented with a real DOM element positioned
+	 * next to the pointer. The native `<title>` on each item is removed to
+	 * avoid a duplicate browser tooltip; it is left intact in the serialized
+	 * SVG used by the Copy SVG / standalone HTML actions.
+	 */
+	private addItemTooltips(wrapper: HTMLElement): void {
+		const items = wrapper.querySelectorAll("[data-tdsl-tooltip]");
+		if (items.length === 0) return;
+
+		const tooltip = wrapper.createDiv({
+			cls: "tdsl-tooltip",
+			attr: { role: "tooltip" },
+		});
+
+		for (const item of Array.from(items)) {
+			item.querySelector("title")?.remove();
+
+			item.addEventListener("pointerenter", () => {
+				const text = item.getAttribute("data-tdsl-tooltip");
+				if (!text) return;
+				tooltip.setText(text);
+				tooltip.addClass("tdsl-tooltip-visible");
+			});
+			item.addEventListener("pointermove", (ev) => {
+				const pointerEvent = ev as PointerEvent;
+				const rect = wrapper.getBoundingClientRect();
+				tooltip.style.left = `${pointerEvent.clientX - rect.left + 12}px`;
+				tooltip.style.top = `${pointerEvent.clientY - rect.top + 12}px`;
+			});
+			item.addEventListener("pointerleave", () => {
+				tooltip.removeClass("tdsl-tooltip-visible");
+			});
+		}
 	}
 
 	private async copySvg(svg: string): Promise<void> {
