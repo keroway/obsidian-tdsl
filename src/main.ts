@@ -16,6 +16,7 @@ import {
 	type MarkdownPostProcessorContext,
 	MarkdownRenderChild,
 	MarkdownView,
+	Modal,
 	Notice,
 	normalizePath,
 	Plugin,
@@ -169,7 +170,7 @@ class TdslPreview extends MarkdownRenderChild {
 			const serializedSvg = new XMLSerializer().serializeToString(root);
 			const adopted = document.adoptNode(root) as unknown as SVGSVGElement;
 			wrapper.appendChild(adopted);
-			this.addCopySvgToolbar(wrapper, serializedSvg);
+			this.addCopySvgToolbar(wrapper, serializedSvg, adopted);
 			this.addItemTooltips(wrapper);
 			setupPanZoom(wrapper, adopted);
 
@@ -253,10 +254,22 @@ class TdslPreview extends MarkdownRenderChild {
 	}
 
 	/** Adds the reusable-export toolbar after a successful safe SVG adoption. */
-	private addCopySvgToolbar(wrapper: HTMLElement, svg: string): void {
+	private addCopySvgToolbar(
+		wrapper: HTMLElement,
+		svg: string,
+		svgEl: SVGSVGElement,
+	): void {
 		const toolbar = wrapper.createDiv({
 			cls: "tdsl-toolbar",
 			attr: { role: "toolbar", "aria-label": "Timeline actions" },
+		});
+		const fullscreenButton = toolbar.createEl("button", {
+			text: "Fullscreen",
+			cls: "tdsl-toolbar-button",
+			attr: { type: "button" },
+		});
+		fullscreenButton.addEventListener("click", () => {
+			new TdslFullscreenModal(this.app, svgEl).open();
 		});
 		const copyButton = toolbar.createEl("button", {
 			text: "Copy SVG",
@@ -657,6 +670,38 @@ function applyRootAccessibility(
 	const titleEl = doc.createElementNS(SVG_NS, "title");
 	titleEl.textContent = effectiveLabel;
 	root.insertBefore(titleEl, root.firstChild);
+}
+
+/**
+ * Full-screen view of a rendered timeline with its own independent pan/zoom
+ * state.
+ *
+ * Clones the already-adopted SVG node (never re-parses the serialized string)
+ * so the XSS-safe insertion invariant holds trivially, and so closing the
+ * modal cannot affect the inline preview's own pan/zoom position — the two
+ * `setupPanZoom()` calls close over separate DOM nodes and never share state.
+ */
+class TdslFullscreenModal extends Modal {
+	private readonly source: SVGSVGElement;
+
+	constructor(app: App, source: SVGSVGElement) {
+		super(app);
+		this.source = source;
+	}
+
+	onOpen(): void {
+		this.modalEl.addClass("tdsl-fullscreen-modal");
+		const wrapper = this.contentEl.createDiv({
+			cls: "tdsl-preview tdsl-fullscreen-preview",
+		});
+		const clone = this.source.cloneNode(true) as SVGSVGElement;
+		wrapper.appendChild(clone);
+		setupPanZoom(wrapper, clone);
+	}
+
+	onClose(): void {
+		this.contentEl.empty();
+	}
 }
 
 const ZOOM_WHEEL_FACTOR = 1.15;
