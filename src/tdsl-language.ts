@@ -54,6 +54,7 @@ export const tdslLanguage = StreamLanguage.define<TdslState>({
 		atom: tags.atom,
 		lineComment: tags.lineComment,
 		blockComment: tags.blockComment,
+		directive: tags.meta,
 		punctuation: tags.punctuation,
 		special: tags.special(tags.variableName),
 	},
@@ -75,6 +76,19 @@ export const tdslLanguage = StreamLanguage.define<TdslState>({
 		}
 
 		if (stream.eatSpace()) return null;
+
+		// `//! key: value` ディレクティブコメント — 通常の行コメントと区別する。
+		// src/utils.ts の parseRenderDirectives（`^[ \t]*\/\/!`）と同じく、行頭
+		// から空白のみを挟んだ位置に現れる場合だけディレクティブとして扱う。
+		// eatSpace() は既に行頭の空白を消費済みなので、ここでの判定は
+		// 「この行でここまでに空白以外の文字が出ていないか」で行う。
+		if (
+			/^\s*$/.test(stream.string.slice(0, stream.pos)) &&
+			stream.match("//!")
+		) {
+			stream.skipToEnd();
+			return "directive";
+		}
 
 		// 行コメント
 		if (stream.match("//")) {
