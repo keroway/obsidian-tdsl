@@ -75,8 +75,11 @@ describe("tdslLanguage tokenizer", () => {
 	it("does not classify removed keywords (era / target_type / target_lane) as keywords", () => {
 		for (const word of ["era", "target_type", "target_lane"]) {
 			const tokens = tokenize(word);
-			// null 型トークンは StreamLanguage 上、通常 "" という無名ノード名になる。
-			expect(tokens.every((t) => t.type !== "modifier")).toBe(true);
+			expect(
+				tokens.some((t) =>
+					["keyword", "definitionKeyword", "modifier"].includes(t.type),
+				),
+			).toBe(false);
 		}
 	});
 
