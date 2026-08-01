@@ -139,6 +139,15 @@ export interface TdslSettings {
 	legend: boolean;
 	/** Default vertical pixels per lane (positive integer). 0 => renderer default (60 px). */
 	laneHeight: number;
+	/**
+	 * Wheel-zoom / drag-pan / fullscreen on the preview (client-side viewBox
+	 * rewrite, not a WASM render option). Composes with `scale: fit` and the
+	 * default horizontal-scroll display without conflict — both just control
+	 * how the SVG's CSS box is sized, while pan/zoom rewrites its `viewBox`
+	 * independently. This toggle exists as an opt-out for users who prefer the
+	 * plain scroll-only behaviour.
+	 */
+	panZoom: boolean;
 }
 
 export const DEFAULT_SETTINGS: TdslSettings = {
@@ -151,6 +160,7 @@ export const DEFAULT_SETTINGS: TdslSettings = {
 	table: false,
 	legend: false,
 	laneHeight: 0,
+	panZoom: true,
 };
 
 /**

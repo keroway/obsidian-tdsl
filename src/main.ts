@@ -172,7 +172,10 @@ class TdslPreview extends MarkdownRenderChild {
 			wrapper.appendChild(adopted);
 			this.addCopySvgToolbar(wrapper, serializedSvg, adopted);
 			this.addItemTooltips(wrapper);
-			setupPanZoom(wrapper, adopted);
+			// Independent of `tdsl-fit` / horizontal-scroll display: pan/zoom
+			// rewrites `viewBox`, which is orthogonal to how the SVG's CSS box is
+			// sized, so it composes with either display mode without conflict.
+			if (this.settings.panZoom) setupPanZoom(wrapper, adopted);
 
 			// Warn when import wikidata blocks are silently skipped (no network in browser).
 			if (hasWikidataImport(this.source)) {
@@ -263,14 +266,18 @@ class TdslPreview extends MarkdownRenderChild {
 			cls: "tdsl-toolbar",
 			attr: { role: "toolbar", "aria-label": "Timeline actions" },
 		});
-		const fullscreenButton = toolbar.createEl("button", {
-			text: "Fullscreen",
-			cls: "tdsl-toolbar-button",
-			attr: { type: "button" },
-		});
-		fullscreenButton.addEventListener("click", () => {
-			new TdslFullscreenModal(this.app, svgEl).open();
-		});
+		// Fullscreen exists to give pan/zoom room to work in (#171); hide it
+		// alongside pan/zoom itself when the user has opted out.
+		if (this.settings.panZoom) {
+			const fullscreenButton = toolbar.createEl("button", {
+				text: "Fullscreen",
+				cls: "tdsl-toolbar-button",
+				attr: { type: "button" },
+			});
+			fullscreenButton.addEventListener("click", () => {
+				new TdslFullscreenModal(this.app, svgEl).open();
+			});
+		}
 		const copyButton = toolbar.createEl("button", {
 			text: "Copy SVG",
 			cls: "tdsl-toolbar-button",
@@ -1033,6 +1040,18 @@ class TdslSettingTab extends PluginSettingTab {
 			.addToggle((tg) =>
 				tg.setValue(this.plugin.settings.legend).onChange(async (v) => {
 					this.plugin.settings.legend = v;
+					await this.plugin.saveSettings();
+				}),
+			);
+
+		new Setting(containerEl)
+			.setName("Enable pan/zoom")
+			.setDesc(
+				"Wheel-zoom, drag-pan, and a Fullscreen button on the preview. Composes with `//! scale: fit` and horizontal scrolling; disable to keep the plain scroll-only behaviour.",
+			)
+			.addToggle((tg) =>
+				tg.setValue(this.plugin.settings.panZoom).onChange(async (v) => {
+					this.plugin.settings.panZoom = v;
 					await this.plugin.saveSettings();
 				}),
 			);
