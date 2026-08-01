@@ -17,11 +17,13 @@ import {
 	MarkdownRenderChild,
 	MarkdownView,
 	Notice,
+	normalizePath,
 	Plugin,
 	PluginSettingTab,
 	Setting,
 	SuggestModal,
 	type TextComponent,
+	TFile,
 } from "obsidian";
 import { copyImageToClipboard, copyTextToClipboard } from "./clipboard";
 import { findTdslFenceAtCursor } from "./fence";
@@ -58,6 +60,7 @@ import {
 	parseRenderDirectives,
 	resolveEditorLine,
 	resolveRenderOptions,
+	resolveUniqueVaultPath,
 	SYNTAX_REFERENCE_URL,
 	type TdslSettings,
 } from "./utils";
@@ -269,6 +272,14 @@ class TdslPreview extends MarkdownRenderChild {
 		copyPngButton.addEventListener("click", () => {
 			void this.copyPng();
 		});
+		const saveButton = toolbar.createEl("button", {
+			text: "Save as file",
+			cls: "tdsl-toolbar-button",
+			attr: { type: "button" },
+		});
+		saveButton.addEventListener("click", () => {
+			void this.saveSvgToVault();
+		});
 	}
 
 	/**
@@ -380,6 +391,57 @@ class TdslPreview extends MarkdownRenderChild {
 			}
 		} catch {
 			new Notice("Timeline DSL: Could not generate a PNG image.");
+		}
+	}
+
+	/**
+	 * Renders a copy of the SVG with a forced (non-`"auto"`) renderer theme
+	 * and saves it into the vault next to the current note, so it can be
+	 * reused with `![[...]]`.
+	 *
+	 * A forced theme is required for the same reason as `copyPng`: an
+	 * `![[...]]` embed renders the saved SVG's own markup directly, with no
+	 * `.tdsl-preview` host CSS wrapping it, so any colour that depends on
+	 * that external stylesheet would embed as black/unset.
+	 *
+	 * Resolution policy (recorded on issue #156): SVG, saved next to the
+	 * current note, named `<note>-timeline.svg`. A name collision appends
+	 * `-2`, `-3`, ... — an existing file is never overwritten.
+	 */
+	private async saveSvgToVault(): Promise<void> {
+		try {
+			await ensureWasm();
+			const render = resolveStandaloneHtmlRender(
+				resolveRenderOptions(parseRenderDirectives(this.source), this.settings),
+				document.body.classList.contains("theme-dark"),
+			);
+			const svg = renderSvg(this.source, render);
+
+			const noteFile = this.app.vault.getAbstractFileByPath(
+				this.ctx.sourcePath,
+			);
+			const baseName =
+				noteFile instanceof TFile ? noteFile.basename : "timeline";
+			const folder =
+				noteFile instanceof TFile &&
+				noteFile.parent &&
+				noteFile.parent.path !== "/"
+					? noteFile.parent.path
+					: "";
+
+			const path = resolveUniqueVaultPath(
+				folder,
+				`${baseName}-timeline`,
+				"svg",
+				(p) => this.app.vault.getAbstractFileByPath(normalizePath(p)) !== null,
+			);
+			await this.app.vault.createBinary(
+				normalizePath(path),
+				new TextEncoder().encode(svg).buffer as ArrayBuffer,
+			);
+			new Notice(`✔ Saved timeline to ${path}. Embed it with ![[${path}]].`);
+		} catch {
+			new Notice("Timeline DSL: Could not save the timeline to the vault.");
 		}
 	}
 

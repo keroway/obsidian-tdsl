@@ -275,6 +275,31 @@ export function exceedsLargeDiagramThreshold(source: string): boolean {
 	return estimateItemCount(source) > LARGE_DIAGRAM_ITEM_THRESHOLD;
 }
 
+/**
+ * Resolves a vault path for `<baseName>.<extension>` in `folder`, appending
+ * `-2`, `-3`, ... until `exists` reports no conflict. Never overwrites an
+ * existing file — matches the "Save as file" action's documented behavior
+ * (see #156's accepted resolution policy).
+ *
+ * `exists` is injected (checked against `Vault.getAbstractFileByPath` in
+ * production) so this stays a pure, vault-independent function to unit test.
+ */
+export function resolveUniqueVaultPath(
+	folder: string,
+	baseName: string,
+	extension: string,
+	exists: (path: string) => boolean,
+): string {
+	const pathFor = (name: string) =>
+		folder ? `${folder}/${name}.${extension}` : `${name}.${extension}`;
+
+	let candidate = pathFor(baseName);
+	for (let suffix = 2; exists(candidate); suffix++) {
+		candidate = pathFor(`${baseName}-${suffix}`);
+	}
+	return candidate;
+}
+
 /** Parses the JSON string returned by `check_source` into a Diagnostic array. */
 export function parseDiagnostics(json: string): Diagnostic[] {
 	try {

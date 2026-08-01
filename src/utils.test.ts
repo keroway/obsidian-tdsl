@@ -24,6 +24,7 @@ import {
 	parseScaleSetting,
 	resolveEditorLine,
 	resolveRenderOptions,
+	resolveUniqueVaultPath,
 	SYNTAX_REFERENCE_URL,
 	type TdslSettings,
 } from "./utils";
@@ -407,6 +408,64 @@ describe("exceedsLargeDiagramThreshold", () => {
 			(_, i) => `span s${i} ${i}..${i + 1} "x" {};`,
 		).join("\n");
 		expect(exceedsLargeDiagramThreshold(source)).toBe(false);
+	});
+});
+
+// ----------------------------------------------------------------------------
+// resolveUniqueVaultPath
+// ----------------------------------------------------------------------------
+
+describe("resolveUniqueVaultPath", () => {
+	it("uses the base name unchanged when there is no conflict", () => {
+		const path = resolveUniqueVaultPath(
+			"Notes",
+			"My Note-timeline",
+			"svg",
+			() => false,
+		);
+		expect(path).toBe("Notes/My Note-timeline.svg");
+	});
+
+	it("joins without a leading slash when the folder is the vault root", () => {
+		const path = resolveUniqueVaultPath(
+			"",
+			"Note-timeline",
+			"svg",
+			() => false,
+		);
+		expect(path).toBe("Note-timeline.svg");
+	});
+
+	it("appends -2 when the base name is taken", () => {
+		const taken = new Set(["Notes/Note-timeline.svg"]);
+		const path = resolveUniqueVaultPath("Notes", "Note-timeline", "svg", (p) =>
+			taken.has(p),
+		);
+		expect(path).toBe("Notes/Note-timeline-2.svg");
+	});
+
+	it("keeps incrementing past multiple conflicts", () => {
+		const taken = new Set([
+			"Notes/Note-timeline.svg",
+			"Notes/Note-timeline-2.svg",
+			"Notes/Note-timeline-3.svg",
+		]);
+		const path = resolveUniqueVaultPath("Notes", "Note-timeline", "svg", (p) =>
+			taken.has(p),
+		);
+		expect(path).toBe("Notes/Note-timeline-4.svg");
+	});
+
+	it("never reports a path that exists() flags as taken", () => {
+		const exists = vi.fn().mockReturnValue(true);
+		let calls = 0;
+		const guarded = (p: string) => {
+			calls++;
+			if (calls > 5) return false; // avoid an infinite loop if the guard breaks
+			return exists(p);
+		};
+		const path = resolveUniqueVaultPath("", "x", "svg", guarded);
+		expect(path).toBe("x-6.svg");
 	});
 });
 
