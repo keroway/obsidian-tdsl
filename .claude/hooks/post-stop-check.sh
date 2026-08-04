@@ -25,7 +25,7 @@
 #   stop_hook_active=true の場合（hook 由来の再起動）はスキップ
 #
 # スキップしたい場合:
-#   TDSL_SKIP_STOP_HOOK=1 を設定する
+#   OBSIDIAN_TDSL_SKIP_STOP_HOOK=1 を設定する
 
 set -u
 
@@ -47,7 +47,7 @@ if [ "$STOP_HOOK_ACTIVE" = "true" ]; then
   exit 0
 fi
 
-if [ "${TDSL_SKIP_STOP_HOOK:-}" = "1" ]; then
+if [ "${OBSIDIAN_TDSL_SKIP_STOP_HOOK:-}" = "1" ]; then
   exit 0
 fi
 
@@ -65,7 +65,7 @@ fi
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
   {
     echo "Stop hook: $(pwd) は git リポジトリではありません。変更ファイルを判定できないため検証をスキップしました。"
-    echo "（一時的に止めたい場合は環境変数 TDSL_SKIP_STOP_HOOK=1）"
+    echo "（一時的に止めたい場合は環境変数 OBSIDIAN_TDSL_SKIP_STOP_HOOK=1）"
   } >&2
   exit 2
 fi
@@ -141,7 +141,7 @@ run_step "vitest (test)" pnpm run --silent test
 if [ "$FAILED" -eq 1 ]; then
   {
     echo "Stop hook: lint / typecheck / test に失敗があります。下記を修正してから完了してください。"
-    echo "（再実行をスキップしたい場合は環境変数 TDSL_SKIP_STOP_HOOK=1）"
+    echo "（再実行をスキップしたい場合は環境変数 OBSIDIAN_TDSL_SKIP_STOP_HOOK=1）"
     echo "$REPORT"
   } >&2
   exit 2
