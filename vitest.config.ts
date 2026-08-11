@@ -28,6 +28,21 @@ export default defineConfig({
 				branches: 85,
 				functions: 85,
 				lines: 87,
+				// 集約値だけでは「1 ファイルが丸ごと 0% でも全体は通る」（#191）。
+				// 実際 editor-highlight.ts は 147 行すべて未テストのまま
+				// 87.63% の集約閾値を通過していた。ファイル単位の下限で塞ぐ。
+				//
+				// ViewPlugin 本体は EditorView に密結合でテスト対象外のため
+				// 到達可能な上限は高くない。切り出した純関数（予算配分・本文範囲・
+				// 可視判定）のテストが消えたら落ちる高さに置く。
+				// 実測 (2026-08-11): statements 24.44 / branches 22.22 /
+				//                    functions 40 / lines 24.32
+				"src/editor-highlight.ts": {
+					statements: 22,
+					branches: 20,
+					functions: 38,
+					lines: 22,
+				},
 			},
 		},
 	},
