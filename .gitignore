@@ -21,6 +21,10 @@ main.js
 .pi/
 .claude/settings.local.json
 
+# Codex CLI Stop hook config — hooks.json embeds absolute paths, so sharing it
+# breaks other machines (keroway/agent-assets#186)
+.codex/
+
 # OS
 Thumbs.db
 
