@@ -87,7 +87,15 @@ describe("intersectsVisibleRanges", () => {
 		expect(intersectsVisibleRanges(450, 900, ranges)).toBe(true);
 	});
 
-	it("端で接するだけのブロックも可視と判定する（境界は閉区間）", () => {
+	// 端点でのみ接する場合、既存実装は可視として扱う（`<=` / `>=`）。
+	// `visibleRanges` を半開区間 `[from, to)` と解釈するなら不可視が厳密だが、
+	// **このテストは現状の挙動を固定するためのもの**で、正しさの主張ではない。
+	//
+	// 締める側に倒すと「実際には見えているブロックが色付かない」方向に失敗し、
+	// 現状のまま緩いと「画面外のブロックを 1 つ余分にパースする」だけで済む。
+	// 影響が小さいうえ失敗の向きが安全なので、この PR では変えない（#191 は
+	// テスト欠落を埋めるのが目的で、挙動変更は範囲外）。
+	it("端で接するだけのブロックも可視と判定する（現状の挙動を固定）", () => {
 		expect(intersectsVisibleRanges(200, 300, ranges)).toBe(true);
 		expect(intersectsVisibleRanges(0, 100, ranges)).toBe(true);
 	});
