@@ -108,8 +108,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Test
-        run: pnpm test
+      # カバレッジ閾値は vitest.config.ts に設定されているが、CI から
+      # test:coverage を呼ぶ場所が無く、実行されないゲートになっていた（#188）。
+      # `test:coverage` は `test` と同じテストを走らせた上で閾値を判定するため、
+      # ここを置き換えるだけでテストの実行範囲は変わらない。
+      - name: Test (with coverage thresholds)
+        run: pnpm run test:coverage
 
   lint:
     needs: changes
