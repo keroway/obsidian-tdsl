@@ -23,3 +23,8 @@ main.js
 
 # OS
 Thumbs.db
+
+# vitest --coverage の出力。生成物なのでコミットしない。
+# biome は useIgnoreFile: true でこのファイルを読むため、
+# ここに書くことで lint 対象からも外れる（#188）。
+coverage/
