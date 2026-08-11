@@ -40,7 +40,55 @@ const TDSL_HIGHLIGHTER = tagHighlighter([
  * total is spent, and stops parsing further blocks once it runs out (they
  * pick up highlighting on the next docChanged/viewportChanged pass).
  */
-const TOTAL_PARSE_BUDGET_MS = 50;
+export const TOTAL_PARSE_BUDGET_MS = 50;
+
+/**
+ * Remaining share of `TOTAL_PARSE_BUDGET_MS` after `elapsedMs` has been spent.
+ * A value `<= 0` means the caller must stop parsing further blocks.
+ *
+ * Split out of `buildDecorations()` so it can be tested without an
+ * `EditorView` (#191). Breaking this calculation does not throw — it only
+ * makes highlighting occasionally lag — so it needs a test of its own.
+ */
+export function remainingParseBudgetMs(elapsedMs: number): number {
+	return TOTAL_PARSE_BUDGET_MS - elapsedMs;
+}
+
+/**
+ * Body line range of a fence, converting `listTdslFenceRanges()`'s 0-indexed
+ * `lines` positions to CodeMirror's 1-indexed line numbers.
+ *
+ * Returns null when the fence has no body (the open and close fences are
+ * adjacent), which the caller must skip rather than parse.
+ *
+ * Split out for testing (#191): an off-by-one here either highlights the
+ * fence markers themselves or drops the body's first line, and neither
+ * raises an error.
+ */
+export function fenceBodyLineRange(
+	openLine: number,
+	closeLine: number,
+): { startLineNo: number; endLineNo: number } | null {
+	const startLineNo = openLine + 2;
+	const endLineNo = closeLine;
+	if (startLineNo > endLineNo) return null;
+	return { startLineNo, endLineNo };
+}
+
+/**
+ * Whether `[bodyFrom, bodyTo]` overlaps any of the editor's visible ranges.
+ *
+ * Split out for testing (#191): if this ever returned true unconditionally the
+ * plugin would still render correctly and merely parse off-screen blocks, so
+ * only a test can catch the regression.
+ */
+export function intersectsVisibleRanges(
+	bodyFrom: number,
+	bodyTo: number,
+	ranges: readonly { from: number; to: number }[],
+): boolean {
+	return ranges.some((r) => bodyFrom <= r.to && bodyTo >= r.from);
+}
 
 /**
  * Highlights one tdsl block's body (`[bodyFrom, bodyTo)` in the *host*
@@ -98,21 +146,17 @@ function buildDecorations(view: EditorView): DecorationSet {
 
 	const start = performance.now();
 	for (const { openLine, closeLine } of listTdslFenceRanges(lines)) {
-		// 0-indexed `lines` positions -> 1-indexed CodeMirror line numbers.
-		// Body is empty when the open and close fences are adjacent.
-		const bodyStartLineNo = openLine + 2;
-		const bodyEndLineNo = closeLine;
-		if (bodyStartLineNo > bodyEndLineNo) continue;
+		const body = fenceBodyLineRange(openLine, closeLine);
+		if (body === null) continue;
 
-		const bodyFrom = doc.line(bodyStartLineNo).from;
-		const bodyTo = doc.line(bodyEndLineNo).to;
+		const bodyFrom = doc.line(body.startLineNo).from;
+		const bodyTo = doc.line(body.endLineNo).to;
 
-		const inViewport = view.visibleRanges.some(
-			(r) => bodyFrom <= r.to && bodyTo >= r.from,
-		);
-		if (!inViewport) continue;
+		if (!intersectsVisibleRanges(bodyFrom, bodyTo, view.visibleRanges)) {
+			continue;
+		}
 
-		const remainingBudget = TOTAL_PARSE_BUDGET_MS - (performance.now() - start);
+		const remainingBudget = remainingParseBudgetMs(performance.now() - start);
 		if (remainingBudget <= 0) break;
 		highlightBlock(view, builder, bodyFrom, bodyTo, remainingBudget);
 	}
