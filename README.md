@@ -21,6 +21,8 @@ An [Obsidian](https://obsidian.md) plugin that renders [Timeline DSL](https://gi
 - **Inline syntax errors** — Parse and semantic errors are shown with line/column numbers inside the note, without leaving the editor
 - **Dark mode support** — Automatically follows Obsidian's `body.theme-dark` class; colour palette adapts to Catppuccin-style dark colours
 - **XSS-safe SVG insertion** — SVG output is parsed via `DOMParser` and inserted with `document.adoptNode`; no `innerHTML`, no script execution
+- **Pan/zoom & fullscreen** — Wheel-zoom, drag-pan, and a Fullscreen button on every rendered timeline. Enabled by default; composes with `//! scale: fit` and horizontal scrolling. Toggle in the settings tab.
+- **Export toolbar** — Every rendered timeline gets a toolbar with Copy SVG, Copy standalone HTML, Copy PNG, and Save as file actions
 - **Mobile-enabled** — `isDesktopOnly: false`; the plugin is not blocked from running on Obsidian Mobile, but has not yet been extensively verified on iOS/Android. Feedback via [GitHub Issues](https://github.com/keroway/obsidian-tdsl/issues) is welcome.
 - **Zero network requests** — The [Timeline DSL WASM](https://www.npmjs.com/package/@keroway/tdsl-wasm) renderer is bundled inline; no external calls at render time
 
@@ -215,6 +217,7 @@ so you don't repeat the same directive in every block:
 | Show table by default | on / off | off |
 | Show legend by default | on / off | off |
 | Default lane height | empty / `0`, or a positive integer (px) | `0` (renderer default, 60 px) |
+| Enable pan/zoom | on / off | on |
 
 Resolution order is **block `//!` directive > settings default > built-in**.
 Changes apply immediately to every open note — no need to reopen anything.
@@ -228,6 +231,21 @@ In addition to the Markdown code-block preview, the plugin adds three commands t
 | `Format current tdsl block` | Cursor inside a ` ```tdsl ` block | Re-formats the current block's DSL body using the WASM formatter. **Requires the cursor to be inside the block.** |
 | `Fix lint issues in current tdsl block` | Cursor inside a ` ```tdsl ` block | Applies auto-fixable lint rules (such as `missing_id`) to the current block. Does nothing if there are no fixable issues. **Requires the cursor to be inside the block.** |
 | `Insert timeline template` | Anywhere in the note | Opens a picker that inserts a starter timeline (`History`, `Project plan`, `Biography`, or `Reading log`) at the cursor position. No existing block is needed. |
+
+### Timeline toolbar
+
+Every rendered timeline shows a toolbar (`role="toolbar"`) with these actions:
+
+| Button | What it does |
+|---|---|
+| `Fullscreen` | Opens the timeline in a fullscreen modal, giving pan/zoom more room to work in. Hidden when pan/zoom is disabled. |
+| `Copy SVG` | Copies the rendered SVG markup to the clipboard |
+| `Copy standalone HTML` | Copies a self-contained HTML document embedding the timeline |
+| `Copy PNG` | Copies a rasterized PNG of the timeline to the clipboard |
+| `Save as file` | Saves the rendered SVG as a file in the vault |
+
+Pan/zoom (wheel-zoom, drag-pan) is enabled by default and can be turned off in
+the settings tab; it composes with `//! scale: fit` and horizontal scrolling.
 
 ### Full example
 
