@@ -138,13 +138,26 @@ Obsidian プラグインのインストール手順はこの 3 ファイルを v
 
 ```text
 src/
-  main.ts               — プラグインエントリポイント。Plugin クラス・設定タブ・MarkdownRenderChild を定義
+  main.ts               — プラグインエントリポイント。Plugin クラス・設定タブ・MarkdownRenderChild を定義。
+                          3コマンド（フォーマット／lint fix／テンプレート挿入）・エクスポートツールバー・
+                          パン/ズーム・CodeMirror6シンタックスハイライトの登録、render-cache と
+                          idle-scheduler による描画キャッシュ／遅延lintの配線も担う
   utils.ts              — 純関数群（`parseRenderDirectives` / 診断の整形 / 設定値の検証）。
                           Obsidian API にも WASM にも依存しないのでそのままユニットテストできる
   fence.ts              — エディタ内の `tdsl` フェンス検出（整形コマンドがカーソル位置から範囲を求める）
   wasm-init.ts          — `createWasmInitializer()`。WASM 初期化の single-flight ガード
   obsidian-rerender.ts  — 非公開 API `previewMode.rerender()` の薄いラッパー。
                           設定変更時に開いているプレビューを再描画するために使う
+  clipboard.ts          — SVG/テキストのクリップボードコピー（Clipboard API の可用性を吸収）
+  editor-highlight.ts   — `tdsl-language.ts` のトークンを CSS クラスへマップする CodeMirror6 拡張
+  idle-scheduler.ts     — `requestIdleCallback`（フォールバック付き）で非クリティカルな処理を遅延実行
+  pan-zoom.ts           — プレビュー内 SVG のパン/ズーム（viewBox 操作、スケール範囲のクランプ）
+  png-export.ts         — SVG 文字列を Canvas 経由で PNG にラスタライズ（DOM 依存はテスト用に注入可能）
+  render-cache.ts       — 直近の描画結果（SVG＋診断）を保持する LRU キャッシュとキー生成
+  standalone-html.ts    — HTML エクスポート向けにテーマ解決を上書き（`auto` テーマは vault 外で使えないため）
+  tdsl-keywords.ts      — timeline-dsl リポジトリの keywords.json を手動移植したキーワード一覧（上流変更は手動追従）
+  tdsl-language.ts      — timeline-dsl リポジトリの CodeMirror StreamLanguage 実装を手動移植した字句解析層
+  templates.ts          — 「Insert timeline template」コマンドが提示する `.tdsl` 雛形集
   wasm.d.ts             — esbuild binary loader 向け .wasm 型宣言
   *.test.ts             — 上記モジュールの Vitest ユニットテスト
 esbuild.config.mjs  — ビルド設定（WASM インライン化・バンドル）
