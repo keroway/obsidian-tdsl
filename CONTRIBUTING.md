@@ -46,7 +46,11 @@ The plugin entry point is `src/main.ts`. It wires Obsidian's plugin API to the T
 - registers the `tdsl` Markdown code-block processor
 - defines the preview renderer and XSS-safe SVG/table insertion path
 - exposes the settings tab and re-renders open Markdown previews after settings changes
-- registers the command that formats the current `tdsl` fenced block
+- registers three commands: format the current `tdsl` fenced block, fix lint issues in it, and
+  insert a timeline template
+- registers the export toolbar (PNG/SVG/HTML), pan/zoom, and the CodeMirror 6 syntax highlighting
+  extension
+- wires the render cache and idle scheduler for cached, deferred rendering/linting
 
 Small, testable helpers live beside it:
 
@@ -54,6 +58,19 @@ Small, testable helpers live beside it:
 - `src/fence.ts` — fenced-code-block detection for the format command
 - `src/wasm-init.ts` — single-flight WASM initialization guard
 - `src/obsidian-rerender.ts` — structural wrapper around Obsidian's preview re-render hook
+- `src/clipboard.ts` — clipboard copy for SVG/text output
+- `src/editor-highlight.ts` — CodeMirror 6 extension mapping `tdsl-language.ts` tokens to CSS classes
+- `src/idle-scheduler.ts` — defers non-critical work via `requestIdleCallback` with a timer fallback
+- `src/pan-zoom.ts` — pan/zoom for the rendered preview SVG (viewBox manipulation, scale clamping)
+- `src/png-export.ts` — rasterizes an SVG string to PNG via Canvas
+- `src/render-cache.ts` — LRU cache of recent render results (SVG + diagnostics) and its key generation
+- `src/standalone-html.ts` — overrides theme resolution for HTML export (the preview's `auto` theme
+  is unavailable outside the vault)
+- `src/tdsl-keywords.ts` — keyword list manually ported from the timeline-dsl repository's
+  keywords.json (upstream changes are followed by hand)
+- `src/tdsl-language.ts` — lexer manually ported from the timeline-dsl repository's CodeMirror
+  StreamLanguage implementation
+- `src/templates.ts` — starter `.tdsl` snippets offered by the "Insert timeline template" command
 
 All heavy processing — DSL parsing, semantic analysis, linting, formatting, SVG rendering, and HTML table rendering — is delegated to the [`@keroway/tdsl-wasm`](https://www.npmjs.com/package/@keroway/tdsl-wasm) package, which is the WASM build of the [keroway/timeline-dsl](https://github.com/keroway/timeline-dsl) Rust compiler.
 
