@@ -29,6 +29,37 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify version consistency
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          manifest_version="$(jq -r '.version' manifest.json)"
+          package_version="$(jq -r '.version' package.json)"
+          versions_last_key="$(jq -r 'keys_unsorted[-1]' versions.json)"
+
+          fail=0
+          if [ "$TAG_NAME" != "$manifest_version" ]; then
+            echo "::error::tag ($TAG_NAME) does not match manifest.json version ($manifest_version)"
+            fail=1
+          fi
+          if [ "$TAG_NAME" != "$package_version" ]; then
+            echo "::error::tag ($TAG_NAME) does not match package.json version ($package_version)"
+            fail=1
+          fi
+          if [ "$TAG_NAME" != "$versions_last_key" ]; then
+            echo "::error::tag ($TAG_NAME) does not match versions.json last key ($versions_last_key)"
+            fail=1
+          fi
+
+          if ! grep -qF "## [$TAG_NAME]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no heading for version $TAG_NAME"
+            fail=1
+          fi
+
+          exit "$fail"
+
       - name: Build
         run: pnpm run build
 
