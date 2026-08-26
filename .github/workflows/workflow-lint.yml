@@ -7,10 +7,10 @@ on:
     paths:
       - ".github/workflows/**"
       - "**/*.sh"
+  # PR は無条件で実行する。branch protection の required status check に
+  # 登録するため、paths フィルタ付きだと対象外の PR でワークフロー自体が
+  # 起動せず required check が常に pending のまま残ってしまう。
   pull_request:
-    paths:
-      - ".github/workflows/**"
-      - "**/*.sh"
   workflow_dispatch:
 
 permissions:

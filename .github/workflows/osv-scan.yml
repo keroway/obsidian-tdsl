@@ -11,6 +11,9 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - ".github/workflows/osv-scan.yml"
+  # main の branch protection に required status check として登録するため、
+  # PR でも実行する。トリガーが無いと required check が常に pending のまま残ってしまう。
+  pull_request:
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
