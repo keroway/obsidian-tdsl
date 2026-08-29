@@ -224,7 +224,7 @@ span main 10..50 "ある時代" {};
 |---|---|---|
 | `Format current tdsl block` | ` ```tdsl ` ブロック内 | 現在のブロックの DSL 本文を WASM フォーマッタで整形する。**カーソルがブロック内にある必要がある。** |
 | `Fix lint issues in current tdsl block` | ` ```tdsl ` ブロック内 | 現在のブロックに対して自動修正可能な lint ルール（`missing_id` など）を適用する。修正対象が無ければ何もしない。**カーソルがブロック内にある必要がある。** |
-| `Insert timeline template` | ノート内のどこでも | ピッカーを開いて選択したスターター年表（`History` / `Project plan` / `Biography` / `Reading log`）をカーソル位置に挿入する。既存のブロックは不要。 |
+| `Insert timeline template` | ノート内のどこでも | ピッカーを開いて選択したスターター年表（`Historical eras` / `Project plan` / `Life of a person` / `Reading log`）をカーソル位置に挿入する。既存のブロックは不要。 |
 
 ### 年表ツールバー
 

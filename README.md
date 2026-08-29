@@ -230,7 +230,7 @@ In addition to the Markdown code-block preview, the plugin adds three commands t
 |---|---|---|
 | `Format current tdsl block` | Cursor inside a ` ```tdsl ` block | Re-formats the current block's DSL body using the WASM formatter. **Requires the cursor to be inside the block.** |
 | `Fix lint issues in current tdsl block` | Cursor inside a ` ```tdsl ` block | Applies auto-fixable lint rules (such as `missing_id`) to the current block. Does nothing if there are no fixable issues. **Requires the cursor to be inside the block.** |
-| `Insert timeline template` | Anywhere in the note | Opens a picker that inserts a starter timeline (`History`, `Project plan`, `Biography`, or `Reading log`) at the cursor position. No existing block is needed. |
+| `Insert timeline template` | Anywhere in the note | Opens a picker that inserts a starter timeline (`Historical eras`, `Project plan`, `Life of a person`, or `Reading log`) at the cursor position. No existing block is needed. |
 
 ### Timeline toolbar
 
