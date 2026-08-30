@@ -531,8 +531,12 @@ describe("parseDiagnostics", () => {
 		]);
 		const result = parseDiagnostics(json);
 		expect(result).toHaveLength(2);
-		expect(result[0].severity).toBe("error");
-		expect(result[1].severity).toBe("warning");
+		expect(result?.[0].severity).toBe("error");
+		expect(result?.[1].severity).toBe("warning");
+	});
+
+	it("returns null for invalid JSON instead of silently dropping diagnostics", () => {
+		expect(parseDiagnostics("not json")).toBeNull();
 	});
 });
 
@@ -668,6 +672,10 @@ describe("parseLintIssues", () => {
 				fixable: true,
 			},
 		]);
+	});
+
+	it("returns null for invalid JSON instead of silently dropping lint issues", () => {
+		expect(parseLintIssues("not json")).toBeNull();
 	});
 });
 

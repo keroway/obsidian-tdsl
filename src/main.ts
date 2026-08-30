@@ -139,6 +139,12 @@ class TdslPreview extends MarkdownRenderChild {
 
 				// check_source returns JSON: [{severity, message, line, col}]
 				const diagnostics = parseDiagnostics(check_source(this.source));
+				if (diagnostics === null) {
+					this.showErrors(wrapper, [
+						"Internal error: could not parse diagnostics from the renderer",
+					]);
+					return;
+				}
 				const errors = filterErrors(diagnostics);
 				if (errors.length > 0) {
 					this.showErrorDiagnostics(wrapper, errors);
@@ -240,9 +246,11 @@ class TdslPreview extends MarkdownRenderChild {
 
 	private showLintIssues(wrapper: HTMLElement): void {
 		try {
-			const lintIssues = parseLintIssues(lint_source(this.source)).filter(
-				(i) => i.code !== "parse_error",
-			);
+			const parsed = parseLintIssues(lint_source(this.source));
+			if (parsed === null) {
+				throw new Error("could not parse lint issues from the renderer");
+			}
+			const lintIssues = parsed.filter((i) => i.code !== "parse_error");
 			if (lintIssues.length === 0 || this.unloaded) return;
 			const lintBanner = wrapper.createDiv({ cls: "tdsl-lint-banner" });
 			for (const issue of lintIssues) {

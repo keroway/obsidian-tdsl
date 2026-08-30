@@ -310,12 +310,16 @@ export function resolveUniqueVaultPath(
 	return candidate;
 }
 
-/** Parses the JSON string returned by `check_source` into a Diagnostic array. */
-export function parseDiagnostics(json: string): Diagnostic[] {
+/**
+ * Parses the JSON string returned by `check_source` into a Diagnostic array.
+ * Returns `null` when `json` is not valid JSON, so callers can surface the
+ * parse failure instead of silently treating it as "no diagnostics" (#211).
+ */
+export function parseDiagnostics(json: string): Diagnostic[] | null {
 	try {
 		return JSON.parse(json) as Diagnostic[];
 	} catch {
-		return [];
+		return null;
 	}
 }
 
@@ -405,12 +409,14 @@ export interface LintIssue {
 /**
  * Parses the JSON string returned by `lint_source` into a LintIssue array.
  * Pure function — can be unit-tested without WASM.
+ * Returns `null` when `json` is not valid JSON, so callers can surface the
+ * parse failure instead of silently treating it as "no lint issues" (#211).
  */
-export function parseLintIssues(json: string): LintIssue[] {
+export function parseLintIssues(json: string): LintIssue[] | null {
 	try {
 		return JSON.parse(json) as LintIssue[];
 	} catch {
-		return [];
+		return null;
 	}
 }
 
