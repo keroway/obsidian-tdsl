@@ -252,8 +252,18 @@ class TdslPreview extends MarkdownRenderChild {
 				row.createSpan({ text: "⚠ " });
 				this.appendDiagnosticLine(row, lintIssueParts(issue));
 			}
-		} catch {
-			// Lint failures must not affect a rendered timeline.
+		} catch (e) {
+			// Lint failures must not affect the already-rendered timeline, but
+			// silently dropping them made a broken `lint_source` invisible to
+			// both users and developers (issue #209). Report it the same way
+			// other non-fatal failures in this class do: an inline notice.
+			if (this.unloaded) return;
+			const banner = wrapper.createDiv({ cls: "tdsl-lint-banner" });
+			const row = banner.createDiv({ cls: "tdsl-notice tdsl-notice-warning" });
+			row.createSpan({ text: "⚠ " });
+			row.createSpan({
+				text: `Timeline DSL: Could not check lint issues: ${String(e)}`,
+			});
 		}
 	}
 
