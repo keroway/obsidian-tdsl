@@ -343,7 +343,7 @@ pnpm run lint         # Biome lint
 pnpm run typecheck    # tsc --noEmit
 ```
 
-CI は lint → typecheck → build の順に実行し、`main.js` の生成を確認します。詳細は [CONTRIBUTING.md](./CONTRIBUTING.md) を参照してください。
+CI は変更されたファイルを分類し、影響を受けるチェックだけを実行します。test（`pnpm run test:coverage`、カバレッジ閾値を判定）、lint（`pnpm run format:check` と `pnpm run lint`）、typecheck、build（`main.js` の生成も確認）、audit（`pnpm audit --audit-level high`）の5種類があります。詳細は [CONTRIBUTING.md](./CONTRIBUTING.md) を参照してください。
 
 ## 関連プロジェクト
 
