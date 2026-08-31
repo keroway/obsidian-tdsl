@@ -89,12 +89,14 @@ Key functions used from `@keroway/tdsl-wasm`:
 
 The `.github/workflows/ci.yml` workflow runs on every push and pull request to `main`. It first classifies the changed files, then runs only the checks that can be affected:
 
-- `src/**` and dependency metadata run tests, formatting/linting, type checking, and the build.
+- `src/**` runs tests, formatting/linting, type checking, and the build.
+- Dependency metadata (`package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`) runs all five checks, including the audit.
 - CSS, manifest, version metadata, and Biome configuration run formatting/linting only.
-- Build, TypeScript, Vitest, dependency, CI, and runtime-version configuration changes enable the relevant checks (CI, dependency, and runtime-version changes run all checks).
+- `esbuild.config.mjs` enables formatting/linting and the build; `tsconfig.json` enables formatting/linting and type checking; `vitest.config.ts` enables tests, formatting/linting, and type checking.
+- CI workflow (`.github/workflows/ci.yml`) and runtime-version (`mise.toml`) changes run all five checks.
 - Documentation-only changes do not set up Node or install dependencies.
 
-The individual checks remain `pnpm test`, `pnpm run format:check`, `pnpm run lint`, `pnpm run typecheck`, and `pnpm run build`; the build job also verifies that `main.js` is produced. The jobs retain their existing names, so repository required-check rules continue to work. All checks selected for a change must pass before merging.
+The individual checks are `pnpm run test:coverage` (enforces the coverage thresholds in `vitest.config.ts`), `pnpm run format:check`, `pnpm run lint`, `pnpm run typecheck`, `pnpm run build`, and `pnpm audit --audit-level high`; the build job also verifies that `main.js` is produced. The jobs retain their existing names, so repository required-check rules continue to work. All checks selected for a change must pass before merging.
 
 ## Commit conventions
 
