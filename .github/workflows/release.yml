@@ -30,6 +30,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Format check
+        run: pnpm run format:check
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Type check
+        run: pnpm run typecheck
+
+      - name: Test (with coverage thresholds)
+        run: pnpm run test:coverage
+
+      - name: Security audit
+        run: pnpm audit --audit-level high
+
       - name: Verify version consistency
         env:
           TAG_NAME: ${{ github.ref_name }}
