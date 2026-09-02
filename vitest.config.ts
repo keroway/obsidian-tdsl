@@ -2,6 +2,10 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
 	test: {
+		// Node by default: every module but one is DOM-free, and a global DOM
+		// implementation would slow the whole suite down. The tests that do need
+		// one opt in per file with a `// @vitest-environment happy-dom` docblock
+		// (currently only svg-accessibility.test.ts).
 		environment: "node",
 		include: ["src/**/*.test.ts"],
 		coverage: {

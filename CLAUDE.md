@@ -157,6 +157,8 @@ src/
   render-options.ts     — `ResolvedRender` を `JsRenderOptions` へ写す代入規則（未解決のフィールドは
                           書かずレンダラー既定を残す／setter が throw したら free する）。
                           WASM クラスは構造的インターフェースで受けるのでテストは実インスタンス不要
+  svg-accessibility.ts  — 描画済み SVG のルートに role / aria-label / <title> を付与する規則
+                          （`Document` は引数で受けるので DOM 実装を差し替えてテストできる）
   standalone-html.ts    — HTML エクスポート向けにテーマ解決を上書き（`auto` テーマは vault 外で使えないため）
   tdsl-keywords.ts      — timeline-dsl リポジトリの keywords.json を手動移植したキーワード一覧（上流変更は手動追従）
   tdsl-language.ts      — timeline-dsl リポジトリの CodeMirror StreamLanguage 実装を手動移植した字句解析層
