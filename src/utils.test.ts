@@ -1184,23 +1184,34 @@ describe("planFenceTransform", () => {
 		expect(seen).toBe("a\nb");
 	});
 
-	it("skips the write when the body already ends with a newline and is unchanged", () => {
-		// `extractFenceBody` joins lines, so the body ends with a newline only
-		// when the last body line is blank. That is the one shape in which the
-		// no-op comparison below can succeed today.
+	it("skips the write when the transform changes nothing", () => {
+		expect(planFenceTransform(block, 2, identity, "format")).toEqual({
+			kind: "noop",
+		});
+	});
+
+	it("skips the write regardless of a trailing blank line in the body", () => {
+		// `extractFenceBody` joins lines, so the body carries a trailing newline
+		// only when its last line is blank. Both shapes must be recognized as
+		// unchanged (#221).
 		const lines = ["```tdsl", "timeline {}", "", "```"];
 		expect(planFenceTransform(lines, 1, identity, "format")).toEqual({
 			kind: "noop",
 		});
 	});
 
-	it("plans a replacement for an unchanged body without a trailing newline", () => {
-		// Behavior carried over verbatim from main.ts: the comparison is
-		// `ensureTrailingNewline(result) === body`, and a joined body carries no
-		// trailing newline, so an unchanged transform still plans a write (#221).
-		expect(planFenceTransform(block, 2, identity, "format")).toEqual({
+	it("treats a transform that only appends a trailing newline as unchanged", () => {
+		expect(
+			planFenceTransform(block, 2, (body) => `${body}\n`, "format"),
+		).toEqual({ kind: "noop" });
+	});
+
+	it("still plans a replacement when the transform adds a blank line", () => {
+		expect(
+			planFenceTransform(block, 2, (body) => `${body}\n\n`, "format"),
+		).toEqual({
 			kind: "replace",
-			text: "timeline {}\n",
+			text: "timeline {}\n\n",
 			from: { line: 2, ch: 0 },
 			to: { line: 3, ch: 0 },
 		});
@@ -1226,8 +1237,8 @@ describe("planFenceTransform", () => {
 	});
 
 	it("does not double the newline when the transform already ends with one", () => {
-		const plan = planFenceTransform(block, 2, () => "timeline {}\n", "format");
-		expect(plan).toMatchObject({ kind: "replace", text: "timeline {}\n" });
+		const plan = planFenceTransform(block, 2, () => "timeline { }\n", "format");
+		expect(plan).toMatchObject({ kind: "replace", text: "timeline { }\n" });
 	});
 
 	it("handles an empty block body", () => {

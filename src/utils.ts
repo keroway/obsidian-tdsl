@@ -637,12 +637,10 @@ export type FenceTransformPlan =
  * throws a string on parse failure; `errorLabel` names the operation in the
  * resulting message.
  *
- * A transform that returns the body byte-identical is meant to yield `noop`
- * rather than a `replace`, since replacing text with itself would still push a
- * pointless entry onto the undo stack. The comparison below only achieves that
- * when the body already ends with a newline — a known bug carried over verbatim
- * from main.ts and tracked in #221, deliberately left unchanged here so this
- * extraction stays behavior-preserving.
+ * A transform that returns the body byte-identical yields `noop` rather than a
+ * `replace`: replacing text with itself would still push a pointless entry onto
+ * the undo stack, and would make the lint-fix command report a fix that never
+ * happened.
  */
 export function planFenceTransform(
 	lines: readonly string[],
@@ -677,8 +675,11 @@ export function planFenceTransform(
 		};
 	}
 
+	// Both sides need the same normalization. `extractFenceBody` joins lines, so
+	// the body carries a trailing newline only when its last line is blank;
+	// comparing it against the always-newline-terminated `text` made the check
+	// pass almost never (#221).
 	const text = ensureTrailingNewline(result);
-	// Not `ensureTrailingNewline(body)` — see #221.
-	if (text === body) return { kind: "noop" };
+	if (text === ensureTrailingNewline(body)) return { kind: "noop" };
 	return { kind: "replace", text, ...fenceBodyRange(openLine, closeLine) };
 }
