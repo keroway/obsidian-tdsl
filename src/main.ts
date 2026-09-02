@@ -40,6 +40,7 @@ import {
 } from "./pan-zoom";
 import { svgToPngBlob } from "./png-export";
 import { renderCacheKey, SvgLruCache } from "./render-cache";
+import { populateRenderOptions } from "./render-options";
 import { resolveStandaloneHtmlRender } from "./standalone-html";
 import {
 	filterTemplates,
@@ -643,22 +644,7 @@ function renderStandaloneHtml(
 function createRenderOptions(
 	r: ReturnType<typeof resolveRenderOptions>,
 ): JsRenderOptions {
-	const opts = new JsRenderOptions();
-	try {
-		if (r.grid) opts.grid = r.grid;
-		if (r.theme) opts.theme = r.theme;
-		if (r.orientation) opts.orientation = r.orientation;
-		if (r.layout_style) opts.layout_style = r.layout_style;
-		if (r.events !== undefined) opts.show_event_labels = r.events;
-		// show_table / show_legend render natively into the SVG (upstream 1.23.0+).
-		if (r.table !== undefined) opts.show_table = r.table;
-		if (r.legend !== undefined) opts.show_legend = r.legend;
-		if (r.laneHeight > 0) opts.lane_height = r.laneHeight;
-		return opts;
-	} catch (error) {
-		opts.free();
-		throw error;
-	}
+	return populateRenderOptions(() => new JsRenderOptions(), r);
 }
 
 const SVG_NS = "http://www.w3.org/2000/svg";
