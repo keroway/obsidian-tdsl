@@ -141,7 +141,11 @@ src/
   main.ts               — プラグインエントリポイント。Plugin クラス・設定タブ・MarkdownRenderChild を定義。
                           3コマンド（フォーマット／lint fix／テンプレート挿入）・エクスポートツールバー・
                           パン/ズーム・CodeMirror6シンタックスハイライトの登録、render-cache と
-                          idle-scheduler による描画キャッシュ／遅延lintの配線も担う
+                          idle-scheduler による描画キャッシュ／遅延lintの配線も担う。
+                          coverage 計測からは除外されている（Plugin ライフサイクルに密結合で
+                          単体テストから到達できない）ため、肥大は `main-budget.test.ts` の
+                          行数バジェットで検知する。純粋ロジックを足すときはここではなく
+                          テスト可能なモジュール側へ置くこと
   utils.ts              — 純関数群（`parseRenderDirectives` / 診断の整形 / 設定値の検証）。
                           Obsidian API にも WASM にも依存しないのでそのままユニットテストできる
   fence.ts              — エディタ内の `tdsl` フェンス検出（整形コマンドがカーソル位置から範囲を求める）
@@ -153,6 +157,7 @@ src/
   idle-scheduler.ts     — `requestIdleCallback`（フォールバック付き）で非クリティカルな処理を遅延実行
   pan-zoom.ts           — プレビュー内 SVG のパン/ズーム（viewBox 操作、スケール範囲のクランプ）
   png-export.ts         — SVG 文字列を Canvas 経由で PNG にラスタライズ（DOM 依存はテスト用に注入可能）
+  raw.d.ts              — Vite の `?raw` インポート（ファイル自身のテキスト）の型宣言
   render-cache.ts       — 直近の描画結果（SVG＋診断）を保持する LRU キャッシュとキー生成
   render-options.ts     — `ResolvedRender` を `JsRenderOptions` へ写す代入規則（未解決のフィールドは
                           書かずレンダラー既定を残す／setter が throw したら free する）。
