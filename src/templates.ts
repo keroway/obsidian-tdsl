@@ -146,3 +146,25 @@ export function renderTemplateSnippet(template: TimelineTemplate): string {
 		: `${template.body}\n`;
 	return `\`\`\`tdsl\n${body}\`\`\`\n`;
 }
+
+/**
+ * Filters the templates for the "Insert timeline template" picker.
+ *
+ * An empty (or whitespace-only) query yields every template, in declaration
+ * order. Otherwise a template matches when the query appears in its name or
+ * its description; the id is deliberately not searched, since it is an
+ * internal key the user never sees. Matching is case-insensitive and matches
+ * substrings, so a partial word typed into the picker still narrows the list.
+ *
+ * Returns a fresh array so callers can hand it to a consumer that mutates or
+ * sorts the result without disturbing `TIMELINE_TEMPLATES`.
+ */
+export function filterTemplates(query: string): TimelineTemplate[] {
+	const q = query.toLowerCase().trim();
+	if (!q) return [...TIMELINE_TEMPLATES];
+	return TIMELINE_TEMPLATES.filter(
+		(t) =>
+			t.name.toLowerCase().includes(q) ||
+			t.description.toLowerCase().includes(q),
+	);
+}

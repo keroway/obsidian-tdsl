@@ -43,8 +43,8 @@ import { svgToPngBlob } from "./png-export";
 import { renderCacheKey, SvgLruCache } from "./render-cache";
 import { resolveStandaloneHtmlRender } from "./standalone-html";
 import {
+	filterTemplates,
 	renderTemplateSnippet,
-	TIMELINE_TEMPLATES,
 	type TimelineTemplate,
 } from "./templates";
 import {
@@ -1136,13 +1136,7 @@ class TemplateSuggestModal extends SuggestModal<TimelineTemplate> {
 	}
 
 	getSuggestions(query: string): TimelineTemplate[] {
-		const q = query.toLowerCase().trim();
-		if (!q) return [...TIMELINE_TEMPLATES];
-		return TIMELINE_TEMPLATES.filter(
-			(t) =>
-				t.name.toLowerCase().includes(q) ||
-				t.description.toLowerCase().includes(q),
-		);
+		return filterTemplates(query);
 	}
 
 	renderSuggestion(template: TimelineTemplate, el: HTMLElement): void {
