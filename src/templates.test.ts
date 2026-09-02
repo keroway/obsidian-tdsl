@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	filterTemplates,
 	findTemplate,
 	renderTemplateSnippet,
 	TIMELINE_TEMPLATES,
@@ -113,5 +114,73 @@ describe("renderTemplateSnippet", () => {
 			body: 'timeline "T" { unit year; range 0..1; }\n',
 		});
 		expect(snippet).not.toContain("\n\n```");
+	});
+});
+
+describe("filterTemplates", () => {
+	it("returns every template for an empty or whitespace-only query", () => {
+		for (const query of ["", "   ", "\t\n"]) {
+			expect(filterTemplates(query).map((t) => t.id)).toEqual(
+				TIMELINE_TEMPLATES.map((t) => t.id),
+			);
+		}
+	});
+
+	it("does not expose TIMELINE_TEMPLATES itself to the caller", () => {
+		const all = filterTemplates("");
+		all.length = 0;
+		expect(TIMELINE_TEMPLATES.length).toBeGreaterThan(0);
+	});
+
+	it("matches a substring of the name, ignoring case", () => {
+		const [first] = TIMELINE_TEMPLATES;
+		const fragment = first.name.slice(1, 4).toUpperCase();
+		expect(filterTemplates(fragment).map((t) => t.id)).toContain(first.id);
+	});
+
+	it("matches the description too, not just the name", () => {
+		// A word that appears only in the description: matching it proves the
+		// description is searched rather than just the name.
+		let found: { id: string; word: string } | undefined;
+		for (const t of TIMELINE_TEMPLATES) {
+			const word = t.description
+				.toLowerCase()
+				.split(/[^a-z]+/)
+				.find((w) => w.length > 4 && !t.name.toLowerCase().includes(w));
+			if (word) {
+				found = { id: t.id, word };
+				break;
+			}
+		}
+		// Guards the fixture: without such a word the assertion proves nothing.
+		expect(found).toBeDefined();
+		if (!found) return;
+		expect(filterTemplates(found.word).map((t) => t.id)).toContain(found.id);
+	});
+
+	it("trims the query before matching", () => {
+		const [first] = TIMELINE_TEMPLATES;
+		expect(filterTemplates(`  ${first.name}  `).map((t) => t.id)).toContain(
+			first.id,
+		);
+	});
+
+	it("does not search the internal id", () => {
+		const target = TIMELINE_TEMPLATES.find(
+			(t) =>
+				!t.name.toLowerCase().includes(t.id) &&
+				!t.description.toLowerCase().includes(t.id),
+		);
+		// Guards the fixture: at least one id must be absent from its own
+		// user-visible text for this assertion to mean anything.
+		expect(target).toBeDefined();
+		if (!target) return;
+		expect(filterTemplates(target.id).map((t) => t.id)).not.toContain(
+			target.id,
+		);
+	});
+
+	it("returns an empty list when nothing matches", () => {
+		expect(filterTemplates("zzz-no-such-template")).toEqual([]);
 	});
 });
