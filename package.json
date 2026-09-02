@@ -8,10 +8,10 @@
 		"build": "node esbuild.config.mjs production",
 		"test": "vitest run",
 		"test:coverage": "vitest run --coverage",
-		"lint": "biome lint .",
+		"lint": "biome lint --error-on-warnings .",
 		"format": "biome format --write .",
 		"format:check": "biome format .",
-		"check": "biome check . && tsc --noEmit && vitest run --coverage",
+		"check": "biome check --error-on-warnings . && tsc --noEmit && vitest run --coverage",
 		"typecheck": "tsc --noEmit",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"postinstall": "lefthook install"
