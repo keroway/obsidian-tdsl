@@ -28,7 +28,6 @@ import {
 } from "obsidian";
 import { copyImageToClipboard, copyTextToClipboard } from "./clipboard";
 import { tdslEditorHighlight } from "./editor-highlight";
-import { findTdslFenceAtCursor } from "./fence";
 import { idleScheduler } from "./idle-scheduler";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
 import {
@@ -53,11 +52,8 @@ import {
 	type DiagnosticParts,
 	debounce,
 	diagnosticParts,
-	ensureTrailingNewline,
 	exceedsLargeDiagramThreshold,
-	extractFenceBody,
 	extractTimelineTitle,
-	fenceBodyRange,
 	filterErrors,
 	filterInfos,
 	filterWarnings,
@@ -68,6 +64,7 @@ import {
 	parseLaneHeightSetting,
 	parseLintIssues,
 	parseRenderDirectives,
+	planFenceTransform,
 	resolveEditorLine,
 	resolveRenderOptions,
 	resolveUniqueVaultPath,
@@ -1166,6 +1163,10 @@ class TemplateSuggestModal extends SuggestModal<TimelineTemplate> {
  * call a WASM function that throws a string on parse failure, and both must
  * write through Editor.replaceRange so the edit lands on the undo stack.
  *
+ * The decision itself — which fence, which failure message, write or skip —
+ * lives in `planFenceTransform` (utils.ts) so it can be tested without an
+ * Editor. What is left here is the two effects: the Notice and the write.
+ *
  * `errorLabel` names the operation in the failure Notice; `onApplied` reports
  * success, and receives whether the transform actually changed anything so a
  * caller can distinguish "fixed" from "nothing to do".
@@ -1176,47 +1177,26 @@ function transformCurrentBlock(
 	errorLabel: string,
 	onApplied: (changed: boolean) => void,
 ): void {
-	const cursor = editor.getCursor();
 	const lines: string[] = [];
 	for (let i = 0; i < editor.lineCount(); i++) {
 		lines.push(editor.getLine(i));
 	}
 
-	const fence = findTdslFenceAtCursor(lines, cursor.line);
-	if (fence.status === "not-in-block") {
-		new Notice("Timeline DSL: Cursor is not inside a tdsl block.");
+	const plan = planFenceTransform(
+		lines,
+		editor.getCursor().line,
+		transform,
+		errorLabel,
+	);
+	if (plan.kind === "error") {
+		new Notice(plan.message);
 		return;
 	}
-	if (fence.status === "missing-close") {
-		new Notice(
-			"Timeline DSL: Could not find the closing fence of the tdsl block.",
-		);
-		return;
-	}
-	const { openLine, closeLine } = fence.range;
-
-	const body = extractFenceBody(lines, openLine, closeLine);
-
-	// The WASM entry points throw a string error on parse failure.
-	let result: string;
-	try {
-		result = transform(body);
-	} catch (e) {
-		new Notice(`Timeline DSL ${errorLabel} error:\n${String(e)}`);
-		return;
-	}
-
-	// Skip the write when the transform is a no-op: lint_fix_source returns the
-	// source byte-identical if nothing is fixable, and replacing text with itself
-	// would still push a pointless entry onto the undo stack.
-	const next = ensureTrailingNewline(result);
-	if (next === body) {
+	if (plan.kind === "noop") {
 		onApplied(false);
 		return;
 	}
-
-	const { from, to } = fenceBodyRange(openLine, closeLine);
-	editor.replaceRange(next, from, to);
+	editor.replaceRange(plan.text, plan.from, plan.to);
 	onApplied(true);
 }
 
