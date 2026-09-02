@@ -60,7 +60,7 @@ Obsidian は複数の `tdsl` ブロックを同時に描画するため、この
 `@keroway/tdsl-wasm` のエクスポートに依存している：
 
 - `check_source(source: string): string` — 診断 JSON（`[{severity, message, line, col}]`）を返す
-- `render_svg_from_source_with_options(source: string, scale: number, opts: JsRenderOptions): string` — SVG 文字列を返す。`scale` は 1 年あたりピクセル数（`0` で自動）。`opts` は `src/main.ts` の `renderSvg()` が設定する 8 つのフィールドを持つ：
+- `render_svg_from_source_with_options(source: string, scale: number, opts: JsRenderOptions): string` — SVG 文字列を返す。`scale` は 1 年あたりピクセル数（`0` で自動）。`opts` は `src/render-options.ts` の `populateRenderOptions()` が設定する 8 つのフィールドを持つ：
   - `grid` — `//! grid: ...` / 設定の Default grid
   - `theme` — `//! theme: ...` / 設定の Default theme（`"auto"` は未設定として扱う）
   - `orientation` — `//! orientation: ...` / 設定の Default orientation
@@ -69,7 +69,7 @@ Obsidian は複数の `tdsl` ブロックを同時に描画するため、この
   - `show_table` — `//! table: ...` / 設定の Render table
   - `show_legend` — `//! legend: ...` / 設定の Render legend
   - `lane_height` — `//! lane_height: ...` / 設定の Default lane height（`0` は未設定として扱う）
-- `JsRenderOptions` は **1 回の render 呼び出しで WASM 側に free される**。使い回すと `null pointer passed to rust` でクラッシュするため、呼び出しごとに `new` すること。`renderSvg()` が実際に上記フィールドを代入しているので、WASM 側に新しいフィールドが追加された場合もそこを確認する。
+- `JsRenderOptions` は **1 回の render 呼び出しで WASM 側に free される**。使い回すと `null pointer passed to rust` でクラッシュするため、呼び出しごとに `new` すること。`populateRenderOptions()`（`src/render-options.ts`）が実際に上記フィールドを代入しているので、WASM 側に新しいフィールドが追加された場合もそこを確認する。代入対象は `RenderOptionsSink` インターフェースとして構造的に宣言してあり、`JsRenderOptions` がこれを満たさなくなると `typecheck` が落ちる。
   所有権の移譲は wasm-bindgen が Rust 側へ入る**前**に `__destroy_into_raw()` で行うため、render が
   throw した場合でもインスタンスは消費済みになる。`src/main.ts` の `renderSvg()` はこの前提で
   「所有権が移る前に throw した経路だけ `free()` する」フラグを持つ。無条件に `free()` すると二重 free になる。
@@ -154,6 +154,9 @@ src/
   pan-zoom.ts           — プレビュー内 SVG のパン/ズーム（viewBox 操作、スケール範囲のクランプ）
   png-export.ts         — SVG 文字列を Canvas 経由で PNG にラスタライズ（DOM 依存はテスト用に注入可能）
   render-cache.ts       — 直近の描画結果（SVG＋診断）を保持する LRU キャッシュとキー生成
+  render-options.ts     — `ResolvedRender` を `JsRenderOptions` へ写す代入規則（未解決のフィールドは
+                          書かずレンダラー既定を残す／setter が throw したら free する）。
+                          WASM クラスは構造的インターフェースで受けるのでテストは実インスタンス不要
   standalone-html.ts    — HTML エクスポート向けにテーマ解決を上書き（`auto` テーマは vault 外で使えないため）
   tdsl-keywords.ts      — timeline-dsl リポジトリの keywords.json を手動移植したキーワード一覧（上流変更は手動追従）
   tdsl-language.ts      — timeline-dsl リポジトリの CodeMirror StreamLanguage 実装を手動移植した字句解析層
