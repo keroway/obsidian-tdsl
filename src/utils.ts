@@ -1,3 +1,5 @@
+import { findTdslFenceAtCursor } from "./fence";
+
 /**
  * Pure utility functions extracted from main.ts.
  * These have no Obsidian API or WASM dependencies and can be unit-tested directly.
@@ -601,4 +603,82 @@ export function fenceBodyRange(
  */
 export function ensureTrailingNewline(text: string): string {
 	return text.endsWith("\n") ? text : `${text}\n`;
+}
+
+/** Editor position, structurally compatible with Obsidian's `EditorPosition`. */
+export interface FencePosition {
+	line: number;
+	ch: number;
+}
+
+/**
+ * What the format / lint-fix commands should do, decided without touching the
+ * editor.
+ *
+ * `error` carries the exact Notice text; `noop` means the transform returned
+ * the body unchanged and the document must not be written (see below);
+ * `replace` carries everything `Editor.replaceRange` needs.
+ */
+export type FenceTransformPlan =
+	| { kind: "error"; message: string }
+	| { kind: "noop" }
+	| { kind: "replace"; text: string; from: FencePosition; to: FencePosition };
+
+/**
+ * Decides how to apply `transform` to the body of the tdsl block containing
+ * `cursorLine`.
+ *
+ * Split out of main.ts's `transformCurrentBlock` so the whole decision — which
+ * fence, which failure message, write or skip — is testable without an
+ * Obsidian `Editor`. The caller is left with the two effects: showing a Notice
+ * and calling `replaceRange`.
+ *
+ * `transform` is a WASM entry point (`format_source` / `lint_fix_source`) that
+ * throws a string on parse failure; `errorLabel` names the operation in the
+ * resulting message.
+ *
+ * A transform that returns the body byte-identical is meant to yield `noop`
+ * rather than a `replace`, since replacing text with itself would still push a
+ * pointless entry onto the undo stack. The comparison below only achieves that
+ * when the body already ends with a newline — a known bug carried over verbatim
+ * from main.ts and tracked in #221, deliberately left unchanged here so this
+ * extraction stays behavior-preserving.
+ */
+export function planFenceTransform(
+	lines: readonly string[],
+	cursorLine: number,
+	transform: (body: string) => string,
+	errorLabel: string,
+): FenceTransformPlan {
+	const fence = findTdslFenceAtCursor(lines, cursorLine);
+	if (fence.status === "not-in-block") {
+		return {
+			kind: "error",
+			message: "Timeline DSL: Cursor is not inside a tdsl block.",
+		};
+	}
+	if (fence.status === "missing-close") {
+		return {
+			kind: "error",
+			message:
+				"Timeline DSL: Could not find the closing fence of the tdsl block.",
+		};
+	}
+	const { openLine, closeLine } = fence.range;
+	const body = extractFenceBody(lines, openLine, closeLine);
+
+	let result: string;
+	try {
+		result = transform(body);
+	} catch (e) {
+		return {
+			kind: "error",
+			message: `Timeline DSL ${errorLabel} error:\n${String(e)}`,
+		};
+	}
+
+	const text = ensureTrailingNewline(result);
+	// Not `ensureTrailingNewline(body)` — see #221.
+	if (text === body) return { kind: "noop" };
+	return { kind: "replace", text, ...fenceBodyRange(openLine, closeLine) };
 }

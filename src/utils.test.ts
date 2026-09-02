@@ -22,6 +22,7 @@ import {
 	parseLintIssues,
 	parseRenderDirectives,
 	parseScaleSetting,
+	planFenceTransform,
 	resolveEditorLine,
 	resolveRenderOptions,
 	resolveUniqueVaultPath,
@@ -1106,5 +1107,144 @@ describe("scale setting committed after debounce", () => {
 		expect(notices).toEqual([
 			'Timeline DSL: "abc" is not a valid scale value. Reset to "auto".',
 		]);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// planFenceTransform
+// ---------------------------------------------------------------------------
+
+describe("planFenceTransform", () => {
+	const block = ["text", "```tdsl", "timeline {}", "```", "more"];
+	const identity = (body: string) => body;
+	const upper = (body: string) => body.toUpperCase();
+
+	it("reports the cursor being outside any tdsl block", () => {
+		expect(planFenceTransform(block, 0, upper, "format")).toEqual({
+			kind: "error",
+			message: "Timeline DSL: Cursor is not inside a tdsl block.",
+		});
+	});
+
+	it("reports an unterminated block", () => {
+		const lines = ["```tdsl", "timeline {}"];
+		expect(planFenceTransform(lines, 1, upper, "format")).toEqual({
+			kind: "error",
+			message:
+				"Timeline DSL: Could not find the closing fence of the tdsl block.",
+		});
+	});
+
+	it("turns a thrown transform into a labelled error message", () => {
+		const throwing = () => {
+			// The WASM entry points throw a bare string, not an Error.
+			throw "unexpected token";
+		};
+		expect(planFenceTransform(block, 2, throwing, "lint fix")).toEqual({
+			kind: "error",
+			message: "Timeline DSL lint fix error:\nunexpected token",
+		});
+	});
+
+	it("does not run the transform when the fence is not found", () => {
+		let calls = 0;
+		planFenceTransform(
+			block,
+			0,
+			(body) => {
+				calls++;
+				return body;
+			},
+			"format",
+		);
+		expect(calls).toBe(0);
+	});
+
+	it("plans a replacement covering exactly the block body", () => {
+		expect(planFenceTransform(block, 2, upper, "format")).toEqual({
+			kind: "replace",
+			text: "TIMELINE {}\n",
+			from: { line: 2, ch: 0 },
+			to: { line: 3, ch: 0 },
+		});
+	});
+
+	it("passes the joined body to the transform, fences excluded", () => {
+		const lines = ["```tdsl", "a", "b", "```"];
+		let seen: string | null = null;
+		planFenceTransform(
+			lines,
+			1,
+			(body) => {
+				seen = body;
+				return body;
+			},
+			"format",
+		);
+		expect(seen).toBe("a\nb");
+	});
+
+	it("skips the write when the body already ends with a newline and is unchanged", () => {
+		// `extractFenceBody` joins lines, so the body ends with a newline only
+		// when the last body line is blank. That is the one shape in which the
+		// no-op comparison below can succeed today.
+		const lines = ["```tdsl", "timeline {}", "", "```"];
+		expect(planFenceTransform(lines, 1, identity, "format")).toEqual({
+			kind: "noop",
+		});
+	});
+
+	it("plans a replacement for an unchanged body without a trailing newline", () => {
+		// Behavior carried over verbatim from main.ts: the comparison is
+		// `ensureTrailingNewline(result) === body`, and a joined body carries no
+		// trailing newline, so an unchanged transform still plans a write (#221).
+		expect(planFenceTransform(block, 2, identity, "format")).toEqual({
+			kind: "replace",
+			text: "timeline {}\n",
+			from: { line: 2, ch: 0 },
+			to: { line: 3, ch: 0 },
+		});
+	});
+
+	it("plans a replacement when the transform empties the body", () => {
+		expect(planFenceTransform(block, 2, () => "", "format")).toEqual({
+			kind: "replace",
+			text: "\n",
+			from: { line: 2, ch: 0 },
+			to: { line: 3, ch: 0 },
+		});
+	});
+
+	it("appends a trailing newline so the closing fence keeps its own line", () => {
+		const plan = planFenceTransform(block, 2, () => "timeline { }", "format");
+		expect(plan).toEqual({
+			kind: "replace",
+			text: "timeline { }\n",
+			from: { line: 2, ch: 0 },
+			to: { line: 3, ch: 0 },
+		});
+	});
+
+	it("does not double the newline when the transform already ends with one", () => {
+		const plan = planFenceTransform(block, 2, () => "timeline {}\n", "format");
+		expect(plan).toMatchObject({ kind: "replace", text: "timeline {}\n" });
+	});
+
+	it("handles an empty block body", () => {
+		const lines = ["```tdsl", "```"];
+		expect(planFenceTransform(lines, 0, upper, "format")).toEqual({
+			kind: "error",
+			message: "Timeline DSL: Cursor is not inside a tdsl block.",
+		});
+	});
+
+	it("resolves the block the cursor is in, not the first one in the note", () => {
+		const lines = ["```tdsl", "first", "```", "", "```tdsl", "second", "```"];
+		expect(planFenceTransform(lines, 5, upper, "format")).toEqual({
+			kind: "replace",
+			text: "SECOND\n",
+			from: { line: 5, ch: 0 },
+			to: { line: 6, ch: 0 },
+		});
 	});
 });
