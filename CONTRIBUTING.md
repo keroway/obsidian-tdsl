@@ -26,6 +26,16 @@ pnpm test              # Vitest unit tests
 pnpm run lint          # Biome lint
 pnpm run format:check  # Biome formatter check
 pnpm run typecheck     # TypeScript type-check without emitting files
+just typos             # Spell-check with typos (requires the typos CLI: brew install typos-cli / cargo install typos-cli)
+```
+
+Typo exclusions (e.g. proper nouns) are configured in `_typos.toml`. To verify the
+checker actually catches typos and applies exclusions:
+
+```sh
+printf 'hte handel\n' > /tmp/typos-check.txt
+typos /tmp/typos-check.txt; echo "exit: $?"   # non-zero exit, flags "hte" but not "handel"
+rm /tmp/typos-check.txt
 ```
 
 ### Testing in Obsidian
