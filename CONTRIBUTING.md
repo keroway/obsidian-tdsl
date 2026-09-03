@@ -30,11 +30,12 @@ just typos             # Spell-check with typos (requires the typos CLI: brew in
 ```
 
 Typo exclusions (e.g. proper nouns) are configured in `_typos.toml`. To verify the
-checker actually catches typos and applies exclusions:
+checker actually catches typos and applies exclusions (the misspelling below is
+split across two strings so this file itself doesn't trip the check):
 
 ```sh
-printf 'hte handel\n' > /tmp/typos-check.txt
-typos /tmp/typos-check.txt; echo "exit: $?"   # non-zero exit, flags "hte" but not "handel"
+printf '%s handel\n' "h""te" > /tmp/typos-check.txt
+typos /tmp/typos-check.txt   # non-zero exit, flags the misspelling but not "handel"
 rm /tmp/typos-check.txt
 ```
 
