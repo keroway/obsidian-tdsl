@@ -341,15 +341,10 @@ export function filterInfos(diagnostics: Diagnostic[]): Diagnostic[] {
 }
 
 /**
- * Formats error diagnostics into human-readable messages.
- * Includes the line number prefix when `line > 0`.
- */
-/**
  * A diagnostic split into the pieces the UI renders separately.
  *
  * `line` is kept apart from `text` so main.ts can turn the `Line N` segment
- * into its own clickable element; `joinDiagnosticParts` reassembles the exact
- * string that segment-less contexts (tests, plain text) expect.
+ * into its own clickable element.
  */
 export interface DiagnosticParts {
 	/** Text before the line label, e.g. `[missing_id] `. Empty for compile errors. */
@@ -362,16 +357,6 @@ export interface DiagnosticParts {
 
 export function diagnosticParts(e: Diagnostic): DiagnosticParts {
 	return { prefix: "", line: e.line, text: e.message };
-}
-
-export function joinDiagnosticParts(p: DiagnosticParts): string {
-	return p.line > 0
-		? `${p.prefix}Line ${p.line}: ${p.text}`
-		: `${p.prefix}${p.text}`;
-}
-
-export function formatDiagnosticMessages(errors: Diagnostic[]): string[] {
-	return errors.map((e) => joinDiagnosticParts(diagnosticParts(e)));
 }
 
 /**
@@ -432,10 +417,6 @@ export function lintIssueParts(i: LintIssue): DiagnosticParts {
 		line: i.line,
 		text: `${i.message}${i.fixable ? " ✏" : ""}`,
 	};
-}
-
-export function formatLintIssues(issues: LintIssue[]): string[] {
-	return issues.map((i) => joinDiagnosticParts(lintIssueParts(i)));
 }
 
 /** Coerces the free-text `scale` setting value into `"auto" | "fit" | number`. */

@@ -12,8 +12,6 @@ import {
 	filterErrors,
 	filterInfos,
 	filterWarnings,
-	formatDiagnosticMessages,
-	formatLintIssues,
 	hasWikidataImport,
 	isRecognizedLaneHeightInput,
 	isRecognizedScaleInput,
@@ -609,44 +607,7 @@ describe("filterInfos", () => {
 });
 
 // ----------------------------------------------------------------------------
-// formatDiagnosticMessages
-// ----------------------------------------------------------------------------
-
-describe("formatDiagnosticMessages", () => {
-	it("prefixes message with line number when line > 0", () => {
-		const errors = [
-			{ severity: "error", message: "bad token", line: 3, col: 1 },
-		];
-		expect(formatDiagnosticMessages(errors)).toEqual(["Line 3: bad token"]);
-	});
-
-	it("omits the line prefix when line === 0", () => {
-		const errors = [
-			{ severity: "error", message: "unknown error", line: 0, col: 0 },
-		];
-		expect(formatDiagnosticMessages(errors)).toEqual(["unknown error"]);
-	});
-
-	it("handles multiple errors with mixed line values", () => {
-		const errors = [
-			{ severity: "error", message: "first", line: 1, col: 0 },
-			{ severity: "error", message: "second", line: 0, col: 0 },
-			{ severity: "error", message: "third", line: 5, col: 2 },
-		];
-		expect(formatDiagnosticMessages(errors)).toEqual([
-			"Line 1: first",
-			"second",
-			"Line 5: third",
-		]);
-	});
-
-	it("returns an empty array for empty input", () => {
-		expect(formatDiagnosticMessages([])).toEqual([]);
-	});
-});
-
-// ----------------------------------------------------------------------------
-// parseLintIssues / formatLintIssues
+// parseLintIssues
 // ----------------------------------------------------------------------------
 
 describe("parseLintIssues", () => {
@@ -677,57 +638,6 @@ describe("parseLintIssues", () => {
 
 	it("returns null for invalid JSON instead of silently dropping lint issues", () => {
 		expect(parseLintIssues("not json")).toBeNull();
-	});
-});
-
-describe("formatLintIssues", () => {
-	it("formats an issue with line and fixable flag", () => {
-		const issues = [
-			{
-				code: "start_gt_end",
-				severity: "warning" as const,
-				line: 5,
-				message: "start is after end",
-				fixable: true,
-			},
-		];
-		expect(formatLintIssues(issues)).toEqual([
-			"[start_gt_end] Line 5: start is after end ✏",
-		]);
-	});
-
-	it("omits line prefix when line === 0", () => {
-		const issues = [
-			{
-				code: "missing_id",
-				severity: "warning" as const,
-				line: 0,
-				message: "span is missing id",
-				fixable: false,
-			},
-		];
-		expect(formatLintIssues(issues)).toEqual([
-			"[missing_id] span is missing id",
-		]);
-	});
-
-	it("omits fixable badge when fixable === false", () => {
-		const issues = [
-			{
-				code: "invalid_tags",
-				severity: "warning" as const,
-				line: 3,
-				message: "unknown tag",
-				fixable: false,
-			},
-		];
-		expect(formatLintIssues(issues)).toEqual([
-			"[invalid_tags] Line 3: unknown tag",
-		]);
-	});
-
-	it("returns an empty array for empty input", () => {
-		expect(formatLintIssues([])).toEqual([]);
 	});
 });
 

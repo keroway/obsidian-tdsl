@@ -29,12 +29,16 @@ export default defineConfig({
 			thresholds: {
 				// 除外後の実測値に沿ったラチェット。下げるのではなく、
 				// 実態が上がったら上げること（下げる変更は理由を PR に書く）。
-				// 実測 (2026-09-02, #219 の切り出し 4 件を反映):
-				//   statements 90.54 / branches 88.57 / functions 88.54 / lines 90.76
+				// 実測 (2026-09-06, #232 で本番未使用の formatDiagnosticMessages /
+				// formatLintIssues / joinDiagnosticParts とそのテストを削除):
+				//   statements 90.05 / branches 87.93 / functions 85.71 / lines 90.24
+				// functions のみ、テストだけが呼んでいた3関数の削除で分母に対する
+				// カバー済み関数の比率が下がったため 87 → 85 に下げた
+				// （到達不能コードで嵩上げされていた分が剥がれた、が実害はない）。
 				// 直下に置いて、通常の変動では落ちず実質的な劣化では落ちるようにする。
 				statements: 89,
 				branches: 87,
-				functions: 87,
+				functions: 85,
 				lines: 89,
 				// 集約値だけでは「1 ファイルが丸ごと 0% でも全体は通る」（#191）。
 				// 実際 editor-highlight.ts は 147 行すべて未テストのまま
