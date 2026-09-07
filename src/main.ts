@@ -691,10 +691,20 @@ const ZOOM_WHEEL_FACTOR = 1.15;
  * response instead of throwing out of a render path.
  */
 function setupPanZoom(wrapper: HTMLElement, svg: SVGSVGElement): void {
-	const original = parseViewBox(svg.getAttribute("viewBox") ?? "");
-	if (!original) return;
+	const currentAttr = svg.getAttribute("viewBox") ?? "";
+	const initial = parseViewBox(currentAttr);
+	if (!initial) return;
 
-	let current: ViewBox = original;
+	// Remembers the viewBox as first rendered (the "whole diagram" bounds) in a
+	// data attribute, separate from the live `viewBox` attribute that pan/zoom
+	// keeps rewriting. `cloneNode(true)` copies data-* attributes, so when the
+	// fullscreen modal clones an already-zoomed inline SVG (#237), the clone's
+	// pan/zoom re-derives the same full bounds instead of freezing whatever
+	// zoom level the inline view happened to be at.
+	if (!svg.dataset.tdslFullViewBox) svg.dataset.tdslFullViewBox = currentAttr;
+	const original = parseViewBox(svg.dataset.tdslFullViewBox) ?? initial;
+
+	let current: ViewBox = initial;
 	const apply = (next: ViewBox) => {
 		current = next;
 		svg.setAttribute("viewBox", formatViewBox(next));
