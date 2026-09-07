@@ -177,7 +177,7 @@ class TdslPreview extends MarkdownRenderChild {
 			const adopted = document.adoptNode(root) as unknown as SVGSVGElement;
 			wrapper.appendChild(adopted);
 			this.addCopySvgToolbar(wrapper, serializedSvg, adopted);
-			this.addItemTooltips(wrapper);
+			addItemTooltips(wrapper);
 			// Independent of `tdsl-fit` / horizontal-scroll display: pan/zoom
 			// rewrites `viewBox`, which is orthogonal to how the SVG's CSS box is
 			// sized, so it composes with either display mode without conflict.
@@ -328,45 +328,6 @@ class TdslPreview extends MarkdownRenderChild {
 		saveButton.addEventListener("click", () => {
 			void this.saveSvgToVault();
 		});
-	}
-
-	/**
-	 * Shows `note` / `link` content on hover via a custom tooltip element.
-	 *
-	 * CSS `::after` generated content does not paint on SVG `<g>` elements in
-	 * Chromium, so this is implemented with a real DOM element positioned
-	 * next to the pointer. The native `<title>` on each item is removed to
-	 * avoid a duplicate browser tooltip; it is left intact in the serialized
-	 * SVG used by the Copy SVG / standalone HTML actions.
-	 */
-	private addItemTooltips(wrapper: HTMLElement): void {
-		const items = wrapper.querySelectorAll("[data-tdsl-tooltip]");
-		if (items.length === 0) return;
-
-		const tooltip = wrapper.createDiv({
-			cls: "tdsl-tooltip",
-			attr: { role: "tooltip" },
-		});
-
-		for (const item of Array.from(items)) {
-			item.querySelector("title")?.remove();
-
-			item.addEventListener("pointerenter", () => {
-				const text = item.getAttribute("data-tdsl-tooltip");
-				if (!text) return;
-				tooltip.setText(text);
-				tooltip.addClass("tdsl-tooltip-visible");
-			});
-			item.addEventListener("pointermove", (ev) => {
-				const pointerEvent = ev as PointerEvent;
-				const rect = wrapper.getBoundingClientRect();
-				tooltip.style.left = `${pointerEvent.clientX - rect.left + 12}px`;
-				tooltip.style.top = `${pointerEvent.clientY - rect.top + 12}px`;
-			});
-			item.addEventListener("pointerleave", () => {
-				tooltip.removeClass("tdsl-tooltip-visible");
-			});
-		}
 	}
 
 	private async copySvg(svg: string): Promise<void> {
@@ -673,10 +634,56 @@ class TdslFullscreenModal extends Modal {
 		const clone = this.source.cloneNode(true) as SVGSVGElement;
 		wrapper.appendChild(clone);
 		setupPanZoom(wrapper, clone);
+		// The inline wrapper's own tooltip element and listeners are not part of
+		// the cloned SVG, so the modal needs its own (#238).
+		addItemTooltips(wrapper);
 	}
 
 	onClose(): void {
 		this.contentEl.empty();
+	}
+}
+
+/**
+ * Shows `note` / `link` content on hover via a custom tooltip element.
+ *
+ * CSS `::after` generated content does not paint on SVG `<g>` elements in
+ * Chromium, so this is implemented with a real DOM element positioned next to
+ * the pointer. The native `<title>` on each item is removed to avoid a
+ * duplicate browser tooltip; it is left intact in the serialized SVG used by
+ * the Copy SVG / standalone HTML actions.
+ *
+ * Shared between the inline preview and `TdslFullscreenModal`: the modal
+ * clones the already-adopted SVG, and its tooltip element/listeners live
+ * outside the SVG so they are not carried over by `cloneNode` (#238).
+ */
+function addItemTooltips(wrapper: HTMLElement): void {
+	const items = wrapper.querySelectorAll("[data-tdsl-tooltip]");
+	if (items.length === 0) return;
+
+	const tooltip = wrapper.createDiv({
+		cls: "tdsl-tooltip",
+		attr: { role: "tooltip" },
+	});
+
+	for (const item of Array.from(items)) {
+		item.querySelector("title")?.remove();
+
+		item.addEventListener("pointerenter", () => {
+			const text = item.getAttribute("data-tdsl-tooltip");
+			if (!text) return;
+			tooltip.setText(text);
+			tooltip.addClass("tdsl-tooltip-visible");
+		});
+		item.addEventListener("pointermove", (ev) => {
+			const pointerEvent = ev as PointerEvent;
+			const rect = wrapper.getBoundingClientRect();
+			tooltip.style.left = `${pointerEvent.clientX - rect.left + 12}px`;
+			tooltip.style.top = `${pointerEvent.clientY - rect.top + 12}px`;
+		});
+		item.addEventListener("pointerleave", () => {
+			tooltip.removeClass("tdsl-tooltip-visible");
+		});
 	}
 }
 

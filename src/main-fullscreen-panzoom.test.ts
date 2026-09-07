@@ -18,13 +18,17 @@ function loadFullscreenModal(): {
 		source: SVGSVGElement,
 		// biome-ignore lint/suspicious/noExplicitAny: constructed dynamically from sliced source
 	) => any;
+	addItemTooltips: (wrapper: HTMLElement) => void;
 } {
 	const panZoomSource = panZoomSourceRaw.split("export ").join("");
+	// This slice also picks up `addItemTooltips`, which sits between
+	// `TdslFullscreenModal` and `ZOOM_WHEEL_FACTOR` (see #238: the modal calls
+	// it directly, so the regression test needs the same function under test).
 	const modalSource = mainSource.slice(
 		mainSource.indexOf("class TdslFullscreenModal"),
 		mainSource.indexOf("export default class TimelineDslPlugin"),
 	);
-	const body = `${panZoomSource}\n${modalSource}\nreturn { TdslFullscreenModal };`;
+	const body = `${panZoomSource}\n${modalSource}\nreturn { TdslFullscreenModal, addItemTooltips };`;
 	const { code } = transformSync(body, { loader: "ts", target: "es2022" });
 
 	class FakeModal {
@@ -44,6 +48,9 @@ function loadFullscreenModal(): {
 	proto.removeClass = function (cls: string) {
 		this.classList.remove(cls);
 	};
+	proto.setText = function (text: string) {
+		this.textContent = text;
+	};
 	proto.createDiv = function (opts: {
 		cls?: string;
 		attr?: Record<string, string>;
@@ -60,9 +67,9 @@ function loadFullscreenModal(): {
 	return new Function("Modal", code)(FakeModal);
 }
 
-function makeSvg(viewBox: string): SVGSVGElement {
+function makeSvg(viewBox: string, inner = ""): SVGSVGElement {
 	const doc = new DOMParser().parseFromString(
-		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}"></svg>`,
+		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">${inner}</svg>`,
 		"image/svg+xml",
 	);
 	return document.adoptNode(doc.documentElement) as unknown as SVGSVGElement;
@@ -114,5 +121,49 @@ describe("TdslFullscreenModal viewBox boundary (#237)", () => {
 		modal.onOpen();
 
 		expect(source.getAttribute("viewBox")).toBe("200 100 400 200");
+	});
+});
+
+describe("TdslFullscreenModal item tooltips (#238)", () => {
+	it("re-attaches a tooltip element and listeners onto the cloned SVG", () => {
+		const { TdslFullscreenModal, addItemTooltips } = loadFullscreenModal();
+
+		const source = makeSvg(
+			"0 0 800 400",
+			'<g data-tdsl-tooltip="example note"><title>example note</title><rect width="100" height="50" /></g>',
+		);
+		const inlineWrapper = document.createElement("div");
+		inlineWrapper.append(source);
+		// The inline preview always wires tooltips before Fullscreen can open
+		// (`renderDiagram()` calls `addItemTooltips(wrapper)`), which is also
+		// what strips the native `<title>` — reproduce that ordering here.
+		addItemTooltips(inlineWrapper);
+
+		const modal = new TdslFullscreenModal({}, source);
+		modal.onOpen();
+		const clone = modal.contentEl.querySelector("svg") as SVGSVGElement;
+		const item = clone.querySelector("g") as SVGGElement;
+
+		item.dispatchEvent(new Event("pointerenter"));
+
+		const tooltip = modal.contentEl.querySelector(
+			'[role="tooltip"]',
+		) as HTMLElement;
+		expect(tooltip).not.toBeNull();
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(true);
+		expect(tooltip.textContent).toBe("example note");
+
+		item.dispatchEvent(new Event("pointerleave"));
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(false);
+	});
+
+	it("does not add a tooltip element when the clone has no tooltip items", () => {
+		const { TdslFullscreenModal } = loadFullscreenModal();
+
+		const source = makeSvg("0 0 800 400", "<rect width='100' height='50' />");
+		const modal = new TdslFullscreenModal({}, source);
+		modal.onOpen();
+
+		expect(modal.contentEl.querySelector('[role="tooltip"]')).toBeNull();
 	});
 });
