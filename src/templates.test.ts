@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
 	filterTemplates,
-	findTemplate,
 	renderTemplateSnippet,
 	TIMELINE_TEMPLATES,
 } from "./templates";
@@ -65,17 +64,6 @@ describe("TIMELINE_TEMPLATES", () => {
 				}
 			}
 		}
-	});
-});
-
-describe("findTemplate", () => {
-	it("finds a template by id", () => {
-		const first = TIMELINE_TEMPLATES[0];
-		expect(findTemplate(first.id)).toBe(first);
-	});
-
-	it("returns undefined for an unknown id", () => {
-		expect(findTemplate("no-such-template")).toBeUndefined();
 	});
 });
 

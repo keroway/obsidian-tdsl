@@ -129,11 +129,6 @@ event fic 2026-06 "Finished a short story" { tags ["fiction"]; };
 	},
 ] as const;
 
-/** Looks a template up by id. Returns `undefined` for an unknown id. */
-export function findTemplate(id: string): TimelineTemplate | undefined {
-	return TIMELINE_TEMPLATES.find((t) => t.id === id);
-}
-
 /**
  * Wraps a template body in a `tdsl` code fence, ready to drop into a note.
  *
