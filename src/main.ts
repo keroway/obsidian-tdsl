@@ -678,8 +678,8 @@ function addItemTooltips(wrapper: HTMLElement): void {
 		item.addEventListener("pointermove", (ev) => {
 			const pointerEvent = ev as PointerEvent;
 			const rect = wrapper.getBoundingClientRect();
-			tooltip.style.left = `${pointerEvent.clientX - rect.left + 12}px`;
-			tooltip.style.top = `${pointerEvent.clientY - rect.top + 12}px`;
+			tooltip.style.left = `${pointerEvent.clientX - rect.left + wrapper.scrollLeft + 12}px`;
+			tooltip.style.top = `${pointerEvent.clientY - rect.top + wrapper.scrollTop + 12}px`;
 		});
 		item.addEventListener("pointerleave", () => {
 			tooltip.removeClass("tdsl-tooltip-visible");
