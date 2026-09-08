@@ -197,3 +197,42 @@ describe("addItemTooltips scroll offset (#243)", () => {
 		expect(tooltip.style.top).toBe("82px");
 	});
 });
+
+describe("TdslFullscreenModal zoom center drift (#244)", () => {
+	it("keeps the diagram point under the cursor fixed when the element's aspect ratio (800x800, Fullscreen's width:100%;height:100%) differs from the viewBox's (800x400)", () => {
+		const { TdslFullscreenModal } = loadFullscreenModal();
+		const source = makeSvg("0 0 800 400");
+		const modal = new TdslFullscreenModal({}, source);
+		modal.onOpen();
+		const clone = modal.contentEl.querySelector("svg") as SVGSVGElement;
+		Object.defineProperty(clone, "getBoundingClientRect", {
+			value: () => ({ left: 0, top: 0, width: 800, height: 800 }),
+		});
+
+		// Independently re-derives the diagram-space point under screen (400,
+		// 300) from a `viewBox` attribute, assuming `xMidYMid meet` letterboxing
+		// against the fixed 800x800 element rect above.
+		const diagramPointUnderCursor = (viewBoxAttr: string) => {
+			const [, y, w, h] = viewBoxAttr.split(" ").map(Number);
+			const scale = Math.min(800 / w, 800 / h);
+			const marginY = (800 - h * scale) / 2;
+			return y + (300 - marginY) / scale;
+		};
+
+		const before = diagramPointUnderCursor(
+			clone.getAttribute("viewBox") as string,
+		);
+		// happy-dom's WheelEvent constructor does not apply `clientX`/`clientY`
+		// from the init dict (unlike PointerEvent, used elsewhere in this file),
+		// so they are set directly on the instance instead.
+		const wheelEvent = new WheelEvent("wheel", { deltaY: -100 });
+		Object.defineProperty(wheelEvent, "clientX", { value: 400 });
+		Object.defineProperty(wheelEvent, "clientY", { value: 300 });
+		clone.dispatchEvent(wheelEvent);
+		const after = diagramPointUnderCursor(
+			clone.getAttribute("viewBox") as string,
+		);
+
+		expect(after).toBeCloseTo(before, 5);
+	});
+});

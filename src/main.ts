@@ -31,6 +31,7 @@ import { tdslEditorHighlight } from "./editor-highlight";
 import { idleScheduler } from "./idle-scheduler";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
 import {
+	contentRect,
 	formatViewBox,
 	panViewBox,
 	parseViewBox,
@@ -718,7 +719,7 @@ function setupPanZoom(wrapper: HTMLElement, svg: SVGSVGElement): void {
 	};
 
 	const focusFromEvent = (ev: { clientX: number; clientY: number }) => {
-		const rect = svg.getBoundingClientRect();
+		const rect = contentRect(svg.getBoundingClientRect(), current);
 		return {
 			x: current.x + ((ev.clientX - rect.left) / rect.width) * current.width,
 			y: current.y + ((ev.clientY - rect.top) / rect.height) * current.height,
@@ -750,7 +751,7 @@ function setupPanZoom(wrapper: HTMLElement, svg: SVGSVGElement): void {
 
 	svg.addEventListener("pointermove", (ev) => {
 		if (!dragging) return;
-		const rect = svg.getBoundingClientRect();
+		const rect = contentRect(svg.getBoundingClientRect(), current);
 		const deltaPx = {
 			x: ev.clientX - lastClientX,
 			y: ev.clientY - lastClientY,
