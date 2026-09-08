@@ -167,3 +167,33 @@ describe("TdslFullscreenModal item tooltips (#238)", () => {
 		expect(modal.contentEl.querySelector('[role="tooltip"]')).toBeNull();
 	});
 });
+
+describe("addItemTooltips scroll offset (#243)", () => {
+	it("keeps the tooltip anchored to the pointer after horizontal/vertical scroll", () => {
+		const { addItemTooltips } = loadFullscreenModal();
+
+		const source = makeSvg(
+			"0 0 800 400",
+			'<g data-tdsl-tooltip="example note"><title>example note</title><rect width="100" height="50" /></g>',
+		);
+		const wrapper = document.createElement("div");
+		wrapper.append(source);
+		Object.defineProperty(wrapper, "getBoundingClientRect", {
+			value: () => ({ left: 100, top: 50, width: 500, height: 400 }),
+		});
+		Object.defineProperty(wrapper, "scrollLeft", { value: 300 });
+		Object.defineProperty(wrapper, "scrollTop", { value: 20 });
+
+		addItemTooltips(wrapper);
+		const item = wrapper.querySelector("g") as SVGGElement;
+
+		item.dispatchEvent(new Event("pointerenter"));
+		item.dispatchEvent(
+			new PointerEvent("pointermove", { clientX: 200, clientY: 100 }),
+		);
+
+		const tooltip = wrapper.querySelector('[role="tooltip"]') as HTMLElement;
+		expect(tooltip.style.left).toBe("412px");
+		expect(tooltip.style.top).toBe("82px");
+	});
+});
