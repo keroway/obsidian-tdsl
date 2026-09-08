@@ -6,6 +6,14 @@ export interface ViewBox {
 	height: number;
 }
 
+/** A `DOMRect`-shaped screen rectangle (left/top/width/height in pixels). */
+export interface Rect {
+	left: number;
+	top: number;
+	width: number;
+	height: number;
+}
+
 const MIN_SCALE = 1;
 const MAX_SCALE = 8;
 
@@ -74,6 +82,35 @@ export function panViewBox(
 		{ x, y, width: current.width, height: current.height },
 		original,
 	);
+}
+
+/**
+ * Computes the actual rendered diagram rectangle within an SVG element's
+ * bounding client rect, accounting for `xMidYMid meet` letterboxing
+ * (the SVG default `preserveAspectRatio`) when the element's rect aspect
+ * ratio differs from the `viewBox`'s — e.g. Fullscreen stretches the SVG to
+ * `width: 100%; height: 100%` of a container whose aspect ratio need not
+ * match the diagram's. Screen-to-diagram coordinate conversions must use
+ * this instead of the raw element rect, or the mapping drifts by the size of
+ * the (invisible) letterbox margin.
+ *
+ * Falls back to `elementRect` unchanged when it has no area, matching the
+ * degenerate-size guard callers already apply to it.
+ */
+export function contentRect(elementRect: Rect, viewBox: ViewBox): Rect {
+	if (elementRect.width <= 0 || elementRect.height <= 0) return elementRect;
+	const scale = Math.min(
+		elementRect.width / viewBox.width,
+		elementRect.height / viewBox.height,
+	);
+	const width = viewBox.width * scale;
+	const height = viewBox.height * scale;
+	return {
+		left: elementRect.left + (elementRect.width - width) / 2,
+		top: elementRect.top + (elementRect.height - height) / 2,
+		width,
+		height,
+	};
 }
 
 /** Returns the original viewBox, undoing any zoom/pan applied to it. */

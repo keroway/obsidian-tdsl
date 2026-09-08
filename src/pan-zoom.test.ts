@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	contentRect,
 	formatViewBox,
 	panViewBox,
 	parseViewBox,
@@ -121,5 +122,35 @@ describe("panViewBox", () => {
 describe("resetViewBox", () => {
 	it("returns the original viewBox", () => {
 		expect(resetViewBox(original)).toEqual(original);
+	});
+});
+
+describe("contentRect", () => {
+	it("returns the element rect unchanged when its aspect ratio matches the viewBox", () => {
+		const rect = { left: 10, top: 20, width: 800, height: 400 };
+		expect(contentRect(rect, original)).toEqual(rect);
+	});
+
+	it("letterboxes vertically when the element is taller than the viewBox aspect ratio (#244)", () => {
+		// 800x400 viewBox in an 800x800 square element (e.g. Fullscreen) is
+		// scaled to fit width, leaving a 200px margin above and below.
+		const rect = contentRect(
+			{ left: 0, top: 0, width: 800, height: 800 },
+			original,
+		);
+		expect(rect).toEqual({ left: 0, top: 200, width: 800, height: 400 });
+	});
+
+	it("letterboxes horizontally when the element is wider than the viewBox aspect ratio", () => {
+		const rect = contentRect(
+			{ left: 0, top: 0, width: 1600, height: 400 },
+			original,
+		);
+		expect(rect).toEqual({ left: 400, top: 0, width: 800, height: 400 });
+	});
+
+	it("returns the input unchanged when the element has zero size", () => {
+		const rect = { left: 0, top: 0, width: 0, height: 0 };
+		expect(contentRect(rect, original)).toEqual(rect);
 	});
 });
