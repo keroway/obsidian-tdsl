@@ -19,3 +19,4 @@ Closes #
 - [ ] `npm run build` が通る
 - [ ] `npm run typecheck` が通る
 - [ ] `npm run lint` が通る
+- [ ] ユーザー影響のある変更は `CHANGELOG.md` の `[Unreleased]` に追記した（内部リファクタ/CI/テストのみの変更は対象外）

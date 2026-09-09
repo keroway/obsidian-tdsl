@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Timeline-template command** — `Insert timeline template` inserts one of four starter timelines (history, project, biography, or reading log) at the cursor ([#137](https://github.com/keroway/obsidian-tdsl/pull/137))
 - **Lint-fix command** — `Fix lint issues in current tdsl block` applies fixable lint corrections without creating an undo entry when there is nothing to change ([#138](https://github.com/keroway/obsidian-tdsl/pull/138))
 - **Clickable diagnostic locations** — click or keyboard-activate `Line N` in error, warning, info, or lint output to move to that line in the active note ([#139](https://github.com/keroway/obsidian-tdsl/pull/139))
+- **`layout_style` directive** — `//! layout_style: ...` and a matching Default layout style setting choose the lane-layout algorithm ([#150](https://github.com/keroway/obsidian-tdsl/pull/150))
+- **Pan and zoom** — inline previews and the fullscreen modal support pan/zoom, coexisting with `scale: fit` and horizontal-scroll display ([#178](https://github.com/keroway/obsidian-tdsl/pull/178), [#179](https://github.com/keroway/obsidian-tdsl/pull/179), [#180](https://github.com/keroway/obsidian-tdsl/pull/180))
+- **CodeMirror 6 syntax highlighting** — `tdsl` code blocks are colour-highlighted in the editor, matching the active Obsidian theme's colours ([#181](https://github.com/keroway/obsidian-tdsl/pull/181), [#182](https://github.com/keroway/obsidian-tdsl/pull/182))
+- **Hover tooltips** — `data-tdsl-tooltip` on rendered SVG elements shows note/link tooltips on hover ([#164](https://github.com/keroway/obsidian-tdsl/pull/164))
+- **Theme-mapped SVG colours** — internal SVG structural colours are mapped to Obsidian CSS variables ([#165](https://github.com/keroway/obsidian-tdsl/pull/165))
+- **Large-diagram confirmation** — rendering a very large Timeline DSL diagram asks for confirmation before drawing it ([#167](https://github.com/keroway/obsidian-tdsl/pull/167))
+- **Export toolbar** — Copy SVG, copy PNG to clipboard, copy standalone HTML, and save the render result as a vault image file are available from the preview toolbar ([#160](https://github.com/keroway/obsidian-tdsl/pull/160), [#166](https://github.com/keroway/obsidian-tdsl/pull/166), [#161](https://github.com/keroway/obsidian-tdsl/pull/161), [#169](https://github.com/keroway/obsidian-tdsl/pull/169))
+- **Rendering cache and idle lint** — repeated renders of an unchanged `tdsl` block reuse the cached SVG and diagnostics, and linting is deferred until the editor is idle ([#158](https://github.com/keroway/obsidian-tdsl/pull/158), [#159](https://github.com/keroway/obsidian-tdsl/pull/159))
 
 ### Changed
 
@@ -22,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Shipped DSL documentation** — README documents hour/minute/second units, datetime UTC offsets, `now`, and `note` / `link` / `color` properties ([#132](https://github.com/keroway/obsidian-tdsl/pull/132))
 - **Settings input responsiveness** — Default scale and lane-height edits wait briefly for typing to stop before saving and re-rendering previews ([#91](https://github.com/keroway/obsidian-tdsl/pull/91))
 - **Print/PDF and forced-colors presentation** — printed timelines fit page width and omit editing-only notices; forced-colors mode preserves lane distinctions ([#140](https://github.com/keroway/obsidian-tdsl/pull/140))
+- **Node toolchain upgraded to 26** ([#162](https://github.com/keroway/obsidian-tdsl/pull/162))
+- **README documentation refreshed** — documents the full command list, `id`/`origin`/`source`/`calendar`, and the pan/zoom and export toolbar features ([#149](https://github.com/keroway/obsidian-tdsl/pull/149), [#199](https://github.com/keroway/obsidian-tdsl/pull/199))
 
 ### Fixed
 
@@ -33,6 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Pending settings saves** — closing the settings tab saves pending edits, while unloading the plugin cancels them to prevent post-unload work ([#125](https://github.com/keroway/obsidian-tdsl/pull/125))
 - **Format command fence compatibility** — formatting recognizes tilde fences, variable-length backtick fences, and `tdsl` info strings with extra arguments ([#126](https://github.com/keroway/obsidian-tdsl/pull/126))
 - **Timeline SVG accessibility** — assistive technologies can access labelled timeline items instead of having them hidden by the root SVG image role ([#127](https://github.com/keroway/obsidian-tdsl/pull/127))
+- **Swallowed lint/check errors** — `showLintIssues` and invalid-JSON responses from `check_source()` / `lint_source()` now surface errors instead of being caught and silently ignored ([#210](https://github.com/keroway/obsidian-tdsl/pull/210), [#213](https://github.com/keroway/obsidian-tdsl/pull/213))
+- **Fullscreen zoom reset** — resetting zoom in the fullscreen modal no longer sticks to the inline view's already-zoomed viewBox ([#239](https://github.com/keroway/obsidian-tdsl/pull/239))
+- **Fullscreen tooltips** — note/link tooltips on timeline items are no longer lost when entering fullscreen ([#240](https://github.com/keroway/obsidian-tdsl/pull/240))
+- **Tooltip position after horizontal scroll** — the tooltip no longer drifts out of place after scrolling the preview horizontally ([#245](https://github.com/keroway/obsidian-tdsl/pull/245))
+- **Fullscreen zoom center** — zooming in fullscreen no longer drifts off-center when the display area and viewBox aspect ratios differ ([#246](https://github.com/keroway/obsidian-tdsl/pull/246))
 
 ## [1.0.0] - 2026-07-11
 
