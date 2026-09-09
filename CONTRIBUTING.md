@@ -75,6 +75,10 @@ Small, testable helpers live beside it:
 - `src/pan-zoom.ts` — pan/zoom for the rendered preview SVG (viewBox manipulation, scale clamping)
 - `src/png-export.ts` — rasterizes an SVG string to PNG via Canvas
 - `src/render-cache.ts` — LRU cache of recent render results (SVG + diagnostics) and its key generation
+- `src/render-options.ts` — assignment rules from `ResolvedRender` to `JsRenderOptions` (unresolved
+  fields are left unset so the renderer default applies; frees the instance if a setter throws)
+- `src/svg-accessibility.ts` — rules for attaching role/aria-label/`<title>` to the root of a
+  rendered SVG
 - `src/standalone-html.ts` — overrides theme resolution for HTML export (the preview's `auto` theme
   is unavailable outside the vault)
 - `src/tdsl-keywords.ts` — keyword list manually ported from the timeline-dsl repository's
