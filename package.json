@@ -32,14 +32,14 @@
 		"@codemirror/view": "6.38.6",
 		"@lezer/highlight": "^1.2.3",
 		"@types/node": "^26.1.1",
-		"@vitest/coverage-v8": "^4.1.10",
+		"@vitest/coverage-v8": "^4.1.11",
 		"builtin-modules": "^5.3.0",
 		"esbuild": "^0.28.1",
 		"happy-dom": "^20.12.0",
 		"lefthook": "^2.1.10",
 		"obsidian": "1.13.1",
 		"typescript": "^7.0.2",
-		"vitest": "^4.1.10"
+		"vitest": "^4.1.11"
 	},
 	"packageManager": "pnpm@11.17.0+sha512.cca3cea332ad254bb84145f966d19f4879615210346fc92c79a047f23a0d7b3cca3c3792f0076ba1f1831d277efbcf0a9119b31a9a60eca7fb3d6231f331ef72",
 	"dependencies": {
