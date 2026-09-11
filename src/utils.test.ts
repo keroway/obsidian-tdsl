@@ -786,6 +786,23 @@ describe("extractFenceBody", () => {
 			"timeline {}",
 		);
 	});
+
+	it("strips a callout prefix from every body line (#251)", () => {
+		const lines = ["> ```tdsl", "> timeline {}", "> lane a {}", "> ```"];
+		expect(extractFenceBody(lines, 0, 3, "> ")).toBe("timeline {}\nlane a {}");
+	});
+
+	it("strips a list-indent prefix from every body line (#251)", () => {
+		const lines = ["  ```tdsl", "  timeline {}", "  ```"];
+		expect(extractFenceBody(lines, 0, 2, "  ")).toBe("timeline {}");
+	});
+
+	it("strips a bare blank callout line using the prefix without trailing whitespace (#251)", () => {
+		const lines = ["> ```tdsl", "> timeline {}", ">", "> lane a {}", "> ```"];
+		expect(extractFenceBody(lines, 0, 4, "> ")).toBe(
+			"timeline {}\n\nlane a {}",
+		);
+	});
 });
 
 // ----------------------------------------------------------------------------
@@ -1156,6 +1173,48 @@ describe("planFenceTransform", () => {
 		expect(planFenceTransform(lines, 0, upper, "format")).toEqual({
 			kind: "error",
 			message: "Timeline DSL: Cursor is not inside a tdsl block.",
+		});
+	});
+
+	it("passes the body to the transform with the callout prefix stripped (#251)", () => {
+		const lines = ["> ```tdsl", "> timeline {}", "> ```"];
+		let seen: string | null = null;
+		planFenceTransform(
+			lines,
+			1,
+			(body) => {
+				seen = body;
+				return body;
+			},
+			"format",
+		);
+		expect(seen).toBe("timeline {}");
+	});
+
+	it("restores the callout prefix onto every transformed body line (#251)", () => {
+		const lines = ["> ```tdsl", "> timeline {}", "> lane a {}", "> ```"];
+		expect(planFenceTransform(lines, 1, upper, "format")).toEqual({
+			kind: "replace",
+			text: "> TIMELINE {}\n> LANE A {}\n",
+			from: { line: 1, ch: 0 },
+			to: { line: 3, ch: 0 },
+		});
+	});
+
+	it("restores the list-indent prefix onto every transformed body line (#251)", () => {
+		const lines = ["  ```tdsl", "  timeline {}", "  ```"];
+		expect(planFenceTransform(lines, 1, upper, "format")).toEqual({
+			kind: "replace",
+			text: "  TIMELINE {}\n",
+			from: { line: 1, ch: 0 },
+			to: { line: 2, ch: 0 },
+		});
+	});
+
+	it("still detects a callout block as unchanged when the transform is a no-op (#251)", () => {
+		const lines = ["> ```tdsl", "> timeline {}", "> ```"];
+		expect(planFenceTransform(lines, 1, identity, "format")).toEqual({
+			kind: "noop",
 		});
 	});
 

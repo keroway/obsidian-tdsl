@@ -8,7 +8,10 @@ describe("findTdslFenceAtCursor", () => {
 				["before", "```tdsl", "timeline {}", "```", "after"],
 				2,
 			),
-		).toEqual({ status: "found", range: { openLine: 1, closeLine: 3 } });
+		).toEqual({
+			status: "found",
+			range: { openLine: 1, closeLine: 3, prefix: "" },
+		});
 	});
 
 	it("does not match normal markdown after a closed tdsl block", () => {
@@ -48,7 +51,10 @@ describe("findTdslFenceAtCursor", () => {
 				["> [!note]", "> ```tdsl", "> timeline {}", "> ```", "after"],
 				2,
 			),
-		).toEqual({ status: "found", range: { openLine: 1, closeLine: 3 } });
+		).toEqual({
+			status: "found",
+			range: { openLine: 1, closeLine: 3, prefix: "> " },
+		});
 	});
 
 	it("finds a tdsl fence nested inside an indented list item", () => {
@@ -57,7 +63,10 @@ describe("findTdslFenceAtCursor", () => {
 				["- item", "  ```tdsl", "  timeline {}", "  ```", "after"],
 				2,
 			),
-		).toEqual({ status: "found", range: { openLine: 1, closeLine: 3 } });
+		).toEqual({
+			status: "found",
+			range: { openLine: 1, closeLine: 3, prefix: "  " },
+		});
 	});
 
 	it("does not pair a callout-nested open fence with a differently-nested close fence", () => {
@@ -72,7 +81,10 @@ describe("findTdslFenceAtCursor", () => {
 	it("finds a tilde fence (~~~tdsl)", () => {
 		expect(
 			findTdslFenceAtCursor(["~~~tdsl", "timeline {}", "~~~", "after"], 1),
-		).toEqual({ status: "found", range: { openLine: 0, closeLine: 2 } });
+		).toEqual({
+			status: "found",
+			range: { openLine: 0, closeLine: 2, prefix: "" },
+		});
 	});
 
 	it("does not close a tilde fence with a backtick fence", () => {
@@ -84,7 +96,10 @@ describe("findTdslFenceAtCursor", () => {
 	it("finds a fence opened with four or more backticks", () => {
 		expect(
 			findTdslFenceAtCursor(["````tdsl", "timeline {}", "````"], 1),
-		).toEqual({ status: "found", range: { openLine: 0, closeLine: 2 } });
+		).toEqual({
+			status: "found",
+			range: { openLine: 0, closeLine: 2, prefix: "" },
+		});
 	});
 
 	it("treats a shorter fence line inside a longer fence as body", () => {
@@ -95,19 +110,28 @@ describe("findTdslFenceAtCursor", () => {
 				["````tdsl", "timeline {}", "```", "still body", "````"],
 				3,
 			),
-		).toEqual({ status: "found", range: { openLine: 0, closeLine: 4 } });
+		).toEqual({
+			status: "found",
+			range: { openLine: 0, closeLine: 4, prefix: "" },
+		});
 	});
 
 	it("accepts a longer close fence than the open fence", () => {
 		expect(
 			findTdslFenceAtCursor(["```tdsl", "timeline {}", "`````"], 1),
-		).toEqual({ status: "found", range: { openLine: 0, closeLine: 2 } });
+		).toEqual({
+			status: "found",
+			range: { openLine: 0, closeLine: 2, prefix: "" },
+		});
 	});
 
 	it("accepts an extra info string after the language identifier", () => {
 		expect(
 			findTdslFenceAtCursor(["```tdsl extra info", "timeline {}", "```"], 1),
-		).toEqual({ status: "found", range: { openLine: 0, closeLine: 2 } });
+		).toEqual({
+			status: "found",
+			range: { openLine: 0, closeLine: 2, prefix: "" },
+		});
 	});
 
 	it("ignores a language whose name merely starts with tdsl", () => {
@@ -129,7 +153,10 @@ describe("findTdslFenceAtCursor", () => {
 				["> [!note]", "> ~~~tdsl", "> timeline {}", "> ~~~", "after"],
 				2,
 			),
-		).toEqual({ status: "found", range: { openLine: 1, closeLine: 3 } });
+		).toEqual({
+			status: "found",
+			range: { openLine: 1, closeLine: 3, prefix: "> " },
+		});
 	});
 
 	it("treats a nested shorter tdsl fence as body of the outer block", () => {
@@ -137,7 +164,10 @@ describe("findTdslFenceAtCursor", () => {
 		// outer fence pair is the one to format.
 		expect(
 			findTdslFenceAtCursor(["````tdsl", "```tdsl", "body", "````"], 2),
-		).toEqual({ status: "found", range: { openLine: 0, closeLine: 3 } });
+		).toEqual({
+			status: "found",
+			range: { openLine: 0, closeLine: 3, prefix: "" },
+		});
 	});
 
 	it("does not treat a tdsl fence inside another language's block as a block", () => {
@@ -155,7 +185,10 @@ describe("findTdslFenceAtCursor", () => {
 				["```js", "console.log(1)", "```", "```tdsl", "timeline {}", "```"],
 				4,
 			),
-		).toEqual({ status: "found", range: { openLine: 3, closeLine: 5 } });
+		).toEqual({
+			status: "found",
+			range: { openLine: 3, closeLine: 5, prefix: "" },
+		});
 	});
 
 	it("reports not-in-block when the cursor is inside an unclosed non-tdsl block", () => {
@@ -173,7 +206,7 @@ describe("listTdslFenceRanges", () => {
 	it("lists a single closed tdsl block", () => {
 		expect(
 			listTdslFenceRanges(["before", "```tdsl", "timeline {}", "```", "after"]),
-		).toEqual([{ openLine: 1, closeLine: 3 }]);
+		).toEqual([{ openLine: 1, closeLine: 3, prefix: "" }]);
 	});
 
 	it("lists every closed tdsl block in the document", () => {
@@ -188,8 +221,8 @@ describe("listTdslFenceRanges", () => {
 				"```",
 			]),
 		).toEqual([
-			{ openLine: 0, closeLine: 2 },
-			{ openLine: 4, closeLine: 6 },
+			{ openLine: 0, closeLine: 2, prefix: "" },
+			{ openLine: 4, closeLine: 6, prefix: "" },
 		]);
 	});
 
@@ -212,7 +245,7 @@ describe("listTdslFenceRanges", () => {
 				"```tdsl",
 				"still open",
 			]),
-		).toEqual([{ openLine: 0, closeLine: 2 }]);
+		).toEqual([{ openLine: 0, closeLine: 2, prefix: "" }]);
 	});
 
 	it("lists a tdsl block nested inside a callout", () => {
@@ -224,7 +257,7 @@ describe("listTdslFenceRanges", () => {
 				"> ```",
 				"after",
 			]),
-		).toEqual([{ openLine: 1, closeLine: 3 }]);
+		).toEqual([{ openLine: 1, closeLine: 3, prefix: "> " }]);
 	});
 
 	it("does not treat a tdsl fence inside another language's block as a block", () => {
@@ -236,12 +269,12 @@ describe("listTdslFenceRanges", () => {
 	it("lists a tilde fence (~~~tdsl)", () => {
 		expect(
 			listTdslFenceRanges(["~~~tdsl", "timeline {}", "~~~", "after"]),
-		).toEqual([{ openLine: 0, closeLine: 2 }]);
+		).toEqual([{ openLine: 0, closeLine: 2, prefix: "" }]);
 	});
 
 	it("accepts a longer close fence than the open fence", () => {
 		expect(listTdslFenceRanges(["````tdsl", "timeline {}", "`````"])).toEqual([
-			{ openLine: 0, closeLine: 2 },
+			{ openLine: 0, closeLine: 2, prefix: "" },
 		]);
 	});
 });

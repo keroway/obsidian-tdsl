@@ -546,17 +546,43 @@ export function debounce<Args extends unknown[]>(
 // ---------------------------------------------------------------------------
 
 /**
+ * Strips a fence's nesting prefix (e.g. `"> "` for a callout, `"  "` for an
+ * indented list item) from one body line, so the WASM parser only sees DSL
+ * text (#251). Blank lines inside the nesting often drop the prefix's
+ * trailing whitespace (a callout's blank line is a bare `">"`), so this also
+ * tries the prefix with trailing spaces/tabs removed before giving up.
+ */
+function stripFencePrefix(line: string, prefix: string): string {
+	if (!prefix) return line;
+	if (line.startsWith(prefix)) return line.slice(prefix.length);
+	const bare = prefix.replace(/[ \t]+$/, "");
+	if (bare && line.startsWith(bare)) return line.slice(bare.length);
+	return line;
+}
+
+/** Prepends a fence's nesting prefix back onto a transformed body line. */
+function restoreFencePrefix(line: string, prefix: string): string {
+	return prefix ? prefix + line : line;
+}
+
+/**
  * Extracts the body string from a line array given a fence range.
  * Returns the joined text of lines openLine+1 .. closeLine-1 (exclusive).
+ *
+ * `prefix` is the nesting prefix reported by `findTdslFenceAtCursor` /
+ * `listTdslFenceRanges` (empty for a top-level block); it is stripped from
+ * each line so a callout's `> ` or a list's indentation never reaches the
+ * WASM parser as DSL text (#251).
  */
 export function extractFenceBody(
 	lines: readonly string[],
 	openLine: number,
 	closeLine: number,
+	prefix = "",
 ): string {
 	const bodyLines: string[] = [];
 	for (let i = openLine + 1; i < closeLine; i++) {
-		bodyLines.push(lines[i] ?? "");
+		bodyLines.push(stripFencePrefix(lines[i] ?? "", prefix));
 	}
 	return bodyLines.join("\n");
 }
@@ -643,8 +669,8 @@ export function planFenceTransform(
 				"Timeline DSL: Could not find the closing fence of the tdsl block.",
 		};
 	}
-	const { openLine, closeLine } = fence.range;
-	const body = extractFenceBody(lines, openLine, closeLine);
+	const { openLine, closeLine, prefix } = fence.range;
+	const body = extractFenceBody(lines, openLine, closeLine, prefix);
 
 	let result: string;
 	try {
@@ -662,5 +688,23 @@ export function planFenceTransform(
 	// pass almost never (#221).
 	const text = ensureTrailingNewline(result);
 	if (text === ensureTrailingNewline(body)) return { kind: "noop" };
-	return { kind: "replace", text, ...fenceBodyRange(openLine, closeLine) };
+
+	// Restore the nesting prefix stripped by `extractFenceBody` onto every
+	// transformed body line, but not onto the trailing newline terminator
+	// itself — that newline only places the (already-prefixed) closing fence
+	// on its own line (#251).
+	const restored = prefix
+		? ensureTrailingNewline(
+				text
+					.replace(/\n$/, "")
+					.split("\n")
+					.map((line) => restoreFencePrefix(line, prefix))
+					.join("\n"),
+			)
+		: text;
+	return {
+		kind: "replace",
+		text: restored,
+		...fenceBodyRange(openLine, closeLine),
+	};
 }
