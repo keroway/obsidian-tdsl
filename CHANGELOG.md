@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fullscreen tooltips** — note/link tooltips on timeline items are no longer lost when entering fullscreen ([#240](https://github.com/keroway/obsidian-tdsl/pull/240))
 - **Tooltip position after horizontal scroll** — the tooltip no longer drifts out of place after scrolling the preview horizontally ([#245](https://github.com/keroway/obsidian-tdsl/pull/245))
 - **Fullscreen zoom center** — zooming in fullscreen no longer drifts off-center when the display area and viewBox aspect ratios differ ([#246](https://github.com/keroway/obsidian-tdsl/pull/246))
+- **Nested-fence prefix round-trip** — format and lint fix strip the callout/list-indent prefix before parsing a nested `tdsl` block's body and restore it on every transformed line, instead of feeding the prefix to the parser or losing the indentation ([#252](https://github.com/keroway/obsidian-tdsl/pull/252))
 
 ## [1.0.0] - 2026-07-11
 

@@ -1,6 +1,14 @@
 export interface TdslFenceRange {
 	openLine: number;
 	closeLine: number;
+	/**
+	 * The nesting prefix captured from the opening fence line (e.g. `"> "` for
+	 * a callout, `"  "` for an indented list item, `""` for a top-level
+	 * block). Body lines repeat this prefix in Markdown source; callers that
+	 * feed the body to the WASM parser must strip it first and restore it
+	 * afterwards (see `extractFenceBody` / `planFenceTransform` in utils.ts).
+	 */
+	prefix: string;
 }
 
 export type TdslFenceResult =
@@ -98,7 +106,10 @@ export function findTdslFenceAtCursor(
 		if (isTdsl(open) && cursorInBody) {
 			return closeLine === -1
 				? { status: "missing-close" }
-				: { status: "found", range: { openLine: i, closeLine } };
+				: {
+						status: "found",
+						range: { openLine: i, closeLine, prefix: open.prefix },
+					};
 		}
 
 		// An unclosed block swallows the rest of the document, so there is no
@@ -140,7 +151,8 @@ export function listTdslFenceRanges(
 		}
 
 		if (closeLine === -1) break;
-		if (isTdsl(open)) ranges.push({ openLine: i, closeLine });
+		if (isTdsl(open))
+			ranges.push({ openLine: i, closeLine, prefix: open.prefix });
 		i = closeLine;
 	}
 
