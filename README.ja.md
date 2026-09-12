@@ -23,7 +23,7 @@
 - **XSS 安全な SVG 挿入** — `DOMParser` で SVG をパースして `document.adoptNode` で挿入。`innerHTML` 未使用、スクリプト実行なし
 - **パン/ズーム・フルスクリーン** — 描画された年表それぞれにホイールズーム・ドラッグパン・フルスクリーンボタンを提供。既定で有効。`//! scale: fit` や横スクロールと共存する。設定タブで切り替え可能
 - **エクスポートツールバー** — 描画された年表それぞれに Copy SVG / Copy standalone HTML / Copy PNG / Save as file のツールバーを提供
-- **モバイル対応** — デスクトップ・モバイル両対応（`isDesktopOnly: false`）
+- **モバイル対応** — `isDesktopOnly: false`。Obsidian Mobile での実行はブロックしていないが、iOS/Android での十分な動作検証はまだ行っていない。[GitHub Issues](https://github.com/keroway/obsidian-tdsl/issues) でのフィードバックを歓迎
 - **外部通信なし** — [Timeline DSL WASM](https://www.npmjs.com/package/@keroway/tdsl-wasm) レンダラはバンドル済み。描画時に外部リクエストなし
 
 ## 使い方
