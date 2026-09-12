@@ -6,7 +6,7 @@ This plugin bundles the following third-party packages into `main.js` via esbuil
 
 ## @keroway/tdsl-wasm
 
-- **Version**: ^1.17.0
+- **Version**: ^1.27.0
 - **Homepage**: https://www.npmjs.com/package/@keroway/tdsl-wasm
 - **License**: MIT
 
