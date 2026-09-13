@@ -30,21 +30,24 @@ export function svgToPngBlob(
 		const url = deps.createObjectUrl(blob);
 		const img = deps.createImage();
 		img.onload = () => {
-			const canvas = deps.createCanvas();
-			canvas.width = img.naturalWidth || img.width || 800;
-			canvas.height = img.naturalHeight || img.height || 400;
-			const ctx = canvas.getContext("2d");
-			if (!ctx) {
+			try {
+				const canvas = deps.createCanvas();
+				canvas.width = img.naturalWidth || img.width || 800;
+				canvas.height = img.naturalHeight || img.height || 400;
+				const ctx = canvas.getContext("2d");
+				if (!ctx) {
+					throw new Error("2D canvas context is unavailable");
+				}
+				ctx.drawImage(img, 0, 0);
+				canvas.toBlob((result) => {
+					if (result) resolve(result);
+					else reject(new Error("canvas.toBlob failed"));
+				}, "image/png");
+			} catch (err) {
+				reject(err instanceof Error ? err : new Error(String(err)));
+			} finally {
 				deps.revokeObjectUrl(url);
-				reject(new Error("2D canvas context is unavailable"));
-				return;
 			}
-			ctx.drawImage(img, 0, 0);
-			deps.revokeObjectUrl(url);
-			canvas.toBlob((result) => {
-				if (result) resolve(result);
-				else reject(new Error("canvas.toBlob failed"));
-			}, "image/png");
 		};
 		img.onerror = () => {
 			deps.revokeObjectUrl(url);
