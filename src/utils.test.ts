@@ -323,6 +323,18 @@ describe("parseRenderDirectives", () => {
 	it("is case-insensitive for keys and enum values", () => {
 		expect(parseRenderDirectives(`//! GRID: Decade`).grid).toBe("decade");
 	});
+
+	it("ignores a directive commented out inside a block comment (#263)", () => {
+		const src = [
+			"/*",
+			" //! orientation: vertical",
+			'timeline "Commented title" {',
+			"import wikidata {",
+			"*/",
+			'timeline "Real title" { unit year; range 0..10; }',
+		].join("\n");
+		expect(parseRenderDirectives(src)).toEqual({});
+	});
 });
 
 // ----------------------------------------------------------------------------
@@ -358,6 +370,11 @@ describe("hasWikidataImport", () => {
 
 	it("returns false for an empty string", () => {
 		expect(hasWikidataImport("")).toBe(false);
+	});
+
+	it("returns false for an import wikidata line inside a block comment (#263)", () => {
+		const source = '/*\nimport wikidata {\n*/\ntimeline "Real" {}';
+		expect(hasWikidataImport(source)).toBe(false);
 	});
 });
 
@@ -502,6 +519,16 @@ describe("extractTimelineTitle", () => {
 
 	it("trims surrounding whitespace from the title", () => {
 		expect(extractTimelineTitle('timeline "  Padded  "')).toBe("Padded");
+	});
+
+	it("skips a title commented out inside a block comment (#263)", () => {
+		const source = [
+			"/*",
+			'timeline "Commented title" {',
+			"*/",
+			'timeline "Real title" { unit year; range 0..10; }',
+		].join("\n");
+		expect(extractTimelineTitle(source)).toBe("Real title");
 	});
 });
 

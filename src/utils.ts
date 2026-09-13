@@ -49,6 +49,68 @@ export interface RenderDirectives {
 	lane_height?: number;
 }
 
+/**
+ * Blanks out `/* ... *\/` block comments (replacing their content with spaces,
+ * keeping newlines) so line-based scans never see commented-out DSL text as
+ * live. Mirrors the tokenizer state machine in `tdsl-language.ts`: a string
+ * literal suspends block-comment detection (a title containing `/*` must not
+ * start one) and a `//` line comment is copied through unchanged so `//!`
+ * directive lines outside a block comment keep working (#263).
+ */
+function stripBlockComments(source: string): string {
+	let out = "";
+	let i = 0;
+	let inString = false;
+	let inBlockComment = false;
+	while (i < source.length) {
+		const c = source[i];
+		if (inBlockComment) {
+			if (c === "*" && source[i + 1] === "/") {
+				out += "  ";
+				i += 2;
+				inBlockComment = false;
+				continue;
+			}
+			out += c === "\n" ? "\n" : " ";
+			i++;
+			continue;
+		}
+		if (inString) {
+			if (c === "\\" && i + 1 < source.length) {
+				out += source[i] + source[i + 1];
+				i += 2;
+				continue;
+			}
+			if (c === '"') inString = false;
+			out += c;
+			i++;
+			continue;
+		}
+		if (c === '"') {
+			inString = true;
+			out += c;
+			i++;
+			continue;
+		}
+		if (c === "/" && source[i + 1] === "/") {
+			while (i < source.length && source[i] !== "\n") {
+				out += source[i];
+				i++;
+			}
+			continue;
+		}
+		if (c === "/" && source[i + 1] === "*") {
+			inBlockComment = true;
+			out += "  ";
+			i += 2;
+			continue;
+		}
+		out += c;
+		i++;
+	}
+	return out;
+}
+
 const BOOL_TRUE = new Set(["on", "true", "yes", "1"]);
 const GRID_VALUES = new Set(["none", "decade", "year", "month"]);
 const THEME_VALUES = new Set(["default", "dark", "print", "pastel"]);
@@ -66,10 +128,11 @@ const LAYOUT_STYLE_VALUES = new Set([
  */
 export function parseRenderDirectives(source: string): RenderDirectives {
 	const out: RenderDirectives = {};
+	const scanned = stripBlockComments(source);
 	const re = /^[ \t]*\/\/!\s*([a-z_]+)\s*:\s*(.+?)\s*$/gim;
 	let m: RegExpExecArray | null;
 	// biome-ignore lint/suspicious/noAssignInExpressions: idiomatic RegExp.exec loop
-	while ((m = re.exec(source)) !== null) {
+	while ((m = re.exec(scanned)) !== null) {
 		const key = m[1].toLowerCase();
 		const raw = m[2].trim();
 		const val = raw.toLowerCase();
@@ -242,12 +305,12 @@ export function resolveRenderOptions(
 
 /** Returns true when the source contains an `import wikidata` block. */
 export function hasWikidataImport(source: string): boolean {
-	return /^\s*import\s+wikidata\b/m.test(source);
+	return /^\s*import\s+wikidata\b/m.test(stripBlockComments(source));
 }
 
 /** Extracts the timeline title from a `timeline "..."` line, or null. */
 export function extractTimelineTitle(source: string): string | null {
-	const m = source.match(/^\s*timeline\s+"([^"]*)"/m);
+	const m = stripBlockComments(source).match(/^\s*timeline\s+"([^"]*)"/m);
 	return m?.[1].trim() ? m[1].trim() : null;
 }
 
