@@ -181,3 +181,9 @@ versions.json  — バージョン↔minAppVersion マッピング
 - `@keroway/tdsl-wasm` — Rust/WASM レンダラー。`src/main.ts` が import しているのは
   `init` / `check_source` / `lint_source` / `format_source` / `render_svg_from_source_with_options` / `JsRenderOptions`
 - `obsidian` — Obsidian プラグイン API（`external` として esbuild からは除外）
+
+## Codex 向け運用ルール
+
+Codex 向けの横断運用ルールは `keroway/CLAUDE.md` ではなく
+[agent-assets `docs/codex-common-instructions.md`](https://github.com/keroway/agent-assets/blob/main/docs/codex-common-instructions.md)
+を正典とする（Codex は git ルートより上の AGENTS.md を読まないため）。
