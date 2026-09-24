@@ -840,7 +840,12 @@ export default class TimelineDslPlugin extends Plugin {
 	}
 
 	async saveSettings(): Promise<void> {
-		await this.saveData(this.settings);
+		try {
+			await this.saveData(this.settings);
+		} catch {
+			new Notice("Timeline DSL: Could not save settings.");
+			return;
+		}
 		// Re-render all open Markdown previews so the new settings take effect
 		// immediately without requiring the user to reopen the note.
 		this.app.workspace.iterateAllLeaves((leaf) => {

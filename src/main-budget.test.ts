@@ -21,7 +21,11 @@ import mainSource from "./main.ts?raw";
  * cannot see — do that only with a reason in the PR, and prefer extracting the
  * logic into a testable module instead.
  */
-const MAIN_TS_LINE_BUDGET = 1190;
+// Raised by 5 (issue #268): saveSettings() wraps this.saveData() in a
+// try/catch that surfaces a Notice on failure, matching every other async
+// entry point in this file. It cannot be extracted — it needs `this.saveData`
+// and `this.app.workspace`, both only available on the live Plugin instance.
+const MAIN_TS_LINE_BUDGET = 1195;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
