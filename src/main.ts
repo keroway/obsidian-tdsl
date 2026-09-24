@@ -800,7 +800,12 @@ export default class TimelineDslPlugin extends Plugin {
 			id: "format-tdsl-block",
 			name: "Format current tdsl block",
 			editorCallback: async (editor: Editor) => {
-				await ensureWasm();
+				try {
+					await ensureWasm();
+				} catch {
+					new Notice("Timeline DSL: Could not initialize the renderer.");
+					return;
+				}
 				formatCurrentBlock(editor);
 			},
 		});
@@ -809,7 +814,12 @@ export default class TimelineDslPlugin extends Plugin {
 			id: "lint-fix-tdsl-block",
 			name: "Fix lint issues in current tdsl block",
 			editorCallback: async (editor: Editor) => {
-				await ensureWasm();
+				try {
+					await ensureWasm();
+				} catch {
+					new Notice("Timeline DSL: Could not initialize the renderer.");
+					return;
+				}
 				lintFixCurrentBlock(editor);
 			},
 		});

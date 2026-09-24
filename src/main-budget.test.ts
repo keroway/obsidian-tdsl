@@ -25,7 +25,11 @@ import mainSource from "./main.ts?raw";
 // try/catch that surfaces a Notice on failure, matching every other async
 // entry point in this file. It cannot be extracted — it needs `this.saveData`
 // and `this.app.workspace`, both only available on the live Plugin instance.
-const MAIN_TS_LINE_BUDGET = 1195;
+// Raised by 10 (issue #270): the format/lint-fix editorCallbacks now wrap
+// ensureWasm() in try/catch + Notice, matching every other ensureWasm() call
+// site in this file. It cannot be extracted — editorCallback needs the live
+// Editor instance and the module-level ensureWasm() closure.
+const MAIN_TS_LINE_BUDGET = 1205;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
