@@ -68,7 +68,7 @@ jobs:
               __all__|.github/workflows/ci.yml|mise.toml)
                 test=true; lint=true; typecheck=true; build=true; audit=true; typos=true ;;
               src/**)
-                test=true; lint=true; typecheck=true; build=true ;;
+                test=true; lint=true; typecheck=true; build=true; typos=true ;;
               esbuild.config.mjs)
                 lint=true; build=true ;;
               vitest.config.ts)
@@ -78,7 +78,7 @@ jobs:
               biome.json|version-bump.mjs|styles.css|manifest.json|versions.json)
                 lint=true ;;
               package.json|pnpm-lock.yaml|pnpm-workspace.yaml)
-                test=true; lint=true; typecheck=true; build=true; audit=true ;;
+                test=true; lint=true; typecheck=true; build=true; audit=true; typos=true ;;
               *.md|_typos.toml)
                 typos=true ;;
             esac
