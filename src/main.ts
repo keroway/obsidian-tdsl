@@ -857,10 +857,24 @@ export default class TimelineDslPlugin extends Plugin {
 			return;
 		}
 		// Re-render all open Markdown previews so the new settings take effect
-		// immediately without requiring the user to reopen the note.
+		// immediately without requiring the user to reopen the note. Tracked so a
+		// previewMode API removal (private Obsidian API) surfaces instead of
+		// silently leaving previews stale — see issue #276.
+		let markdownLeafCount = 0;
+		let rerenderedCount = 0;
 		this.app.workspace.iterateAllLeaves((leaf) => {
-			rerenderMarkdownPreviewView(leaf.view);
+			if (leaf.view.getViewType() !== "markdown") return;
+			markdownLeafCount++;
+			if (rerenderMarkdownPreviewView(leaf.view)) rerenderedCount++;
 		});
+		if (rerenderedCount < markdownLeafCount) {
+			console.error(
+				"Timeline DSL: could not re-render some Markdown previews (previewMode API unavailable).",
+			);
+			new Notice(
+				"Timeline DSL: settings saved, but some open previews could not refresh automatically. Reopen the note to see the change.",
+			);
+		}
 	}
 }
 
