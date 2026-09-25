@@ -76,6 +76,16 @@ timeline "Chinese Dynasties" {
 `calendar` is optional and accepts `proleptic_gregorian` (default) or `julian`.
 It affects how date literals are interpreted; omitting it is equivalent to `proleptic_gregorian`.
 
+For `unit month`, write the bounds as `YYYY-MM` (e.g. `2026-01`). For `unit day`,
+write them as `YYYY-MM-DD` (e.g. `2026-03-01`):
+
+```
+timeline "Reading log" {
+    unit month;
+    range 2026-01..2026-12;
+}
+```
+
 For sub-day units, write the bounds as ISO 8601 date-times. A UTC offset (or
 `Z`) goes **inside the literal** — there is no separate timezone property on the
 `timeline` block:

@@ -75,6 +75,16 @@ timeline "中国王朝" {
 `calendar` は省略可能で、`proleptic_gregorian`（既定）または `julian` を指定できます。
 日付リテラルの解釈に影響し、省略時は `proleptic_gregorian` と同等です。
 
+`unit month` のときは範囲を `YYYY-MM`（例: `2026-01`）で、`unit day` のときは
+`YYYY-MM-DD`（例: `2026-03-01`）で書きます:
+
+```
+timeline "読書ログ" {
+    unit month;
+    range 2026-01..2026-12;
+}
+```
+
 日未満の単位を使うときは、範囲を ISO 8601 の日時で書きます。UTC オフセット（または `Z`）は
 **日時リテラルの中**に書きます。`timeline` ブロックにタイムゾーン用のプロパティはありません:
 
