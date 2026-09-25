@@ -80,6 +80,27 @@ jobs:
       - name: Build
         run: pnpm run build
 
+      - name: Extract CHANGELOG.md section for release notes
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          version="${TAG_NAME#v}"
+          awk -v ver="$version" '
+            /^## \[/ {
+              if (found) exit
+              if ($0 ~ "^## \\[" ver "\\]") { found = 1; next }
+              next
+            }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+
+          if [ ! -s release-notes.md ]; then
+            echo "::error::CHANGELOG.md section for version $version is empty"
+            exit 1
+          fi
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -88,4 +109,4 @@ jobs:
           set -euo pipefail
           gh release create "$TAG_NAME" main.js manifest.json styles.css \
             --title "$TAG_NAME" \
-            --generate-notes
+            --notes-file release-notes.md
