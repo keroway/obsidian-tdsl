@@ -163,11 +163,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Format check
-        run: pnpm run format:check
-
-      - name: Lint
-        run: pnpm run lint
+      # biome check は format + lint に加えて assist.actions.source.organizeImports
+      # (import 順序)も検証する。format:check / lint を個別に呼ぶと
+      # organizeImports 違反を CI が素通りしてしまう（#280）。
+      - name: Check (format + lint + organizeImports)
+        run: pnpm exec biome check --error-on-warnings .
 
   typecheck:
     needs: changes
