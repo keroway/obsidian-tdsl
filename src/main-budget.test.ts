@@ -29,7 +29,12 @@ import mainSource from "./main.ts?raw";
 // ensureWasm() in try/catch + Notice, matching every other ensureWasm() call
 // site in this file. It cannot be extracted — editorCallback needs the live
 // Editor instance and the module-level ensureWasm() closure.
-const MAIN_TS_LINE_BUDGET = 1205;
+// Raised by 14 (issue #276): saveSettings() now counts Markdown leaves and
+// surfaces a console.error + Notice when previewMode is unavailable, instead
+// of silently leaving previews stale. It cannot be extracted — it needs
+// `this.app.workspace.iterateAllLeaves`, only available on the live Plugin
+// instance.
+const MAIN_TS_LINE_BUDGET = 1219;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
