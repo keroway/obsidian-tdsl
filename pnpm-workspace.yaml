@@ -13,3 +13,7 @@ packages:
 allowBuilds:
   esbuild: false
   lefthook: true
+# osv-scan: obsidian が moment を 2.29.4 に固定しており GHSA-4p3w-j4w9-5jqw (fixed 2.31.0) に該当。
+# 上限付きレンジで transitive を引き上げる (devDependencies 経由のみ、配布物には含まれない)。
+overrides:
+  moment: ">=2.31.0 <3"
