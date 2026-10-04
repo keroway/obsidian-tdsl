@@ -35,6 +35,8 @@
     コミットされないためターン終了時に検証する対象がない）
 - 失敗時: exit 2 で Claude にフィードバック（ブロッキング）
 - pnpm が見つからない等「検証できない」場合も exit 2（silent-pass しない）
+- timeout は 120s（実測: format:check + lint + typecheck + test で約 5.15s。timeout で切られると
+  「未検証」ではなく「終わらなかった」として返るため、余裕を取って他リポの同種 hook と揃えた）
 - 一時的に止めたい場合: `OBSIDIAN_TDSL_SKIP_STOP_HOOK=1`
   （`timeline-dsl` の `TDSL_SKIP_STOP_HOOK` と衝突しないよう、リポジトリ名をプレフィックスにしている）
 
