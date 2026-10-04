@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-04
+
 ### Added
 
 - **Vault-wide display defaults** — settings can set default orientation and whether to show the table or legend; per-block directives still take precedence ([#133](https://github.com/keroway/obsidian-tdsl/pull/133))
@@ -96,6 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mobile-enabled** — `isDesktopOnly: false` in `manifest.json`, so the plugin is not blocked from running on Obsidian Mobile (not extensively verified on-device; see Unreleased)
 - **CI workflow** — GitHub Actions runs ESLint → `tsc --noEmit` → esbuild → verifies `main.js` is produced on every push and pull request to `main`
 
-[Unreleased]: https://github.com/keroway/obsidian-tdsl/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/keroway/obsidian-tdsl/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/keroway/obsidian-tdsl/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/keroway/obsidian-tdsl/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/keroway/obsidian-tdsl/releases/tag/v0.1.0
