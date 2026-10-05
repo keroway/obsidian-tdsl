@@ -1,0 +1,86 @@
+# 最新リリースタグから Unreleased が滞留したら、リリース催促の issue を 1 件だけ起票する。
+# release.yml はタグ push でのみ起動するため、タグを切らない限り何コミット積んでも
+# 配布物は古いまま残る（#265: v1.0.0 から 109 コミット・約 3 ヶ月）。
+name: release-reminder
+
+on:
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  # どちらかを超え、かつ最新タグ以降に 1 コミット以上あれば催促する。
+  COMMIT_THRESHOLD: "30"
+  DAYS_THRESHOLD: "30"
+  REMINDER_TITLE: "リリースの催促: 最新タグから Unreleased が滞留している"
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: Open a reminder issue when unreleased changes pile up
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          tag="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' HEAD || true)"
+          if [ -z "$tag" ]; then
+            echo "No release tag found; nothing to remind."
+            exit 0
+          fi
+
+          commits="$(git rev-list --count "${tag}..HEAD")"
+          tag_epoch="$(git log -1 --format=%ct "${tag}^{commit}")"
+          days=$(( ( $(date +%s) - tag_epoch ) / 86400 ))
+          echo "latest tag: ${tag}, commits since: ${commits}, days since: ${days}"
+
+          if [ "$commits" -lt 1 ]; then
+            echo "No commits since ${tag}; nothing to remind."
+            exit 0
+          fi
+          if [ "$commits" -lt "$COMMIT_THRESHOLD" ] && [ "$days" -lt "$DAYS_THRESHOLD" ]; then
+            echo "Below thresholds (${COMMIT_THRESHOLD} commits / ${DAYS_THRESHOLD} days); nothing to remind."
+            exit 0
+          fi
+
+          # 重複起票しない: 同じタイトルの open な issue があれば何もしない。
+          existing="$(gh issue list --state open --limit 100 --json title \
+            | jq --arg t "$REMINDER_TITLE" '[.[] | select(.title == $t)] | length')"
+          if [ "$existing" -gt 0 ]; then
+            echo "An open reminder issue already exists; skipping."
+            exit 0
+          fi
+
+          body="$(cat <<EOF
+          最新リリース \`${tag}\` から **${commits} コミット・${days} 日**が経過しています（閾値: ${COMMIT_THRESHOLD} コミット / ${DAYS_THRESHOLD} 日）。
+          README が説明している機能の一部が、配布されている GitHub Release に含まれていない可能性があります。
+
+          ## リリース手順（CLAUDE.md「バージョン整合」節）
+          1. \`CHANGELOG.md\` の \`[Unreleased]\` を \`## [x.y.z] - YYYY-MM-DD\` に切り、末尾のリンク参照も更新する
+          2. \`pnpm version <minor|patch> --no-git-tag-version\`（\`version-bump.mjs\` が manifest / versions を同期）
+          3. PR を出してマージし、マージコミットに \`vx.y.z\` タグを付けて push する
+          4. \`release.yml\` が GitHub Release を作成し、\`main.js\` / \`manifest.json\` / \`styles.css\` が添付されることを確認する
+
+          このリリースが終われば、この issue はクローズしてください（次回のスケジュール実行で、閾値を再び超えていれば新しい issue が作られます）。
+
+          _release-reminder workflow により自動起票_
+          EOF
+          )"
+          gh issue create --title "$REMINDER_TITLE" --body "$body"
