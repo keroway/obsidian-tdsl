@@ -75,42 +75,9 @@ jobs:
             changed_files="$(git diff --name-only "${base}" "${HEAD_SHA}")"
           fi
 
-          test=false
-          lint=false
-          typecheck=false
-          build=false
-          audit=false
-          typos=false
-
-          while IFS= read -r file; do
-            case "${file}" in
-              __all__|.github/workflows/ci.yml|mise.toml)
-                test=true; lint=true; typecheck=true; build=true; audit=true; typos=true ;;
-              src/**)
-                test=true; lint=true; typecheck=true; build=true; typos=true ;;
-              esbuild.config.mjs)
-                lint=true; build=true ;;
-              vitest.config.ts)
-                test=true; lint=true; typecheck=true ;;
-              tsconfig.json)
-                lint=true; typecheck=true ;;
-              biome.json|version-bump.mjs|styles.css|manifest.json|versions.json)
-                lint=true ;;
-              package.json|pnpm-lock.yaml|pnpm-workspace.yaml)
-                test=true; lint=true; typecheck=true; build=true; audit=true; typos=true ;;
-              *.md|_typos.toml)
-                typos=true ;;
-            esac
-          done <<< "${changed_files}"
-
-          {
-            echo "test=${test}"
-            echo "lint=${lint}"
-            echo "typecheck=${typecheck}"
-            echo "build=${build}"
-            echo "audit=${audit}"
-            echo "typos=${typos}"
-          } >> "${GITHUB_OUTPUT}"
+          # 分類ルールは scripts/classify-changes.sh（検証は src/classify-changes.test.ts）。
+          # 未分類のパスは全ジョブを起動する。
+          bash scripts/classify-changes.sh <<< "${changed_files}" >> "${GITHUB_OUTPUT}"
 
   test:
     needs: changes
