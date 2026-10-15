@@ -55,11 +55,32 @@ function parseFence(line: string): Fence | null {
 	};
 }
 
+/** Splits a nesting prefix into its blockquote markers and whitespace width. */
+function splitPrefix(prefix: string): { quotes: string; indent: number } {
+	const quotes = prefix.replace(/[ \t]/g, "");
+	return { quotes, indent: prefix.length - quotes.length };
+}
+
+/**
+ * Same container (identical `>` markers) and, per CommonMark, a close fence
+ * may be indented up to 3 spaces deeper than the open fence. A shallower
+ * close fence leaves the container, so it does not pair (one column of slack
+ * inside a blockquote covers the optional space after `>`).
+ */
+function samePrefixContainer(open: Fence, candidate: Fence): boolean {
+	if (candidate.prefix === open.prefix) return true;
+	const o = splitPrefix(open.prefix);
+	const c = splitPrefix(candidate.prefix);
+	if (o.quotes !== c.quotes) return false;
+	const slack = o.quotes === "" ? 0 : 1;
+	return c.indent >= o.indent - slack && c.indent <= o.indent + 3;
+}
+
 /** A fence line only closes `open` when it repeats it with no info string. */
 function closes(open: Fence, candidate: Fence): boolean {
 	return (
 		candidate.info === "" &&
-		candidate.prefix === open.prefix &&
+		samePrefixContainer(open, candidate) &&
 		candidate.char === open.char &&
 		candidate.length >= open.length
 	);
