@@ -72,7 +72,10 @@ function samePrefixContainer(open: Fence, candidate: Fence): boolean {
 	const o = splitPrefix(open.prefix);
 	const c = splitPrefix(candidate.prefix);
 	if (o.quotes !== c.quotes) return false;
-	const slack = o.quotes === "" ? 0 : 1;
+	// A top-level open fence indented 0-3 spaces is not inside any container
+	// (4+ would be a list/code context), so a close fence may sit at any
+	// column from 0 up.
+	const slack = o.quotes === "" ? (o.indent <= 3 ? o.indent : 0) : 1;
 	return c.indent >= o.indent - slack && c.indent <= o.indent + 3;
 }
 

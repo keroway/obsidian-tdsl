@@ -221,6 +221,32 @@ describe("closing fence indentation (CommonMark: up to 3 spaces)", () => {
 		});
 	}
 
+	for (const [openIndent, closeIndent] of [
+		[2, 0],
+		[3, 1],
+		[3, 0],
+	] as const) {
+		it(`closes an open fence indented ${openIndent} with a shallower close indented ${closeIndent} (#306)`, () => {
+			const lines = [
+				`${" ".repeat(openIndent)}~~~tdsl`,
+				`${" ".repeat(openIndent)}timeline {}`,
+				`${" ".repeat(closeIndent)}~~~`,
+				"",
+				"~~~tdsl",
+				"timeline {}",
+				"~~~",
+			];
+			expect(listTdslFenceRanges(lines)).toEqual([
+				{ openLine: 0, closeLine: 2, prefix: " ".repeat(openIndent) },
+				{ openLine: 4, closeLine: 6, prefix: "" },
+			]);
+			expect(findTdslFenceAtCursor(lines, 5)).toEqual({
+				status: "found",
+				range: { openLine: 4, closeLine: 6, prefix: "" },
+			});
+		});
+	}
+
 	it("does not treat a 4-space indented fence as a close fence", () => {
 		expect(
 			listTdslFenceRanges(["```tdsl", "timeline {}", "    ```", "```"]),
