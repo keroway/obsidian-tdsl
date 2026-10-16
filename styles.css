@@ -397,6 +397,7 @@
  *        better with Obsidian's neutral off-white backgrounds.
  * Dark:  brighter, higher-contrast hues so lane items pop on dark backdrops.
  */
+/* biome-ignore lint/style/noDescendingSpecificity: 先行の `.theme-dark .tdsl-preview` は background のみで、こちらはカスタムプロパティだけ。宣言が重ならないので順序は無関係 */
 .tdsl-preview {
 	--tdsl-lane-0: #4682b4; /* steel-blue */
 	--tdsl-lane-1: #e67e22; /* carrot */
