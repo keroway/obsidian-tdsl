@@ -228,6 +228,49 @@ describe("closing fence indentation (CommonMark: up to 3 spaces)", () => {
 	});
 });
 
+describe("unclosed fence inside a blockquote (#304)", () => {
+	const lines = [
+		"> ~~~js",
+		"> example",
+		"",
+		"~~~tdsl",
+		'timeline "Real" { unit year; range 1..10; }',
+		"~~~",
+	];
+	const range = { openLine: 3, closeLine: 5, prefix: "" };
+
+	it("lists a later top-level tdsl block", () => {
+		expect(listTdslFenceRanges(lines)).toEqual([range]);
+	});
+
+	it("finds a later top-level tdsl block at the cursor", () => {
+		expect(findTdslFenceAtCursor(lines, 4)).toEqual({
+			status: "found",
+			range,
+		});
+	});
+
+	it("keeps an unclosed quoted tdsl block scoped to its container", () => {
+		const quoted = ["> ```tdsl", "> timeline {}", "", "```tdsl", "x", "```"];
+		expect(findTdslFenceAtCursor(quoted, 1)).toEqual({
+			status: "missing-close",
+		});
+		expect(findTdslFenceAtCursor(quoted, 4)).toEqual({
+			status: "found",
+			range: { openLine: 3, closeLine: 5, prefix: "" },
+		});
+		expect(listTdslFenceRanges(quoted)).toEqual([
+			{ openLine: 3, closeLine: 5, prefix: "" },
+		]);
+	});
+
+	it("does not leave a nested quote when the depth is unchanged", () => {
+		expect(
+			listTdslFenceRanges(["> > ```tdsl", "> > timeline {}", "> > ```"]),
+		).toEqual([{ openLine: 0, closeLine: 2, prefix: "> > " }]);
+	});
+});
+
 describe("listTdslFenceRanges", () => {
 	it("returns an empty list when the document has no fences", () => {
 		expect(listTdslFenceRanges(["plain markdown", "more text"])).toEqual([]);

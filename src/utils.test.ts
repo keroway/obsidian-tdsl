@@ -1245,6 +1245,16 @@ describe("planFenceTransform", () => {
 		});
 	});
 
+	it("reaches a top-level block after an unclosed quoted fence (#304)", () => {
+		const lines = ["> ~~~js", "> example", "", "~~~tdsl", "first", "~~~"];
+		expect(planFenceTransform(lines, 4, upper, "format")).toEqual({
+			kind: "replace",
+			text: "FIRST\n",
+			from: { line: 4, ch: 0 },
+			to: { line: 5, ch: 0 },
+		});
+	});
+
 	it("resolves the block the cursor is in, not the first one in the note", () => {
 		const lines = ["```tdsl", "first", "```", "", "```tdsl", "second", "```"];
 		expect(planFenceTransform(lines, 5, upper, "format")).toEqual({
