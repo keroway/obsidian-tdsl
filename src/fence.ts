@@ -86,6 +86,40 @@ function closes(open: Fence, candidate: Fence): boolean {
 	);
 }
 
+/** Number of leading blockquote markers (`>`) on a line. */
+function quoteDepth(line: string): number {
+	const m = /^[ \t]*(?:>[ \t]*)*/.exec(line);
+	return (m?.[0].match(/>/g) ?? []).length;
+}
+
+/**
+ * Scans forward from the open fence at `openLine` for its close fence.
+ *
+ * `end` is the exclusive end of the block's extent. A fence inside a blockquote
+ * cannot outlive it: the first line with fewer `>` markers leaves the container
+ * and terminates the block even without a close fence (CommonMark). Without
+ * this, an unclosed quoted fence would swallow every later block. Top-level
+ * and indented fences have no such boundary, so they run to the document end.
+ */
+function findClose(
+	lines: readonly string[],
+	openLine: number,
+	open: Fence,
+): { closeLine: number; end: number } {
+	const depth = quoteDepth(lines[openLine] ?? "");
+	for (let j = openLine + 1; j < lines.length; j++) {
+		const line = lines[j] ?? "";
+		if (depth > 0 && quoteDepth(line) < depth) {
+			return { closeLine: -1, end: j };
+		}
+		const candidate = parseFence(line);
+		if (candidate && closes(open, candidate)) {
+			return { closeLine: j, end: j + 1 };
+		}
+	}
+	return { closeLine: -1, end: lines.length };
+}
+
 /** The info string names this block as tdsl (extra info after it is ignored). */
 function isTdsl(fence: Fence): boolean {
 	return fence.info === "tdsl" || fence.info.startsWith("tdsl ");
@@ -111,19 +145,13 @@ export function findTdslFenceAtCursor(
 		const open = parseFence(lines[i] ?? "");
 		if (!open) continue;
 
-		let closeLine = -1;
-		for (let j = i + 1; j < lines.length; j++) {
-			const candidate = parseFence(lines[j] ?? "");
-			if (candidate && closes(open, candidate)) {
-				closeLine = j;
-				break;
-			}
-		}
+		const { closeLine, end } = findClose(lines, i, open);
 
 		// Only the body lines of a tdsl block count — neither the fence markers
 		// themselves nor another language's block do.
 		const cursorInBody =
-			cursorLine > i && (closeLine === -1 || cursorLine < closeLine);
+			cursorLine > i &&
+			(closeLine === -1 ? cursorLine < end : cursorLine < closeLine);
 		if (isTdsl(open) && cursorInBody) {
 			return closeLine === -1
 				? { status: "missing-close" }
@@ -133,10 +161,9 @@ export function findTdslFenceAtCursor(
 					};
 		}
 
-		// An unclosed block swallows the rest of the document, so there is no
-		// later block left to examine.
-		if (closeLine === -1) break;
-		i = closeLine;
+		// An unclosed block runs to the end of its container; resume scanning
+		// after it (at the document end this finishes the loop).
+		i = end - 1;
 	}
 
 	return { status: "not-in-block" };
@@ -162,19 +189,11 @@ export function listTdslFenceRanges(
 		const open = parseFence(lines[i] ?? "");
 		if (!open) continue;
 
-		let closeLine = -1;
-		for (let j = i + 1; j < lines.length; j++) {
-			const candidate = parseFence(lines[j] ?? "");
-			if (candidate && closes(open, candidate)) {
-				closeLine = j;
-				break;
-			}
-		}
+		const { closeLine, end } = findClose(lines, i, open);
 
-		if (closeLine === -1) break;
-		if (isTdsl(open))
+		if (closeLine !== -1 && isTdsl(open))
 			ranges.push({ openLine: i, closeLine, prefix: open.prefix });
-		i = closeLine;
+		i = end - 1;
 	}
 
 	return ranges;
