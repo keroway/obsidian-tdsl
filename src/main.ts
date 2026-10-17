@@ -37,6 +37,7 @@ import {
 	parseViewBox,
 	resetViewBox,
 	type ViewBox,
+	viewBoxPointFromClient,
 	zoomViewBox,
 } from "./pan-zoom";
 import { svgToPngBlob } from "./png-export";
@@ -722,20 +723,18 @@ function setupPanZoom(wrapper: HTMLElement, svg: SVGSVGElement): void {
 		svg.setAttribute("viewBox", formatViewBox(next));
 	};
 
-	const focusFromEvent = (ev: { clientX: number; clientY: number }) => {
-		const rect = contentRect(svg.getBoundingClientRect(), current);
-		return {
-			x: current.x + ((ev.clientX - rect.left) / rect.width) * current.width,
-			y: current.y + ((ev.clientY - rect.top) / rect.height) * current.height,
-		};
-	};
-
 	svg.addEventListener(
 		"wheel",
 		(ev) => {
 			ev.preventDefault();
+			const focus = viewBoxPointFromClient(
+				svg.getBoundingClientRect(),
+				current,
+				ev,
+			);
+			if (!focus) return; // zero-sized / non-finite: keep state (#317)
 			const factor = ev.deltaY < 0 ? ZOOM_WHEEL_FACTOR : 1 / ZOOM_WHEEL_FACTOR;
-			apply(zoomViewBox(current, original, factor, focusFromEvent(ev)));
+			apply(zoomViewBox(current, original, factor, focus));
 		},
 		{ passive: false },
 	);
