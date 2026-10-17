@@ -297,6 +297,35 @@ describe("unclosed fence inside a blockquote (#304)", () => {
 	});
 });
 
+describe("unclosed fence inside a list item (#316)", () => {
+	const lines = [
+		"- item",
+		"  ~~~text",
+		"  example",
+		"",
+		"outside list",
+		"~~~tdsl",
+		"timeline {}",
+		"~~~",
+	];
+	const range = { openLine: 5, closeLine: 7, prefix: "" };
+
+	it("lists a later top-level tdsl block", () => {
+		expect(listTdslFenceRanges(lines)).toEqual([range]);
+	});
+
+	it("finds a later top-level tdsl block at the cursor", () => {
+		expect(findTdslFenceAtCursor(lines, 6)).toEqual({ status: "found", range });
+	});
+
+	it("keeps blank lines and deeper-indented lines inside the fence", () => {
+		const inside = ["- item", "  ~~~tdsl", "  a", "", "    b", "  ~~~"];
+		expect(listTdslFenceRanges(inside)).toEqual([
+			{ openLine: 1, closeLine: 5, prefix: "  " },
+		]);
+	});
+});
+
 describe("listTdslFenceRanges", () => {
 	it("returns an empty list when the document has no fences", () => {
 		expect(listTdslFenceRanges(["plain markdown", "more text"])).toEqual([]);
