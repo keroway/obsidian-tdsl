@@ -105,13 +105,23 @@ describe("applyRootAccessibility", () => {
 		);
 	});
 
+	it("replaces the renderer's generic 'timeline' label with the title", () => {
+		const { doc, root } = parse(
+			`<svg xmlns="${SVG_NS}" aria-label="timeline"><g/></svg>`,
+		);
+		applyRootAccessibility(doc, root, "Project roadmap");
+
+		expect(root.getAttribute("aria-label")).toBe("Project roadmap");
+		expect(root.firstElementChild?.textContent).toBe("Project roadmap");
+	});
+
 	it("is idempotent", () => {
 		const { doc, root } = parse(`<svg xmlns="${SVG_NS}"><g/></svg>`);
-		applyRootAccessibility(doc, root, "Timeline");
+		applyRootAccessibility(doc, root, "Project roadmap");
 		applyRootAccessibility(doc, root, "Something else");
 
-		expect(root.getAttribute("aria-label")).toBe("Timeline");
+		expect(root.getAttribute("aria-label")).toBe("Project roadmap");
 		expect(root.querySelectorAll("title").length).toBe(1);
-		expect(root.firstElementChild?.textContent).toBe("Timeline");
+		expect(root.firstElementChild?.textContent).toBe("Project roadmap");
 	});
 });

@@ -7,6 +7,9 @@
  */
 const SVG_NS = "http://www.w3.org/2000/svg";
 
+/** The fixed `aria-label` the WASM renderer puts on every timeline root. */
+const GENERIC_LABEL = /^\s*timeline\s*$/i;
+
 /**
  * Labels the root `<svg>` of a rendered timeline for assistive technology.
  *
@@ -18,7 +21,9 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  * descendants exposed.
  *
  * Attributes the renderer already provides win: upstream knows the diagram's
- * structure better than this plugin does.
+ * structure better than this plugin does. The one exception is the renderer's
+ * generic `timeline` label, which carries no information; the title extracted
+ * from the source replaces it.
  */
 export function applyRootAccessibility(
 	doc: Document,
@@ -26,8 +31,10 @@ export function applyRootAccessibility(
 	label: string,
 ): void {
 	if (!root.hasAttribute("role")) root.setAttribute("role", "group");
-	const effectiveLabel = root.getAttribute("aria-label") ?? label;
-	if (!root.hasAttribute("aria-label"))
+	const existing = root.getAttribute("aria-label");
+	const effectiveLabel =
+		existing === null || GENERIC_LABEL.test(existing) ? label : existing;
+	if (existing !== effectiveLabel)
 		root.setAttribute("aria-label", effectiveLabel);
 
 	// A root <title> gives the same description to tools that surface the SVG
