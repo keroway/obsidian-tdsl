@@ -99,9 +99,13 @@ describe("TdslFullscreenModal viewBox boundary (#237)", () => {
 
 		expect(clone.getAttribute("viewBox")).toBe("200 100 400 200");
 
-		clone.dispatchEvent(
-			new WheelEvent("wheel", { deltaY: 100, clientX: 400, clientY: 200 }),
-		);
+		// happy-dom's WheelEvent ignores clientX/clientY (see #244 below), so set
+		// them explicitly; otherwise the focus is NaN and this assertion passed
+		// vacuously on a NaN viewBox (#317).
+		const wheelEvent = new WheelEvent("wheel", { deltaY: 100 });
+		Object.defineProperty(wheelEvent, "clientX", { value: 400 });
+		Object.defineProperty(wheelEvent, "clientY", { value: 200 });
+		clone.dispatchEvent(wheelEvent);
 		// Must be able to zoom out past the initially-opened (zoomed) range.
 		const afterZoomOut = clone.getAttribute("viewBox");
 		expect(afterZoomOut).not.toBe("200 100 400 200");

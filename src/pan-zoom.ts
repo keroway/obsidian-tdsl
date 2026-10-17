@@ -113,6 +113,26 @@ export function contentRect(elementRect: Rect, viewBox: ViewBox): Rect {
 	};
 }
 
+/**
+ * Converts a client-space point into viewBox coordinates. Returns `null` when
+ * the element has no area or the result is not finite, so a wheel event on a
+ * zero-sized (e.g. hidden) SVG cannot write NaN into the viewBox (#317).
+ */
+export function viewBoxPointFromClient(
+	elementRect: Rect,
+	viewBox: ViewBox,
+	client: { clientX: number; clientY: number },
+): { x: number; y: number } | null {
+	const rect = contentRect(elementRect, viewBox);
+	if (!(rect.width > 0) || !(rect.height > 0)) return null;
+	const x =
+		viewBox.x + ((client.clientX - rect.left) / rect.width) * viewBox.width;
+	const y =
+		viewBox.y + ((client.clientY - rect.top) / rect.height) * viewBox.height;
+	if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+	return { x, y };
+}
+
 /** Returns the original viewBox, undoing any zoom/pan applied to it. */
 export function resetViewBox(original: ViewBox): ViewBox {
 	return original;

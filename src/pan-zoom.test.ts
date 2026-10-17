@@ -6,6 +6,7 @@ import {
 	parseViewBox,
 	resetViewBox,
 	type ViewBox,
+	viewBoxPointFromClient,
 	zoomViewBox,
 } from "./pan-zoom";
 
@@ -152,5 +153,46 @@ describe("contentRect", () => {
 	it("returns the input unchanged when the element has zero size", () => {
 		const rect = { left: 0, top: 0, width: 0, height: 0 };
 		expect(contentRect(rect, original)).toEqual(rect);
+	});
+});
+
+describe("viewBoxPointFromClient", () => {
+	const full = { left: 0, top: 0, width: 800, height: 400 };
+	const zero = { left: 0, top: 0, width: 0, height: 0 };
+
+	it("maps a client point into viewBox coordinates", () => {
+		expect(
+			viewBoxPointFromClient(full, original, { clientX: 400, clientY: 200 }),
+		).toEqual({ x: 400, y: 200 });
+	});
+
+	it("returns null for a zero-sized element so NaN never reaches the viewBox (#317)", () => {
+		expect(
+			viewBoxPointFromClient(zero, original, { clientX: 0, clientY: 0 }),
+		).toBeNull();
+	});
+
+	it("returns null for non-finite client coordinates", () => {
+		expect(
+			viewBoxPointFromClient(full, original, {
+				clientX: Number.NaN,
+				clientY: 0,
+			}),
+		).toBeNull();
+	});
+
+	it("zooms normally once the element regains its size", () => {
+		expect(
+			viewBoxPointFromClient(zero, original, { clientX: 0, clientY: 0 }),
+		).toBeNull();
+		const focus = viewBoxPointFromClient(full, original, {
+			clientX: 400,
+			clientY: 200,
+		});
+		expect(focus).not.toBeNull();
+		if (!focus) return;
+		const zoomed = zoomViewBox(original, original, 1.15, focus);
+		expect(Number.isFinite(zoomed.x)).toBe(true);
+		expect(zoomed.width).toBeCloseTo(800 / 1.15);
 	});
 });
