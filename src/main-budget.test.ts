@@ -34,7 +34,10 @@ import mainSource from "./main.ts?raw";
 // of silently leaving previews stale. It cannot be extracted — it needs
 // `this.app.workspace.iterateAllLeaves`, only available on the live Plugin
 // instance.
-const MAIN_TS_LINE_BUDGET = 1219;
+// Raised by 3 (issue #308): TdslPreview.renderDiagram() bails out after the
+// ensureWasm() await (and in its catch) when the block was unloaded meanwhile.
+// It cannot be extracted — it needs the instance's `unloaded` flag.
+const MAIN_TS_LINE_BUDGET = 1222;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
