@@ -101,8 +101,9 @@ function quoteDepth(line: string): number {
  * `end` is the exclusive end of the block's extent. A fence inside a blockquote
  * cannot outlive it: the first line with fewer `>` markers leaves the container
  * and terminates the block even without a close fence (CommonMark). Without
- * this, an unclosed quoted fence would swallow every later block. Top-level
- * and indented fences have no such boundary, so they run to the document end.
+ * this, an unclosed quoted fence would swallow every later block. An indented
+ * fence (assumed to be list content) likewise ends at the first non-blank line
+ * indented less than it; top-level fences run to the document end.
  */
 function findClose(
 	lines: readonly string[],
@@ -110,6 +111,10 @@ function findClose(
 	open: Fence,
 ): { closeLine: number; end: number } {
 	const depth = quoteDepth(lines[openLine] ?? "");
+	// An unquoted fence indented 2+ columns is taken to sit in a list item
+	// (`- ` / `1. ` content): the first non-blank line indented less than the
+	// fence leaves the item. 1 column cannot be list content, so it is exempt.
+	const listIndent = depth === 0 ? splitPrefix(open.prefix).indent : 0;
 	for (let j = openLine + 1; j < lines.length; j++) {
 		const line = lines[j] ?? "";
 		if (depth > 0 && quoteDepth(line) < depth) {
@@ -118,6 +123,13 @@ function findClose(
 		const candidate = parseFence(line);
 		if (candidate && closes(open, candidate)) {
 			return { closeLine: j, end: j + 1 };
+		}
+		if (
+			listIndent >= 2 &&
+			line.trim() !== "" &&
+			(/^[ \t]*/.exec(line)?.[0].length ?? 0) < listIndent
+		) {
+			return { closeLine: -1, end: j };
 		}
 	}
 	return { closeLine: -1, end: lines.length };
