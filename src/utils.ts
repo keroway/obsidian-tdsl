@@ -56,8 +56,12 @@ export interface RenderDirectives {
  * literal suspends block-comment detection (a title containing `/*` must not
  * start one) and a `//` line comment is copied through unchanged so `//!`
  * directive lines outside a block comment keep working (#263).
+ *
+ * With `blankStrings`, string literal contents are blanked the same way (quotes
+ * and newlines kept) so a `//!` line inside a multi-line string is not seen as
+ * a directive (#310).
  */
-function stripBlockComments(source: string): string {
+function stripBlockComments(source: string, blankStrings = false): string {
 	let out = "";
 	let i = 0;
 	let inString = false;
@@ -77,12 +81,17 @@ function stripBlockComments(source: string): string {
 		}
 		if (inString) {
 			if (c === "\\" && i + 1 < source.length) {
-				out += source[i] + source[i + 1];
+				const pair = source[i] + source[i + 1];
+				out += blankStrings ? pair.replace(/[^\n]/g, " ") : pair;
 				i += 2;
 				continue;
 			}
-			if (c === '"') inString = false;
-			out += c;
+			if (c === '"') {
+				inString = false;
+				out += c;
+			} else {
+				out += blankStrings && c !== "\n" ? " " : c;
+			}
 			i++;
 			continue;
 		}
@@ -128,7 +137,7 @@ const LAYOUT_STYLE_VALUES = new Set([
  */
 export function parseRenderDirectives(source: string): RenderDirectives {
 	const out: RenderDirectives = {};
-	const scanned = stripBlockComments(source);
+	const scanned = stripBlockComments(source, true);
 	const re = /^[ \t]*\/\/!\s*([a-z_]+)\s*:\s*(.+?)\s*$/gim;
 	let m: RegExpExecArray | null;
 	// biome-ignore lint/suspicious/noAssignInExpressions: idiomatic RegExp.exec loop

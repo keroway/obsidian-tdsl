@@ -335,6 +335,27 @@ describe("parseRenderDirectives", () => {
 		].join("\n");
 		expect(parseRenderDirectives(src)).toEqual({});
 	});
+
+	it("ignores a directive line inside a multi-line string (#310)", () => {
+		const src = [
+			'timeline "Title',
+			"//! theme: dark",
+			'//! table: on",',
+			'end" { unit year; range 1..2; }',
+		].join("\n");
+		expect(parseRenderDirectives(src)).toEqual({});
+	});
+
+	it("still applies a directive after a multi-line string closes (#310)", () => {
+		const src = [
+			'timeline "A',
+			"//! theme: dark",
+			'B" {',
+			"//! grid: decade",
+			"unit year; range 1..2; }",
+		].join("\n");
+		expect(parseRenderDirectives(src)).toEqual({ grid: "decade" });
+	});
 });
 
 // ----------------------------------------------------------------------------
