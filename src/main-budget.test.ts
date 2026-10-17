@@ -37,7 +37,10 @@ import mainSource from "./main.ts?raw";
 // Raised by 3 (issue #308): TdslPreview.renderDiagram() bails out after the
 // ensureWasm() await (and in its catch) when the block was unloaded meanwhile.
 // It cannot be extracted — it needs the instance's `unloaded` flag.
-const MAIN_TS_LINE_BUDGET = 1222;
+// Raised by 1 (issue #312): setupPanZoom() tags the wrapper `tdsl-pannable` so
+// styles.css applies grab/touch-action only when pan/zoom is on. It cannot be
+// extracted — setupPanZoom() itself lives in main.ts.
+const MAIN_TS_LINE_BUDGET = 1223;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;

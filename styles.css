@@ -121,6 +121,11 @@
 	width: auto;
 	height: auto;
 	max-width: none;
+}
+
+/* Only when pan/zoom is enabled (main.ts setupPanZoom adds `tdsl-pannable`);
+ * otherwise native touch scrolling and the default cursor stay intact. */
+.tdsl-preview.tdsl-pannable svg {
 	cursor: grab;
 	touch-action: none;
 }

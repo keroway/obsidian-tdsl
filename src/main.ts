@@ -706,6 +706,7 @@ function setupPanZoom(wrapper: HTMLElement, svg: SVGSVGElement): void {
 	const initial = parseViewBox(currentAttr);
 	if (!initial) return;
 
+	wrapper.addClass("tdsl-pannable"); // gates grab cursor / touch-action (#312)
 	// Remembers the viewBox as first rendered (the "whole diagram" bounds) in a
 	// data attribute, separate from the live `viewBox` attribute that pan/zoom
 	// keeps rewriting. `cloneNode(true)` copies data-* attributes, so when the

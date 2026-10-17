@@ -236,3 +236,13 @@ describe("TdslFullscreenModal zoom center drift (#244)", () => {
 		expect(after).toBeCloseTo(before, 5);
 	});
 });
+
+describe("pan/zoom CSS gating (#312)", () => {
+	it("marks the fullscreen wrapper pannable once pan/zoom is wired", () => {
+		const { TdslFullscreenModal } = loadFullscreenModal();
+		const modal = new TdslFullscreenModal({}, makeSvg("0 0 800 400"));
+		modal.onOpen();
+
+		expect(modal.contentEl.querySelector(".tdsl-pannable")).not.toBeNull();
+	});
+});
