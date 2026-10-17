@@ -136,6 +136,8 @@ class TdslPreview extends MarkdownRenderChild {
 			let cached = svgRenderCache.get(cacheKey);
 			if (!cached) {
 				await ensureWasm();
+				// The block may have been unloaded while WASM was initializing.
+				if (this.unloaded) return;
 
 				// check_source returns JSON: [{severity, message, line, col}]
 				const diagnostics = parseDiagnostics(check_source(this.source));
@@ -209,6 +211,7 @@ class TdslPreview extends MarkdownRenderChild {
 				this.showLintIssues(wrapper);
 			});
 		} catch (e) {
+			if (this.unloaded) return;
 			this.showErrors(wrapper, [String(e)]);
 		}
 	}
