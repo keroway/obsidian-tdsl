@@ -326,6 +326,26 @@ describe("unclosed fence inside a list item (#316)", () => {
 	});
 });
 
+describe("indented top-level fence without a list (#320)", () => {
+	it.each([2, 3])("detects a fence opened with %i spaces", (n) => {
+		const lines = [`${" ".repeat(n)}~~~tdsl`, "timeline {}", "~~~"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 0, closeLine: 2, prefix: " ".repeat(n) },
+		]);
+		expect(findTdslFenceAtCursor(lines, 1)).toEqual({
+			status: "found",
+			range: { openLine: 0, closeLine: 2, prefix: " ".repeat(n) },
+		});
+	});
+
+	it("detects an indented fence after a plain paragraph", () => {
+		const lines = ["paragraph", "", "  ~~~tdsl", "timeline {}", "  ~~~"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 2, closeLine: 4, prefix: "  " },
+		]);
+	});
+});
+
 describe("listTdslFenceRanges", () => {
 	it("returns an empty list when the document has no fences", () => {
 		expect(listTdslFenceRanges(["plain markdown", "more text"])).toEqual([]);

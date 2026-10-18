@@ -95,6 +95,28 @@ function quoteDepth(line: string): number {
 	return (m?.[0].match(/>/g) ?? []).length;
 }
 
+const LIST_MARKER_RE = /^[ \t]*(?:[-*+]|\d{1,9}[.)])(?:[ \t]|$)/;
+
+/**
+ * Whether the fence at `openLine` (indented `indent` columns, unquoted) sits in
+ * a list item: the nearest earlier non-blank line indented less than the fence
+ * must be a list item marker line.
+ */
+function inListItem(
+	lines: readonly string[],
+	openLine: number,
+	indent: number,
+): boolean {
+	for (let k = openLine - 1; k >= 0; k--) {
+		const line = lines[k] ?? "";
+		if (line.trim() === "") continue;
+		if ((/^[ \t]*/.exec(line)?.[0].length ?? 0) < indent) {
+			return LIST_MARKER_RE.test(line);
+		}
+	}
+	return false;
+}
+
 /**
  * Scans forward from the open fence at `openLine` for its close fence.
  *
@@ -114,7 +136,11 @@ function findClose(
 	// An unquoted fence indented 2+ columns is taken to sit in a list item
 	// (`- ` / `1. ` content): the first non-blank line indented less than the
 	// fence leaves the item. 1 column cannot be list content, so it is exempt.
-	const listIndent = depth === 0 ? splitPrefix(open.prefix).indent : 0;
+	// A top-level paragraph may also be indented 2-3 columns, so this only
+	// applies when a list item actually encloses the fence.
+	const fenceIndent = splitPrefix(open.prefix).indent;
+	const listIndent =
+		depth === 0 && inListItem(lines, openLine, fenceIndent) ? fenceIndent : 0;
 	for (let j = openLine + 1; j < lines.length; j++) {
 		const line = lines[j] ?? "";
 		if (depth > 0 && quoteDepth(line) < depth) {
