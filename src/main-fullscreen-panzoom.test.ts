@@ -250,3 +250,62 @@ describe("pan/zoom CSS gating (#312)", () => {
 		expect(modal.contentEl.querySelector(".tdsl-pannable")).not.toBeNull();
 	});
 });
+
+describe("pan drag state after pointer capture loss (#328)", () => {
+	function openClone() {
+		const { TdslFullscreenModal } = loadFullscreenModal();
+		const source = makeSvg("0 0 800 400");
+		source.dataset.tdslFullViewBox = "0 0 800 400";
+		source.setAttribute("viewBox", "200 100 400 200");
+		const modal = new TdslFullscreenModal({}, source);
+		modal.onOpen();
+		const clone = modal.contentEl.querySelector("svg") as SVGSVGElement;
+		Object.defineProperty(clone, "getBoundingClientRect", {
+			value: () => ({ left: 0, top: 0, width: 800, height: 400 }),
+		});
+		Object.defineProperty(clone, "setPointerCapture", { value: () => {} });
+		Object.defineProperty(clone, "releasePointerCapture", {
+			value: () => {},
+		});
+		Object.defineProperty(clone, "hasPointerCapture", { value: () => false });
+		return { modal, clone };
+	}
+
+	function pointer(type: string, init: PointerEventInit) {
+		return new PointerEvent(type, { button: 0, ...init });
+	}
+
+	it("stops panning on lostpointercapture", () => {
+		const { modal, clone } = openClone();
+		clone.dispatchEvent(
+			pointer("pointerdown", { pointerId: 1, clientX: 400, clientY: 200 }),
+		);
+		expect(modal.contentEl.querySelector(".tdsl-panning")).not.toBeNull();
+
+		clone.dispatchEvent(pointer("lostpointercapture", { pointerId: 1 }));
+		expect(modal.contentEl.querySelector(".tdsl-panning")).toBeNull();
+
+		const before = clone.getAttribute("viewBox");
+		clone.dispatchEvent(
+			pointer("pointermove", {
+				pointerId: 1,
+				buttons: 0,
+				clientX: 500,
+				clientY: 200,
+			}),
+		);
+		expect(clone.getAttribute("viewBox")).toBe(before);
+	});
+
+	it("ignores moves from a different pointerId while dragging", () => {
+		const { clone } = openClone();
+		clone.dispatchEvent(
+			pointer("pointerdown", { pointerId: 1, clientX: 400, clientY: 200 }),
+		);
+		const before = clone.getAttribute("viewBox");
+		clone.dispatchEvent(
+			pointer("pointermove", { pointerId: 2, clientX: 500, clientY: 200 }),
+		);
+		expect(clone.getAttribute("viewBox")).toBe(before);
+	});
+});

@@ -740,12 +740,14 @@ function setupPanZoom(wrapper: HTMLElement, svg: SVGSVGElement): void {
 	);
 
 	let dragging = false;
+	let activePointerId = -1;
 	let lastClientX = 0;
 	let lastClientY = 0;
 
 	svg.addEventListener("pointerdown", (ev) => {
-		if (ev.button !== 0) return;
+		if (ev.button !== 0 || dragging) return;
 		dragging = true;
+		activePointerId = ev.pointerId;
 		lastClientX = ev.clientX;
 		lastClientY = ev.clientY;
 		svg.setPointerCapture(ev.pointerId);
@@ -753,7 +755,7 @@ function setupPanZoom(wrapper: HTMLElement, svg: SVGSVGElement): void {
 	});
 
 	svg.addEventListener("pointermove", (ev) => {
-		if (!dragging) return;
+		if (!dragging || ev.pointerId !== activePointerId) return;
 		const rect = contentRect(svg.getBoundingClientRect(), current);
 		const deltaPx = {
 			x: ev.clientX - lastClientX,
@@ -770,13 +772,18 @@ function setupPanZoom(wrapper: HTMLElement, svg: SVGSVGElement): void {
 	});
 
 	const endDrag = (ev: PointerEvent) => {
-		if (!dragging) return;
+		if (!dragging || ev.pointerId !== activePointerId) return;
 		dragging = false;
-		svg.releasePointerCapture(ev.pointerId);
+		activePointerId = -1;
+		// lostpointercapture fires after the capture is already gone.
+		if (svg.hasPointerCapture?.(ev.pointerId)) {
+			svg.releasePointerCapture(ev.pointerId);
+		}
 		wrapper.removeClass("tdsl-panning");
 	};
 	svg.addEventListener("pointerup", endDrag);
 	svg.addEventListener("pointercancel", endDrag);
+	svg.addEventListener("lostpointercapture", endDrag);
 
 	svg.addEventListener("dblclick", () => {
 		apply(resetViewBox(original));

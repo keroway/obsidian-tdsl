@@ -40,7 +40,10 @@ import mainSource from "./main.ts?raw";
 // Raised by 1 (issue #312): setupPanZoom() tags the wrapper `tdsl-pannable` so
 // styles.css applies grab/touch-action only when pan/zoom is on. It cannot be
 // extracted — setupPanZoom() itself lives in main.ts.
-const MAIN_TS_LINE_BUDGET = 1223;
+// Raised by 6 (issue #328): setupPanZoom() tracks the active pointerId and ends
+// the drag on lostpointercapture. It cannot be extracted — the handlers close
+// over setupPanZoom()'s local drag state and the SVG element.
+const MAIN_TS_LINE_BUDGET = 1229;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
