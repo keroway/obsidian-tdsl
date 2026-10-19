@@ -138,7 +138,8 @@ const LAYOUT_STYLE_VALUES = new Set([
 export function parseRenderDirectives(source: string): RenderDirectives {
 	const out: RenderDirectives = {};
 	const scanned = stripBlockComments(source, true);
-	const re = /^[ \t]*\/\/!\s*([a-z_]+)\s*:\s*(.+?)\s*$/gim;
+	// Horizontal whitespace only: `\s` would let an empty value swallow the next line.
+	const re = /^[ \t]*\/\/![ \t]*([a-z_]+)[ \t]*:[ \t]*(.+?)[ \t]*$/gim;
 	let m: RegExpExecArray | null;
 	// biome-ignore lint/suspicious/noAssignInExpressions: idiomatic RegExp.exec loop
 	while ((m = re.exec(scanned)) !== null) {

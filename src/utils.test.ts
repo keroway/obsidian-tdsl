@@ -356,6 +356,15 @@ describe("parseRenderDirectives", () => {
 		].join("\n");
 		expect(parseRenderDirectives(src)).toEqual({ grid: "decade" });
 	});
+
+	it("does not let an empty value swallow the next directive (#326)", () => {
+		expect(parseRenderDirectives("//! grid:\n//! theme: dark")).toEqual({
+			theme: "dark",
+		});
+		expect(parseRenderDirectives("//! events:\n//! table: on")).toEqual({
+			table: true,
+		});
+	});
 });
 
 // ----------------------------------------------------------------------------
