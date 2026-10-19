@@ -26,11 +26,23 @@ export type TdslFenceResult =
 // variants, so the format command has to recognize the same set — otherwise a
 // block renders fine but cannot be formatted.
 //
-// Capture groups: 1 = nesting prefix, 2 = fence marker, 3 = info string.
-const FENCE_RE = /^([ \t]*(?:>[ \t]*)*)(`{3,}|~{3,})[ \t]*(.*)$/;
+// A list item marker (`- `, `1. `) may directly precede the opening fence
+// (`- ~~~tdsl`); the fence then starts the item's content. Only the open line
+// carries the marker — body and close lines are indented under it.
+//
+// Capture groups: 1 = nesting prefix, 2 = list marker (optional), 3 = fence
+// marker, 4 = info string.
+const FENCE_RE =
+	/^([ \t]*(?:>[ \t]*)*)((?:[-*+]|\d{1,9}[.)])[ \t]+)?(`{3,}|~{3,})[ \t]*(.*)$/;
 
 interface Fence {
+	/**
+	 * Prefix repeated on body/close lines. A list marker on the open line is
+	 * replaced by spaces of the same width (the item's continuation indent).
+	 */
 	prefix: string;
+	/** The open line starts with a list item marker. */
+	listMarker: boolean;
 	/** "`" or "~" — open and close must use the same character. */
 	char: string;
 	/** Number of marker characters; a close fence needs at least as many. */
@@ -42,13 +54,15 @@ interface Fence {
 function parseFence(line: string): Fence | null {
 	const m = FENCE_RE.exec(line);
 	if (!m) return null;
-	const marker = m[2] ?? "";
-	const info = (m[3] ?? "").trim();
+	const listMarker = m[2] ?? "";
+	const marker = m[3] ?? "";
+	const info = (m[4] ?? "").trim();
 	// CommonMark: the info string of a backtick fence may not contain a
 	// backtick (that would make it inline code, not a fence).
 	if (marker.startsWith("`") && info.includes("`")) return null;
 	return {
-		prefix: m[1] ?? "",
+		prefix: (m[1] ?? "") + " ".repeat(listMarker.length),
+		listMarker: listMarker !== "",
 		char: marker[0] ?? "",
 		length: marker.length,
 		info,
@@ -140,7 +154,9 @@ function findClose(
 	// applies when a list item actually encloses the fence.
 	const fenceIndent = splitPrefix(open.prefix).indent;
 	const listIndent =
-		depth === 0 && inListItem(lines, openLine, fenceIndent) ? fenceIndent : 0;
+		depth === 0 && (open.listMarker || inListItem(lines, openLine, fenceIndent))
+			? fenceIndent
+			: 0;
 	for (let j = openLine + 1; j < lines.length; j++) {
 		const line = lines[j] ?? "";
 		if (depth > 0 && quoteDepth(line) < depth) {

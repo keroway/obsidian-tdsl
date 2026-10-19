@@ -346,6 +346,35 @@ describe("indented top-level fence without a list (#320)", () => {
 	});
 });
 
+describe("fence opened on the list marker line (#324)", () => {
+	it.each([
+		["bullet", ["- ~~~tdsl", "  timeline {}", "  ~~~"], "  "],
+		["numbered", ["1. ~~~tdsl", "   timeline {}", "   ~~~"], "   "],
+		["quoted list", ["> - ```tdsl", ">   timeline {}", ">   ```"], ">   "],
+	])("detects a %s item", (_name, lines, prefix) => {
+		const range = { openLine: 0, closeLine: 2, prefix };
+		expect(listTdslFenceRanges(lines)).toEqual([range]);
+		expect(findTdslFenceAtCursor(lines, 1)).toEqual({
+			status: "found",
+			range,
+		});
+	});
+
+	it("ends an unclosed fence at the item boundary", () => {
+		const lines = ["- ```tdsl", "  timeline {}", "next", "```tdsl", "t", "```"];
+		expect(findTdslFenceAtCursor(lines, 1)).toEqual({
+			status: "missing-close",
+		});
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 3, closeLine: 5, prefix: "" },
+		]);
+	});
+
+	it("does not treat a marker without a fence as a block", () => {
+		expect(listTdslFenceRanges(["- item", "  text"])).toEqual([]);
+	});
+});
+
 describe("listTdslFenceRanges", () => {
 	it("returns an empty list when the document has no fences", () => {
 		expect(listTdslFenceRanges(["plain markdown", "more text"])).toEqual([]);
