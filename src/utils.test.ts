@@ -406,6 +406,16 @@ describe("hasWikidataImport", () => {
 		const source = '/*\nimport wikidata {\n*/\ntimeline "Real" {}';
 		expect(hasWikidataImport(source)).toBe(false);
 	});
+
+	it("returns false for an import wikidata line inside a multi-line string (#330)", () => {
+		const source = 'timeline "example\nimport wikidata\n" {}';
+		expect(hasWikidataImport(source)).toBe(false);
+	});
+
+	it("returns true for a real import that follows a multi-line string (#330)", () => {
+		const source = 'timeline "a\nb" {}\nimport wikidata {}';
+		expect(hasWikidataImport(source)).toBe(true);
+	});
 });
 
 // ----------------------------------------------------------------------------

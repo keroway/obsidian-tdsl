@@ -315,7 +315,7 @@ export function resolveRenderOptions(
 
 /** Returns true when the source contains an `import wikidata` block. */
 export function hasWikidataImport(source: string): boolean {
-	return /^\s*import\s+wikidata\b/m.test(stripBlockComments(source));
+	return /^\s*import\s+wikidata\b/m.test(stripBlockComments(source, true));
 }
 
 /** Extracts the timeline title from a `timeline "..."` line, or null. */
