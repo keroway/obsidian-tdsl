@@ -40,6 +40,22 @@ function significantTokens(source: string): [string, string][] {
 }
 
 describe("tdslLanguage tokenizer", () => {
+	it("keeps a multi-line string as string until the closing quote", () => {
+		const tokens = significantTokens('"first\n//! theme: dark\nspan\nlast";');
+		expect(tokens.every(([type]) => type === "string")).toBe(true);
+		expect(tokens.map(([, text]) => text).join("")).toContain("//! theme");
+	});
+
+	it("returns to normal code after a multi-line string closes", () => {
+		const tokens = significantTokens('"a\nb" span');
+		expect(tokens[tokens.length - 1]).toEqual(["definitionKeyword", "span"]);
+	});
+
+	it("does not close a multi-line string on an escaped quote", () => {
+		const tokens = significantTokens('"a\\"\nspan');
+		expect(tokens.some(([type]) => type === "definitionKeyword")).toBe(false);
+	});
+
 	it("classifies block keywords", () => {
 		expect(significantTokens("timeline")).toEqual([["keyword", "timeline"]]);
 		expect(significantTokens("lane")).toEqual([["keyword", "lane"]]);

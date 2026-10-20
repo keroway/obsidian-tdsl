@@ -27,7 +27,11 @@
 //   3. `era` / `target_type` / `target_lane` の除去
 //      キーワード表自体の差分（`src/tdsl-keywords.ts` の先頭コメント参照）。
 
-import { LanguageSupport, StreamLanguage } from "@codemirror/language";
+import {
+	LanguageSupport,
+	StreamLanguage,
+	type StringStream,
+} from "@codemirror/language";
 import { tags } from "@lezer/highlight";
 import {
 	BLOCK_KEYWORDS as BLOCK_KWS,
@@ -37,6 +41,24 @@ import {
 
 interface TdslState {
 	inBlockComment: boolean;
+	inString: boolean;
+}
+
+// 文字列本体（開き引用符の後ろ）を閉じ引用符か行末まで読む。閉じ引用符に
+// 達していなければ inString を立てたまま返し、次行で継続させる。
+function scanString(stream: StringStream, state: TdslState): "string" {
+	while (!stream.eol()) {
+		const c = stream.next();
+		if (c === "\\") {
+			stream.next();
+			continue;
+		}
+		if (c === '"') {
+			state.inString = false;
+			return "string";
+		}
+	}
+	return "string";
 }
 
 const BLOCK_KEYWORDS = new Set(BLOCK_KWS);
@@ -59,12 +81,15 @@ export const tdslLanguage = StreamLanguage.define<TdslState>({
 		special: tags.special(tags.variableName),
 	},
 	startState(): TdslState {
-		return { inBlockComment: false };
+		return { inBlockComment: false, inString: false };
 	},
 	copyState(state): TdslState {
-		return { inBlockComment: state.inBlockComment };
+		return { inBlockComment: state.inBlockComment, inString: state.inString };
 	},
 	token(stream, state): string | null {
+		// 複数行文字列の継続
+		if (state.inString) return scanString(stream, state);
+
 		// ブロックコメント継続
 		if (state.inBlockComment) {
 			if (stream.match("*/")) {
@@ -109,18 +134,11 @@ export const tdslLanguage = StreamLanguage.define<TdslState>({
 			return "blockComment";
 		}
 
-		// 文字列リテラル
+		// 文字列リテラル（閉じ引用符が無ければ次行へ継続する）
 		if (stream.peek() === '"') {
 			stream.next();
-			while (!stream.eol()) {
-				const c = stream.next();
-				if (c === "\\") {
-					stream.next();
-					continue;
-				}
-				if (c === '"') break;
-			}
-			return "string";
+			state.inString = true;
+			return scanString(stream, state);
 		}
 
 		// claim(...).xxx 式（関数呼び出し＋プロパティアクセス）
