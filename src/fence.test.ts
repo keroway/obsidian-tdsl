@@ -455,3 +455,25 @@ describe("listTdslFenceRanges", () => {
 		]);
 	});
 });
+
+describe("indented code block is not a fence (#338)", () => {
+	it("ignores a 4-space indented fence outside a list", () => {
+		const lines = ["    ~~~tdsl", "    timeline {}", "    ~~~"];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+		expect(findTdslFenceAtCursor(lines, 1)).toEqual({
+			status: "not-in-block",
+		});
+	});
+
+	it("ignores a tab indented fence outside a list", () => {
+		const lines = ["\t```tdsl", "\ttimeline {}", "\t```"];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+	});
+
+	it("keeps a deeply indented fence inside a list item", () => {
+		const lines = ["- item", "    ~~~tdsl", "    timeline {}", "    ~~~"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 1, closeLine: 3, prefix: "    " },
+		]);
+	});
+});
