@@ -321,9 +321,35 @@ describe("parseRenderDirectives", () => {
 		);
 	});
 
-	it("treats only on/true/yes/1 as truthy for booleans", () => {
-		expect(parseRenderDirectives(`//! events: yes`).events).toBe(true);
-		expect(parseRenderDirectives(`//! events: nope`).events).toBe(false);
+	it("parses on/true/yes/1 and off/false/no/0 for booleans (#336)", () => {
+		for (const key of ["events", "table", "legend"] as const) {
+			for (const v of ["on", "true", "YES", "1"]) {
+				expect(parseRenderDirectives(`//! ${key}: ${v}`)[key]).toBe(true);
+			}
+			for (const v of ["off", "false", "No", "0"]) {
+				expect(parseRenderDirectives(`//! ${key}: ${v}`)[key]).toBe(false);
+			}
+		}
+	});
+
+	it("ignores invalid boolean values so defaults survive (#336)", () => {
+		const src = `//! events: typo\n//! table: nope\n//! legend: maybe`;
+		const d = parseRenderDirectives(src);
+		expect(d).toEqual({});
+		const r = resolveRenderOptions(d, {
+			...DEFAULT_SETTINGS,
+			events: true,
+			table: true,
+			legend: true,
+		});
+		expect(r.events).toBe(true);
+		expect(r.table).toBe(true);
+		expect(r.legend).toBe(true);
+	});
+
+	it("keeps an earlier valid boolean when a later one is invalid (#336)", () => {
+		const src = `//! events: off\n//! events: typo`;
+		expect(parseRenderDirectives(src).events).toBe(false);
 	});
 
 	it("is case-insensitive for keys and enum values", () => {

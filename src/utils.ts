@@ -121,6 +121,7 @@ function stripBlockComments(source: string, blankStrings = false): string {
 }
 
 const BOOL_TRUE = new Set(["on", "true", "yes", "1"]);
+const BOOL_FALSE = new Set(["off", "false", "no", "0"]);
 const GRID_VALUES = new Set(["none", "decade", "year", "month"]);
 const THEME_VALUES = new Set(["default", "dark", "print", "pastel"]);
 const ORIENTATION_VALUES = new Set(["horizontal", "vertical"]);
@@ -175,13 +176,16 @@ export function parseRenderDirectives(source: string): RenderDirectives {
 					out.layout_style = val as RenderDirectives["layout_style"];
 				break;
 			case "events":
-				out.events = BOOL_TRUE.has(val);
+				if (BOOL_TRUE.has(val)) out.events = true;
+				else if (BOOL_FALSE.has(val)) out.events = false;
 				break;
 			case "table":
-				out.table = BOOL_TRUE.has(val);
+				if (BOOL_TRUE.has(val)) out.table = true;
+				else if (BOOL_FALSE.has(val)) out.table = false;
 				break;
 			case "legend":
-				out.legend = BOOL_TRUE.has(val);
+				if (BOOL_TRUE.has(val)) out.legend = true;
+				else if (BOOL_FALSE.has(val)) out.legend = false;
 				break;
 			case "lane_height": {
 				const n = Number(raw);
