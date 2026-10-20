@@ -185,7 +185,7 @@ export function parseRenderDirectives(source: string): RenderDirectives {
 				break;
 			case "lane_height": {
 				const n = Number(raw);
-				if (Number.isFinite(n) && n > 0) out.lane_height = Math.floor(n);
+				if (Number.isFinite(n) && n >= 0) out.lane_height = Math.floor(n);
 				break;
 			}
 		}
@@ -302,7 +302,8 @@ export function resolveRenderOptions(
 	resolved.legend = directives.legend ?? settings.legend;
 
 	// lane_height: directive wins; else the settings default (0 = renderer auto).
-	if (directives.lane_height !== undefined && directives.lane_height > 0) {
+	// An explicit `0` in the block selects the renderer default even when the setting is positive.
+	if (directives.lane_height !== undefined) {
 		resolved.laneHeight = directives.lane_height;
 	} else if (settings.laneHeight > 0) {
 		resolved.laneHeight = settings.laneHeight;
