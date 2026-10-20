@@ -170,6 +170,14 @@ describe("resolveRenderOptions", () => {
 		expect(r.laneHeight).toBe(40);
 	});
 
+	it("lane_height: explicit 0 directive overrides a positive setting", () => {
+		const r = resolveRenderOptions(
+			{ lane_height: 0 },
+			{ ...DEFAULT_SETTINGS, laneHeight: 120 },
+		);
+		expect(r.laneHeight).toBe(0);
+	});
+
 	it("lane_height: 0 when both unset", () => {
 		expect(resolveRenderOptions({}).laneHeight).toBe(0);
 	});
@@ -273,10 +281,8 @@ describe("parseRenderDirectives", () => {
 		expect(parseRenderDirectives(`//! lane_height: 45.7`).lane_height).toBe(45);
 	});
 
-	it("lane_height: ignores 0 and negative values", () => {
-		expect(
-			parseRenderDirectives(`//! lane_height: 0`).lane_height,
-		).toBeUndefined();
+	it("lane_height: keeps an explicit 0 and ignores negative values", () => {
+		expect(parseRenderDirectives(`//! lane_height: 0`).lane_height).toBe(0);
 		expect(
 			parseRenderDirectives(`//! lane_height: -10`).lane_height,
 		).toBeUndefined();
