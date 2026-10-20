@@ -131,6 +131,36 @@ function inListItem(
 	return false;
 }
 
+/** Columns of leading whitespace; a tab advances to the next multiple of 4. */
+function leadingColumns(line: string): number {
+	let cols = 0;
+	for (const ch of line) {
+		if (ch === " ") cols += 1;
+		else if (ch === "\t") cols += 4 - (cols % 4);
+		else break;
+	}
+	return cols;
+}
+
+/**
+ * Parses the line at `index` as a fence *opener*. An unquoted line indented 4+
+ * columns outside any list item is an indented code block (CommonMark), so a
+ * fence marker there is literal text, not a fence.
+ */
+function parseOpenFence(lines: readonly string[], index: number): Fence | null {
+	const line = lines[index] ?? "";
+	const open = parseFence(line);
+	if (!open) return null;
+	if (
+		quoteDepth(line) === 0 &&
+		leadingColumns(line) >= 4 &&
+		!inListItem(lines, index, /^[ \t]*/.exec(line)?.[0].length ?? 0)
+	) {
+		return null;
+	}
+	return open;
+}
+
 /**
  * Scans forward from the open fence at `openLine` for its close fence.
  *
@@ -199,7 +229,7 @@ export function findTdslFenceAtCursor(
 	cursorLine: number,
 ): TdslFenceResult {
 	for (let i = 0; i < lines.length; i++) {
-		const open = parseFence(lines[i] ?? "");
+		const open = parseOpenFence(lines, i);
 		if (!open) continue;
 
 		const { closeLine, end } = findClose(lines, i, open);
@@ -243,7 +273,7 @@ export function listTdslFenceRanges(
 	const ranges: TdslFenceRange[] = [];
 
 	for (let i = 0; i < lines.length; i++) {
-		const open = parseFence(lines[i] ?? "");
+		const open = parseOpenFence(lines, i);
 		if (!open) continue;
 
 		const { closeLine, end } = findClose(lines, i, open);
