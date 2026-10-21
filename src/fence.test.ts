@@ -375,6 +375,34 @@ describe("fence opened on the list marker line (#324)", () => {
 	});
 });
 
+describe("list-marker fence line in the body is not a close fence (#341)", () => {
+	it.each([
+		["bullet", "- ~~~"],
+		["numbered", "1. ~~~"],
+	])("keeps a %s body line inside the block", (_name, bodyLine) => {
+		const lines = [
+			"~~~tdsl",
+			'timeline "Title',
+			bodyLine,
+			'continued" { unit year; range 1..10; }',
+			"~~~",
+		];
+		const range = { openLine: 0, closeLine: 4, prefix: "" };
+		expect(listTdslFenceRanges(lines)).toEqual([range]);
+		expect(findTdslFenceAtCursor(lines, 3)).toEqual({
+			status: "found",
+			range,
+		});
+	});
+
+	it("still closes on a plain fence line (control)", () => {
+		const lines = ["~~~tdsl", 'timeline "Title', "plain title text", "~~~"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 0, closeLine: 3, prefix: "" },
+		]);
+	});
+});
+
 describe("listTdslFenceRanges", () => {
 	it("returns an empty list when the document has no fences", () => {
 		expect(listTdslFenceRanges(["plain markdown", "more text"])).toEqual([]);

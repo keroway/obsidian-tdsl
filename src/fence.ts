@@ -93,9 +93,14 @@ function samePrefixContainer(open: Fence, candidate: Fence): boolean {
 	return c.indent >= o.indent - slack && c.indent <= o.indent + 3;
 }
 
-/** A fence line only closes `open` when it repeats it with no info string. */
+/**
+ * A fence line only closes `open` when it repeats it with no info string. A
+ * list marker (`- ~~~`) starts a new list item, so it is body text, never a
+ * close fence.
+ */
 function closes(open: Fence, candidate: Fence): boolean {
 	return (
+		!candidate.listMarker &&
 		candidate.info === "" &&
 		samePrefixContainer(open, candidate) &&
 		candidate.char === open.char &&
