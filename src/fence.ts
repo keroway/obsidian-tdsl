@@ -51,6 +51,20 @@ interface Fence {
 	info: string;
 }
 
+/** Display width of `text` from column 0; a tab advances to the next multiple of 4. */
+function textColumns(text: string): number {
+	let cols = 0;
+	for (const ch of text) {
+		cols += ch === "\t" ? 4 - (cols % 4) : 1;
+	}
+	return cols;
+}
+
+/** Columns of leading whitespace (tabs expanded as in `textColumns`). */
+function leadingColumns(line: string): number {
+	return textColumns(/^[ \t]*/.exec(line)?.[0] ?? "");
+}
+
 function parseFence(line: string): Fence | null {
 	const m = FENCE_RE.exec(line);
 	if (!m) return null;
@@ -61,7 +75,11 @@ function parseFence(line: string): Fence | null {
 	// backtick (that would make it inline code, not a fence).
 	if (marker.startsWith("`") && info.includes("`")) return null;
 	return {
-		prefix: (m[1] ?? "") + " ".repeat(listMarker.length),
+		prefix:
+			(m[1] ?? "") +
+			" ".repeat(
+				textColumns((m[1] ?? "") + listMarker) - textColumns(m[1] ?? ""),
+			),
 		listMarker: listMarker !== "",
 		char: marker[0] ?? "",
 		length: marker.length,
@@ -72,7 +90,7 @@ function parseFence(line: string): Fence | null {
 /** Splits a nesting prefix into its blockquote markers and whitespace width. */
 function splitPrefix(prefix: string): { quotes: string; indent: number } {
 	const quotes = prefix.replace(/[ \t]/g, "");
-	return { quotes, indent: prefix.length - quotes.length };
+	return { quotes, indent: textColumns(prefix) - quotes.length };
 }
 
 /**
@@ -129,22 +147,11 @@ function inListItem(
 	for (let k = openLine - 1; k >= 0; k--) {
 		const line = lines[k] ?? "";
 		if (line.trim() === "") continue;
-		if ((/^[ \t]*/.exec(line)?.[0].length ?? 0) < indent) {
+		if (leadingColumns(line) < indent) {
 			return LIST_MARKER_RE.test(line);
 		}
 	}
 	return false;
-}
-
-/** Columns of leading whitespace; a tab advances to the next multiple of 4. */
-function leadingColumns(line: string): number {
-	let cols = 0;
-	for (const ch of line) {
-		if (ch === " ") cols += 1;
-		else if (ch === "\t") cols += 4 - (cols % 4);
-		else break;
-	}
-	return cols;
 }
 
 /**
@@ -159,7 +166,7 @@ function parseOpenFence(lines: readonly string[], index: number): Fence | null {
 	if (
 		quoteDepth(line) === 0 &&
 		leadingColumns(line) >= 4 &&
-		!inListItem(lines, index, /^[ \t]*/.exec(line)?.[0].length ?? 0)
+		!inListItem(lines, index, leadingColumns(line))
 	) {
 		return null;
 	}
@@ -202,7 +209,7 @@ function findClose(
 		if (
 			listIndent >= 2 &&
 			line.trim() !== "" &&
-			(/^[ \t]*/.exec(line)?.[0].length ?? 0) < listIndent
+			leadingColumns(line) < listIndent
 		) {
 			return { closeLine: -1, end: j };
 		}

@@ -538,3 +538,25 @@ describe("indented code block is not a fence (#338)", () => {
 		]);
 	});
 });
+
+describe("tab and space indentation are compared by columns (#347)", () => {
+	const tabbed = ["-\t~~~tdsl", "\ttimeline {};", "\t~~~"];
+	const mixed = ["- item", "    ~~~tdsl", "\ttimeline {};", "\t~~~"];
+
+	it("finds a list fence continued with a tab like one continued with spaces", () => {
+		expect(findTdslFenceAtCursor(tabbed, 1)).toEqual({
+			status: "found",
+			range: { openLine: 0, closeLine: 2, prefix: "    " },
+		});
+	});
+
+	it("finds a fence whose open and body lines mix spaces and a tab", () => {
+		const r = findTdslFenceAtCursor(mixed, 2);
+		expect(r.status).toBe("found");
+	});
+
+	it("lists tab-indented list fences", () => {
+		expect(listTdslFenceRanges(tabbed)).toHaveLength(1);
+		expect(listTdslFenceRanges(mixed)).toHaveLength(1);
+	});
+});
