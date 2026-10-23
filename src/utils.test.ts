@@ -896,6 +896,11 @@ describe("extractFenceBody", () => {
 		expect(extractFenceBody(lines, 0, 2, "  ")).toBe("timeline {}");
 	});
 
+	it("strips a tab-indented body line by columns (#347)", () => {
+		const lines = ["-\t```tdsl", "\ttimeline {}", "\t```"];
+		expect(extractFenceBody(lines, 0, 2, "    ")).toBe("timeline {}");
+	});
+
 	it("strips a bare blank callout line using the prefix without trailing whitespace (#251)", () => {
 		const lines = ["> ```tdsl", "> timeline {}", ">", "> lane a {}", "> ```"];
 		expect(extractFenceBody(lines, 0, 4, "> ")).toBe(

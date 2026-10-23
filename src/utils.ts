@@ -635,7 +635,29 @@ function stripFencePrefix(line: string, prefix: string): string {
 	if (line.startsWith(prefix)) return line.slice(prefix.length);
 	const bare = prefix.replace(/[ \t]+$/, "");
 	if (bare && line.startsWith(bare)) return line.slice(bare.length);
+	// A whitespace-only prefix may be written with tabs on the body lines while
+	// the open line used spaces (or vice versa): compare by tab-stop columns.
+	if (/^[ \t]+$/.test(prefix)) {
+		const target = whitespaceColumns(prefix);
+		let cols = 0;
+		let i = 0;
+		while (i < line.length && cols < target) {
+			const ch = line[i];
+			if (ch === " ") cols += 1;
+			else if (ch === "\t") cols += 4 - (cols % 4);
+			else break;
+			i++;
+		}
+		if (cols === target) return line.slice(i);
+	}
 	return line;
+}
+
+/** Columns spanned by a spaces/tabs string; a tab advances to the next multiple of 4. */
+function whitespaceColumns(ws: string): number {
+	let cols = 0;
+	for (const ch of ws) cols += ch === "\t" ? 4 - (cols % 4) : 1;
+	return cols;
 }
 
 /** Prepends a fence's nesting prefix back onto a transformed body line. */
