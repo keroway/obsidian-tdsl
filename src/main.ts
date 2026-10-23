@@ -50,6 +50,7 @@ import {
 	renderTemplateSnippet,
 	type TimelineTemplate,
 } from "./templates";
+import { createTooltipVisibility } from "./tooltip-visibility";
 import {
 	commitScaleInput,
 	DEFAULT_SETTINGS,
@@ -674,11 +675,29 @@ function addItemTooltips(wrapper: HTMLElement): void {
 	for (const item of Array.from(items)) {
 		item.querySelector("title")?.remove();
 
-		item.addEventListener("pointerenter", () => {
+		const visibility = createTooltipVisibility((visible) => {
+			if (!visible) {
+				tooltip.removeClass("tdsl-tooltip-visible");
+				return;
+			}
 			const text = item.getAttribute("data-tdsl-tooltip");
 			if (!text) return;
 			tooltip.setText(text);
 			tooltip.addClass("tdsl-tooltip-visible");
+		});
+
+		item.addEventListener("pointerenter", () => visibility.setPointer(true));
+		item.addEventListener("focus", () => {
+			visibility.setFocus(true);
+			// No pointer to follow: anchor below the focused item instead.
+			const rect = wrapper.getBoundingClientRect();
+			const itemRect = item.getBoundingClientRect();
+			tooltip.style.left = `${itemRect.left - rect.left + wrapper.scrollLeft}px`;
+			tooltip.style.top = `${itemRect.bottom - rect.top + wrapper.scrollTop + 4}px`;
+		});
+		item.addEventListener("blur", () => visibility.setFocus(false));
+		item.addEventListener("keydown", (ev) => {
+			if ((ev as KeyboardEvent).key === "Escape") visibility.dismiss();
 		});
 		item.addEventListener("pointermove", (ev) => {
 			const pointerEvent = ev as PointerEvent;
@@ -686,9 +705,7 @@ function addItemTooltips(wrapper: HTMLElement): void {
 			tooltip.style.left = `${pointerEvent.clientX - rect.left + wrapper.scrollLeft + 12}px`;
 			tooltip.style.top = `${pointerEvent.clientY - rect.top + wrapper.scrollTop + 12}px`;
 		});
-		item.addEventListener("pointerleave", () => {
-			tooltip.removeClass("tdsl-tooltip-visible");
-		});
+		item.addEventListener("pointerleave", () => visibility.setPointer(false));
 	}
 }
 

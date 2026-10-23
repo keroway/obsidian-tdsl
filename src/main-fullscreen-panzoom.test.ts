@@ -3,6 +3,7 @@ import { transformSync } from "esbuild";
 import { describe, expect, it } from "vitest";
 import mainSource from "./main.ts?raw";
 import panZoomSourceRaw from "./pan-zoom.ts?raw";
+import tooltipVisibilitySourceRaw from "./tooltip-visibility.ts?raw";
 
 /**
  * `TdslFullscreenModal` lives in `src/main.ts`, which is excluded from unit
@@ -28,7 +29,10 @@ function loadFullscreenModal(): {
 		mainSource.indexOf("class TdslFullscreenModal"),
 		mainSource.indexOf("export default class TimelineDslPlugin"),
 	);
-	const body = `${panZoomSource}\n${modalSource}\nreturn { TdslFullscreenModal, addItemTooltips };`;
+	const tooltipVisibilitySource = tooltipVisibilitySourceRaw
+		.split("export ")
+		.join("");
+	const body = `${panZoomSource}\n${tooltipVisibilitySource}\n${modalSource}\nreturn { TdslFullscreenModal, addItemTooltips };`;
 	const { code } = transformSync(body, { loader: "ts", target: "es2022" });
 
 	class FakeModal {
@@ -199,6 +203,66 @@ describe("addItemTooltips scroll offset (#243)", () => {
 		const tooltip = wrapper.querySelector('[role="tooltip"]') as HTMLElement;
 		expect(tooltip.style.left).toBe("412px");
 		expect(tooltip.style.top).toBe("82px");
+	});
+});
+
+describe("addItemTooltips keyboard focus (#343)", () => {
+	function setup() {
+		const { addItemTooltips } = loadFullscreenModal();
+		const source = makeSvg(
+			"0 0 800 400",
+			'<g tabindex="0" data-tdsl-tooltip="example note"><title>example note</title><rect width="100" height="50" /></g>',
+		);
+		const wrapper = document.createElement("div");
+		wrapper.append(source);
+		addItemTooltips(wrapper);
+		const item = wrapper.querySelector("g") as SVGGElement;
+		const tooltip = wrapper.querySelector('[role="tooltip"]') as HTMLElement;
+		return { item, tooltip };
+	}
+
+	it("shows the tooltip on focus and hides it on blur", () => {
+		const { item, tooltip } = setup();
+
+		item.dispatchEvent(new Event("focus"));
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(true);
+		expect(tooltip.textContent).toBe("example note");
+
+		item.dispatchEvent(new Event("blur"));
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(false);
+	});
+
+	it("dismisses on Escape without waiting for blur", () => {
+		const { item, tooltip } = setup();
+
+		item.dispatchEvent(new Event("focus"));
+		item.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(false);
+	});
+
+	it("keeps the tooltip while focused after the pointer leaves", () => {
+		const { item, tooltip } = setup();
+
+		item.dispatchEvent(new Event("focus"));
+		item.dispatchEvent(new Event("pointerenter"));
+		item.dispatchEvent(new Event("pointerleave"));
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(true);
+
+		item.dispatchEvent(new Event("blur"));
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(false);
+	});
+
+	it("keeps the tooltip while hovered after focus is lost", () => {
+		const { item, tooltip } = setup();
+
+		item.dispatchEvent(new Event("pointerenter"));
+		item.dispatchEvent(new Event("focus"));
+		item.dispatchEvent(new Event("blur"));
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(true);
+
+		item.dispatchEvent(new Event("pointerleave"));
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(false);
 	});
 });
 
