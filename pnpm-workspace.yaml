@@ -19,3 +19,5 @@ allowBuilds:
 overrides:
   moment: ">=2.31.0 <3"
   source-map-js: ">=1.2.2 <2"
+  # vite 8.1.0 は GHSA-587h-7wmj-h5pm ほか 2 件に該当 (fixed 8.1.6)。vitest 経由の transitive。
+  vite: ">=8.1.6 <9"
