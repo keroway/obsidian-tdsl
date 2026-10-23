@@ -197,16 +197,18 @@ function findClose(
 		if (depth > 0 && quoteDepth(line) < depth) {
 			return { closeLine: -1, end: j };
 		}
-		const candidate = parseFence(line);
-		if (candidate && closes(open, candidate)) {
-			return { closeLine: j, end: j + 1 };
-		}
+		// The list boundary is checked before the close fence: a marker outside
+		// the item cannot close a fence inside it.
 		if (
 			listIndent >= 2 &&
 			line.trim() !== "" &&
 			(/^[ \t]*/.exec(line)?.[0].length ?? 0) < listIndent
 		) {
 			return { closeLine: -1, end: j };
+		}
+		const candidate = parseFence(line);
+		if (candidate && closes(open, candidate)) {
+			return { closeLine: j, end: j + 1 };
 		}
 	}
 	return { closeLine: -1, end: lines.length };

@@ -403,6 +403,39 @@ describe("list-marker fence line in the body is not a close fence (#341)", () =>
 	});
 });
 
+describe("marker outside the list item does not close a list fence (#345)", () => {
+	it("treats an unindented marker as leaving the item (unclosed)", () => {
+		const lines = ["- ~~~tdsl", "  timeline {}", "~~~"];
+		expect(findTdslFenceAtCursor(lines, 1)).toEqual({
+			status: "missing-close",
+		});
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+	});
+
+	it("does not detect the inside of a top-level code fence as tdsl", () => {
+		const lines = [
+			"- ~~~text",
+			"  example",
+			"~~~",
+			"~~~tdsl",
+			"timeline {}",
+			"~~~",
+		];
+		// Line 2 leaves the item and opens a plain code fence that swallows the rest.
+		expect(findTdslFenceAtCursor(lines, 4)).toEqual({
+			status: "not-in-block",
+		});
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+	});
+
+	it("still closes on an indented marker inside the item (control)", () => {
+		const lines = ["- ~~~tdsl", "  timeline {}", "  ~~~"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 0, closeLine: 2, prefix: "  " },
+		]);
+	});
+});
+
 describe("listTdslFenceRanges", () => {
 	it("returns an empty list when the document has no fences", () => {
 		expect(listTdslFenceRanges(["plain markdown", "more text"])).toEqual([]);
