@@ -672,32 +672,33 @@ function addItemTooltips(wrapper: HTMLElement): void {
 		attr: { role: "tooltip" },
 	});
 
+	// One state per wrapper: the tooltip element is shared by every item (#349).
+	const tip = createTooltipVisibility<Element>((target) => {
+		if (!target) {
+			tooltip.removeClass("tdsl-tooltip-visible");
+			return;
+		}
+		const text = target.item.getAttribute("data-tdsl-tooltip");
+		if (!text) return;
+		tooltip.setText(text);
+		tooltip.addClass("tdsl-tooltip-visible");
+		if (target.source === "focus") {
+			// No pointer to follow: anchor below the focused item instead.
+			const rect = wrapper.getBoundingClientRect();
+			const itemRect = target.item.getBoundingClientRect();
+			tooltip.style.left = `${itemRect.left - rect.left + wrapper.scrollLeft}px`;
+			tooltip.style.top = `${itemRect.bottom - rect.top + wrapper.scrollTop + 4}px`;
+		}
+	});
+
 	for (const item of Array.from(items)) {
 		item.querySelector("title")?.remove();
 
-		const visibility = createTooltipVisibility((visible) => {
-			if (!visible) {
-				tooltip.removeClass("tdsl-tooltip-visible");
-				return;
-			}
-			const text = item.getAttribute("data-tdsl-tooltip");
-			if (!text) return;
-			tooltip.setText(text);
-			tooltip.addClass("tdsl-tooltip-visible");
-		});
-
-		item.addEventListener("pointerenter", () => visibility.setPointer(true));
-		item.addEventListener("focus", () => {
-			visibility.setFocus(true);
-			// No pointer to follow: anchor below the focused item instead.
-			const rect = wrapper.getBoundingClientRect();
-			const itemRect = item.getBoundingClientRect();
-			tooltip.style.left = `${itemRect.left - rect.left + wrapper.scrollLeft}px`;
-			tooltip.style.top = `${itemRect.bottom - rect.top + wrapper.scrollTop + 4}px`;
-		});
-		item.addEventListener("blur", () => visibility.setFocus(false));
+		item.addEventListener("pointerenter", () => tip.setPointer(item, true));
+		item.addEventListener("focus", () => tip.setFocus(item, true));
+		item.addEventListener("blur", () => tip.setFocus(item, false));
 		item.addEventListener("keydown", (ev) => {
-			if ((ev as KeyboardEvent).key === "Escape") visibility.dismiss();
+			if ((ev as KeyboardEvent).key === "Escape") tip.dismiss();
 		});
 		item.addEventListener("pointermove", (ev) => {
 			const pointerEvent = ev as PointerEvent;
@@ -705,7 +706,7 @@ function addItemTooltips(wrapper: HTMLElement): void {
 			tooltip.style.left = `${pointerEvent.clientX - rect.left + wrapper.scrollLeft + 12}px`;
 			tooltip.style.top = `${pointerEvent.clientY - rect.top + wrapper.scrollTop + 12}px`;
 		});
-		item.addEventListener("pointerleave", () => visibility.setPointer(false));
+		item.addEventListener("pointerleave", () => tip.setPointer(item, false));
 	}
 }
 
