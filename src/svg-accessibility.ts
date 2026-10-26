@@ -30,7 +30,12 @@ export function applyRootAccessibility(
 	root: Element,
 	label: string,
 ): void {
-	if (!root.hasAttribute("role")) root.setAttribute("role", "group");
+	// The renderer itself emits role="img" on the root, so a missing role is not
+	// the only case to fix: img is rewritten to group. Other roles (figure, …)
+	// are kept.
+	const role = root.getAttribute("role");
+	if (role === null || role.trim().toLowerCase() === "img")
+		root.setAttribute("role", "group");
 	const existing = root.getAttribute("aria-label");
 	const effectiveLabel =
 		existing === null || GENERIC_LABEL.test(existing) ? label : existing;

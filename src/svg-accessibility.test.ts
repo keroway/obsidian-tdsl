@@ -30,6 +30,16 @@ describe("applyRootAccessibility", () => {
 		expect(root.getAttribute("role")).not.toBe("img");
 	});
 
+	it("rewrites a role=img the renderer emitted on the root to group", () => {
+		const { doc, root } = parse(
+			`<svg xmlns="${SVG_NS}" role="img" aria-label="timeline"><g tabindex="0" role="group"/></svg>`,
+		);
+		applyRootAccessibility(doc, root, "History");
+		expect(root.getAttribute("role")).toBe("group");
+		expect(root.getAttribute("aria-label")).toBe("History");
+		expect(root.querySelector("g")?.getAttribute("role")).toBe("group");
+	});
+
 	it("keeps a role the renderer already set", () => {
 		const { doc, root } = parse(`<svg xmlns="${SVG_NS}" role="figure"/>`);
 		applyRootAccessibility(doc, root, "Timeline");
