@@ -305,6 +305,33 @@ describe("TdslFullscreenModal zoom center drift (#244)", () => {
 	});
 });
 
+describe("horizontal-only wheel input (#358)", () => {
+	it("leaves the viewBox untouched and does not preventDefault when deltaY is 0", () => {
+		const { TdslFullscreenModal } = loadFullscreenModal();
+		const source = makeSvg("0 0 800 400");
+		source.dataset.tdslFullViewBox = "0 0 800 400";
+		source.setAttribute("viewBox", "200 100 400 200");
+		const modal = new TdslFullscreenModal({}, source);
+		modal.onOpen();
+		const clone = modal.contentEl.querySelector("svg") as SVGSVGElement;
+		Object.defineProperty(clone, "getBoundingClientRect", {
+			value: () => ({ left: 0, top: 0, width: 800, height: 400 }),
+		});
+
+		const wheelEvent = new WheelEvent("wheel", {
+			deltaX: 100,
+			deltaY: 0,
+			cancelable: true,
+		});
+		Object.defineProperty(wheelEvent, "clientX", { value: 400 });
+		Object.defineProperty(wheelEvent, "clientY", { value: 200 });
+		clone.dispatchEvent(wheelEvent);
+
+		expect(clone.getAttribute("viewBox")).toBe("200 100 400 200");
+		expect(wheelEvent.defaultPrevented).toBe(false);
+	});
+});
+
 describe("pan/zoom CSS gating (#312)", () => {
 	it("marks the fullscreen wrapper pannable once pan/zoom is wired", () => {
 		const { TdslFullscreenModal } = loadFullscreenModal();

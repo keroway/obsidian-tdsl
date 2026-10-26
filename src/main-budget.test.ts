@@ -50,7 +50,10 @@ import mainSource from "./main.ts?raw";
 // Raised by 1 (issue #349): addItemTooltips() now keeps one tooltip state per
 // wrapper instead of per item. The ownership rule lives in
 // tooltip-visibility.ts; what remains is DOM wiring over the shared tooltip.
-const MAIN_TS_LINE_BUDGET = 1247;
+// Raised by 1 (issue #358): setupPanZoom()'s wheel handler ignores deltaY === 0
+// so horizontal-only input is no longer consumed as a zoom-out. It cannot be
+// extracted — the handler closes over setupPanZoom()'s viewBox state.
+const MAIN_TS_LINE_BUDGET = 1248;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
