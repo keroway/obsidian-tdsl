@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { transformSync } from "esbuild";
 import { describe, expect, it } from "vitest";
+import escapeListenerSourceRaw from "./escape-listener.ts?raw";
 import mainSource from "./main.ts?raw";
 import panZoomSourceRaw from "./pan-zoom.ts?raw";
 import tooltipVisibilitySourceRaw from "./tooltip-visibility.ts?raw";
@@ -29,10 +30,13 @@ function loadFullscreenModal(): {
 		mainSource.indexOf("class TdslFullscreenModal"),
 		mainSource.indexOf("export default class TimelineDslPlugin"),
 	);
+	const escapeListenerSource = escapeListenerSourceRaw
+		.split("export ")
+		.join("");
 	const tooltipVisibilitySource = tooltipVisibilitySourceRaw
 		.split("export ")
 		.join("");
-	const body = `${panZoomSource}\n${tooltipVisibilitySource}\n${modalSource}\nreturn { TdslFullscreenModal, addItemTooltips };`;
+	const body = `${panZoomSource}\n${tooltipVisibilitySource}\n${escapeListenerSource}\n${modalSource}\nreturn { TdslFullscreenModal, addItemTooltips };`;
 	const { code } = transformSync(body, { loader: "ts", target: "es2022" });
 
 	class FakeModal {
@@ -215,6 +219,7 @@ describe("addItemTooltips keyboard focus (#343)", () => {
 		);
 		const wrapper = document.createElement("div");
 		wrapper.append(source);
+		document.body.append(wrapper);
 		addItemTooltips(wrapper);
 		const item = wrapper.querySelector("g") as SVGGElement;
 		const tooltip = wrapper.querySelector('[role="tooltip"]') as HTMLElement;
@@ -239,6 +244,32 @@ describe("addItemTooltips keyboard focus (#343)", () => {
 		item.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
 
 		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(false);
+	});
+
+	it("dismisses a hover tooltip on Escape while focus is outside the diagram (#360)", () => {
+		const { item, tooltip } = setup();
+
+		item.dispatchEvent(new Event("pointerenter"));
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(true);
+
+		document.body.dispatchEvent(
+			new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+		);
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(false);
+	});
+
+	it("stops listening for Escape once the wrapper is detached (#360)", () => {
+		const { item, tooltip } = setup();
+		const wrapper = item.closest("div") as HTMLElement;
+
+		item.dispatchEvent(new Event("pointerenter"));
+		wrapper.remove();
+		document.body.dispatchEvent(
+			new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+		);
+
+		// The listener bailed out instead of acting on a torn-down preview.
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(true);
 	});
 
 	it("keeps the tooltip while focused after the pointer leaves", () => {
