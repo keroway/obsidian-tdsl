@@ -744,6 +744,7 @@ function setupPanZoom(wrapper: HTMLElement, svg: SVGSVGElement): void {
 	svg.addEventListener(
 		"wheel",
 		(ev) => {
+			if (ev.deltaY === 0) return; // horizontal-only input is not a zoom (#358)
 			ev.preventDefault();
 			const focus = viewBoxPointFromClient(
 				svg.getBoundingClientRect(),
