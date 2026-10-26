@@ -6,7 +6,16 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!main.js", "!**/*.js.map", "!.claude", "!.pi"]
+		"includes": [
+			"**",
+			"!main.js",
+			"!**/*.js.map",
+			"!.claude",
+			"!.pi",
+			"!**/*.md",
+			"!**/*.yml",
+			"!**/*.yaml"
+		]
 	},
 	"formatter": {
 		"enabled": true,
