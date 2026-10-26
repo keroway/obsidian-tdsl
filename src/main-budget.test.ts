@@ -47,7 +47,10 @@ import mainSource from "./main.ts?raw";
 // tooltip is reachable by keyboard. The show/hide rule itself lives in
 // tooltip-visibility.ts; what remains is DOM listener wiring and anchoring to
 // the focused item's rect, which closes over the wrapper and tooltip element.
-const MAIN_TS_LINE_BUDGET = 1246;
+// Raised by 1 (issue #349): addItemTooltips() now keeps one tooltip state per
+// wrapper instead of per item. The ownership rule lives in
+// tooltip-visibility.ts; what remains is DOM wiring over the shared tooltip.
+const MAIN_TS_LINE_BUDGET = 1247;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
