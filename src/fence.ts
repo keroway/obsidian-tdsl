@@ -99,14 +99,19 @@ function splitPrefix(prefix: string): { quotes: string; indent: number } {
  * close fence leaves the container, so it does not pair (one column of slack
  * inside a blockquote covers the optional space after `>`).
  */
-function samePrefixContainer(open: Fence, candidate: Fence): boolean {
+function samePrefixContainer(
+	open: Fence,
+	candidate: Fence,
+	topLevel: boolean,
+): boolean {
 	if (candidate.prefix === open.prefix) return true;
 	const o = splitPrefix(open.prefix);
 	const c = splitPrefix(candidate.prefix);
 	if (o.quotes !== c.quotes) return false;
 	// A top-level open fence indented 0-3 spaces is not inside any container
 	// (4+ would be a list/code context), so a close fence may sit at any
-	// column from 0 up.
+	// column from 0 up, but its absolute indent is capped at 3 (#362).
+	if (topLevel) return c.indent <= 3;
 	const slack = o.quotes === "" ? (o.indent <= 3 ? o.indent : 0) : 1;
 	return c.indent >= o.indent - slack && c.indent <= o.indent + 3;
 }
@@ -116,11 +121,11 @@ function samePrefixContainer(open: Fence, candidate: Fence): boolean {
  * list marker (`- ~~~`) starts a new list item, so it is body text, never a
  * close fence.
  */
-function closes(open: Fence, candidate: Fence): boolean {
+function closes(open: Fence, candidate: Fence, topLevel: boolean): boolean {
 	return (
 		!candidate.listMarker &&
 		candidate.info === "" &&
-		samePrefixContainer(open, candidate) &&
+		samePrefixContainer(open, candidate, topLevel) &&
 		candidate.char === open.char &&
 		candidate.length >= open.length
 	);
@@ -195,10 +200,11 @@ function findClose(
 	// A top-level paragraph may also be indented 2-3 columns, so this only
 	// applies when a list item actually encloses the fence.
 	const fenceIndent = splitPrefix(open.prefix).indent;
-	const listIndent =
-		depth === 0 && (open.listMarker || inListItem(lines, openLine, fenceIndent))
-			? fenceIndent
-			: 0;
+	const inList =
+		depth === 0 &&
+		(open.listMarker || inListItem(lines, openLine, fenceIndent));
+	const listIndent = inList ? fenceIndent : 0;
+	const topLevel = depth === 0 && !inList && fenceIndent <= 3;
 	for (let j = openLine + 1; j < lines.length; j++) {
 		const line = lines[j] ?? "";
 		if (depth > 0 && quoteDepth(line) < depth) {
@@ -214,7 +220,7 @@ function findClose(
 			return { closeLine: -1, end: j };
 		}
 		const candidate = parseFence(line);
-		if (candidate && closes(open, candidate)) {
+		if (candidate && closes(open, candidate, topLevel)) {
 			return { closeLine: j, end: j + 1 };
 		}
 	}
