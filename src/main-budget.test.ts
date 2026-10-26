@@ -53,7 +53,11 @@ import mainSource from "./main.ts?raw";
 // Raised by 1 (issue #358): setupPanZoom()'s wheel handler ignores deltaY === 0
 // so horizontal-only input is no longer consumed as a zoom-out. It cannot be
 // extracted — the handler closes over setupPanZoom()'s viewBox state.
-const MAIN_TS_LINE_BUDGET = 1248;
+// Raised by 7 (issue #360): addItemTooltips() wires the document-level Escape
+// listener so a hover tooltip closes whatever has focus. The attach/detach and
+// self-cleanup rule lives in escape-listener.ts; what remains is hooking it to
+// the tooltip's visibility, which closes over the wrapper and tooltip state.
+const MAIN_TS_LINE_BUDGET = 1255;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;

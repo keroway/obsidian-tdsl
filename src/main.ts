@@ -28,6 +28,7 @@ import {
 } from "obsidian";
 import { copyImageToClipboard, copyTextToClipboard } from "./clipboard";
 import { tdslEditorHighlight } from "./editor-highlight";
+import { createEscapeListener } from "./escape-listener";
 import { idleScheduler } from "./idle-scheduler";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
 import {
@@ -672,16 +673,25 @@ function addItemTooltips(wrapper: HTMLElement): void {
 		attr: { role: "tooltip" },
 	});
 
+	// Escape closes it wherever focus is, not only on an item (#360).
+	const escapeKey = createEscapeListener(
+		wrapper.ownerDocument,
+		() => wrapper.isConnected,
+		() => tip.dismiss(),
+	);
+
 	// One state per wrapper: the tooltip element is shared by every item (#349).
 	const tip = createTooltipVisibility<Element>((target) => {
 		if (!target) {
 			tooltip.removeClass("tdsl-tooltip-visible");
+			escapeKey.detach();
 			return;
 		}
 		const text = target.item.getAttribute("data-tdsl-tooltip");
 		if (!text) return;
 		tooltip.setText(text);
 		tooltip.addClass("tdsl-tooltip-visible");
+		escapeKey.attach();
 		if (target.source === "focus") {
 			// No pointer to follow: anchor below the focused item instead.
 			const rect = wrapper.getBoundingClientRect();
@@ -697,9 +707,6 @@ function addItemTooltips(wrapper: HTMLElement): void {
 		item.addEventListener("pointerenter", () => tip.setPointer(item, true));
 		item.addEventListener("focus", () => tip.setFocus(item, true));
 		item.addEventListener("blur", () => tip.setFocus(item, false));
-		item.addEventListener("keydown", (ev) => {
-			if ((ev as KeyboardEvent).key === "Escape") tip.dismiss();
-		});
 		item.addEventListener("pointermove", (ev) => {
 			const pointerEvent = ev as PointerEvent;
 			const rect = wrapper.getBoundingClientRect();
