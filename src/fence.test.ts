@@ -247,6 +247,29 @@ describe("closing fence indentation (CommonMark: up to 3 spaces)", () => {
 		});
 	}
 
+	for (const [openIndent, bodyIndent] of [
+		[1, 4],
+		[3, 6],
+		[3, 4],
+	] as const) {
+		it(`does not close a top-level fence indented ${openIndent} on a body fence indented ${bodyIndent} (#362)`, () => {
+			const lines = [
+				`${" ".repeat(openIndent)}~~~tdsl`,
+				`${" ".repeat(openIndent)}timeline "Title"`,
+				`${" ".repeat(bodyIndent)}~~~`,
+				`${" ".repeat(openIndent)}continued "x" { unit year; range 1..10; }`,
+				"~~~",
+			];
+			expect(listTdslFenceRanges(lines)).toEqual([
+				{ openLine: 0, closeLine: 4, prefix: " ".repeat(openIndent) },
+			]);
+			expect(findTdslFenceAtCursor(lines, 3)).toEqual({
+				status: "found",
+				range: { openLine: 0, closeLine: 4, prefix: " ".repeat(openIndent) },
+			});
+		});
+	}
+
 	it("does not treat a 4-space indented fence as a close fence", () => {
 		expect(
 			listTdslFenceRanges(["```tdsl", "timeline {}", "    ```", "```"]),
