@@ -20,7 +20,7 @@ function loadFullscreenModal(): {
 		source: SVGSVGElement,
 		// biome-ignore lint/suspicious/noExplicitAny: constructed dynamically from sliced source
 	) => any;
-	addItemTooltips: (wrapper: HTMLElement) => void;
+	addItemTooltips: (wrapper: HTMLElement) => () => void;
 } {
 	const panZoomSource = panZoomSourceRaw.split("export ").join("");
 	// This slice also picks up `addItemTooltips`, which sits between
@@ -276,6 +276,40 @@ describe("addItemTooltips keyboard focus (#343)", () => {
 
 		// The listener bailed out instead of acting on a torn-down preview.
 		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(true);
+	});
+
+	it("removes the document keydown listener on dispose without another keydown (#366)", () => {
+		const { addItemTooltips } = loadFullscreenModal();
+		const source = makeSvg(
+			"0 0 800 400",
+			'<g data-tdsl-tooltip="example note"><rect width="100" height="50" /></g>',
+		);
+		const wrapper = document.createElement("div");
+		wrapper.append(source);
+		document.body.append(wrapper);
+		const removeSpy = vi.spyOn(document, "removeEventListener");
+		const dispose = addItemTooltips(wrapper);
+		const item = wrapper.querySelector("g") as SVGGElement;
+		const tooltip = wrapper.querySelector('[role="tooltip"]') as HTMLElement;
+
+		item.dispatchEvent(new Event("pointerenter"));
+		expect(removeSpy).not.toHaveBeenCalledWith(
+			"keydown",
+			expect.anything(),
+			true,
+		);
+
+		dispose();
+
+		expect(removeSpy).toHaveBeenCalledWith("keydown", expect.anything(), true);
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(false);
+		removeSpy.mockRestore();
+	});
+
+	it("returns a no-op dispose when there are no tooltip items (#366)", () => {
+		const { addItemTooltips } = loadFullscreenModal();
+		const wrapper = document.createElement("div");
+		expect(() => addItemTooltips(wrapper)()).not.toThrow();
 	});
 
 	it("keeps the tooltip while the pointer moves from the item onto the tooltip (#364)", () => {
