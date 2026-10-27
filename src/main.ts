@@ -93,6 +93,7 @@ class TdslPreview extends MarkdownRenderChild {
 	private readonly ctx: MarkdownPostProcessorContext;
 	private cancelPendingLint: (() => void) | null = null;
 	private unloaded = false;
+	private disposeTooltips: () => void = () => {};
 	private userAcceptedLargeDiagram = false;
 
 	constructor(
@@ -183,7 +184,7 @@ class TdslPreview extends MarkdownRenderChild {
 			const adopted = document.adoptNode(root) as unknown as SVGSVGElement;
 			wrapper.appendChild(adopted);
 			this.addCopySvgToolbar(wrapper, serializedSvg, adopted);
-			addItemTooltips(wrapper);
+			this.disposeTooltips = addItemTooltips(wrapper);
 			// Independent of `tdsl-fit` / horizontal-scroll display: pan/zoom
 			// rewrites `viewBox`, which is orthogonal to how the SVG's CSS box is
 			// sized, so it composes with either display mode without conflict.
@@ -248,6 +249,8 @@ class TdslPreview extends MarkdownRenderChild {
 		this.unloaded = true;
 		this.cancelPendingLint?.();
 		this.cancelPendingLint = null;
+		this.disposeTooltips();
+		this.disposeTooltips = () => {};
 	}
 
 	private showLintIssues(wrapper: HTMLElement): void {
@@ -627,6 +630,7 @@ function createRenderOptions(
  */
 class TdslFullscreenModal extends Modal {
 	private readonly source: SVGSVGElement;
+	private disposeTooltips: () => void = () => {};
 
 	constructor(app: App, source: SVGSVGElement) {
 		super(app);
@@ -643,10 +647,12 @@ class TdslFullscreenModal extends Modal {
 		setupPanZoom(wrapper, clone);
 		// The inline wrapper's own tooltip element and listeners are not part of
 		// the cloned SVG, so the modal needs its own (#238).
-		addItemTooltips(wrapper);
+		this.disposeTooltips = addItemTooltips(wrapper);
 	}
 
 	onClose(): void {
+		this.disposeTooltips();
+		this.disposeTooltips = () => {};
 		this.contentEl.empty();
 	}
 }
@@ -666,9 +672,9 @@ class TdslFullscreenModal extends Modal {
  */
 const TOOLTIP_LEAVE_GRACE_MS = 200;
 
-function addItemTooltips(wrapper: HTMLElement): void {
+function addItemTooltips(wrapper: HTMLElement): () => void {
 	const items = wrapper.querySelectorAll("[data-tdsl-tooltip]");
-	if (items.length === 0) return;
+	if (items.length === 0) return () => {};
 
 	const tooltip = wrapper.createDiv({
 		cls: "tdsl-tooltip",
@@ -724,6 +730,9 @@ function addItemTooltips(wrapper: HTMLElement): void {
 		});
 		item.addEventListener("pointerleave", () => tip.setPointer(item, false));
 	}
+
+	// Teardown while open must not wait for the next keydown (#366).
+	return () => tip.dismiss();
 }
 
 const ZOOM_WHEEL_FACTOR = 1.15;

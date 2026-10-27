@@ -60,7 +60,11 @@ import mainSource from "./main.ts?raw";
 // Raised by 9 (issue #364): addItemTooltips() wires pointerenter/leave on the
 // tooltip body and passes the grace period. The hold-over rule lives in
 // tooltip-visibility.ts; what remains is DOM listener wiring over the tooltip.
-const MAIN_TS_LINE_BUDGET = 1264;
+// Raised by 9 (issue #366): addItemTooltips() returns a dispose that
+// TdslPreview.onunload() and TdslFullscreenModal.onClose() call, so a tooltip
+// open at teardown drops its document listener at once. It cannot be extracted
+// — the lifecycle hooks live on the Obsidian classes in main.ts.
+const MAIN_TS_LINE_BUDGET = 1273;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
