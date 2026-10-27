@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { transformSync } from "esbuild";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import escapeListenerSourceRaw from "./escape-listener.ts?raw";
 import mainSource from "./main.ts?raw";
 import panZoomSourceRaw from "./pan-zoom.ts?raw";
@@ -136,8 +136,13 @@ describe("TdslFullscreenModal viewBox boundary (#237)", () => {
 	});
 });
 
+afterEach(() => {
+	vi.useRealTimers();
+});
+
 describe("TdslFullscreenModal item tooltips (#238)", () => {
 	it("re-attaches a tooltip element and listeners onto the cloned SVG", () => {
+		vi.useFakeTimers();
 		const { TdslFullscreenModal, addItemTooltips } = loadFullscreenModal();
 
 		const source = makeSvg(
@@ -166,6 +171,7 @@ describe("TdslFullscreenModal item tooltips (#238)", () => {
 		expect(tooltip.textContent).toBe("example note");
 
 		item.dispatchEvent(new Event("pointerleave"));
+		vi.advanceTimersByTime(200);
 		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(false);
 	});
 
@@ -272,12 +278,29 @@ describe("addItemTooltips keyboard focus (#343)", () => {
 		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(true);
 	});
 
+	it("keeps the tooltip while the pointer moves from the item onto the tooltip (#364)", () => {
+		vi.useFakeTimers();
+		const { item, tooltip } = setup();
+
+		item.dispatchEvent(new Event("pointerenter"));
+		item.dispatchEvent(new Event("pointerleave"));
+		tooltip.dispatchEvent(new Event("pointerenter"));
+		vi.advanceTimersByTime(1000);
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(true);
+
+		tooltip.dispatchEvent(new Event("pointerleave"));
+		vi.advanceTimersByTime(200);
+		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(false);
+	});
+
 	it("keeps the tooltip while focused after the pointer leaves", () => {
+		vi.useFakeTimers();
 		const { item, tooltip } = setup();
 
 		item.dispatchEvent(new Event("focus"));
 		item.dispatchEvent(new Event("pointerenter"));
 		item.dispatchEvent(new Event("pointerleave"));
+		vi.advanceTimersByTime(200);
 		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(true);
 
 		item.dispatchEvent(new Event("blur"));
@@ -285,6 +308,7 @@ describe("addItemTooltips keyboard focus (#343)", () => {
 	});
 
 	it("keeps the tooltip while hovered after focus is lost", () => {
+		vi.useFakeTimers();
 		const { item, tooltip } = setup();
 
 		item.dispatchEvent(new Event("pointerenter"));
@@ -293,6 +317,7 @@ describe("addItemTooltips keyboard focus (#343)", () => {
 		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(true);
 
 		item.dispatchEvent(new Event("pointerleave"));
+		vi.advanceTimersByTime(200);
 		expect(tooltip.classList.contains("tdsl-tooltip-visible")).toBe(false);
 	});
 });

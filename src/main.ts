@@ -664,6 +664,8 @@ class TdslFullscreenModal extends Modal {
  * clones the already-adopted SVG, and its tooltip element/listeners live
  * outside the SVG so they are not carried over by `cloneNode` (#238).
  */
+const TOOLTIP_LEAVE_GRACE_MS = 200;
+
 function addItemTooltips(wrapper: HTMLElement): void {
 	const items = wrapper.querySelectorAll("[data-tdsl-tooltip]");
 	if (items.length === 0) return;
@@ -681,25 +683,32 @@ function addItemTooltips(wrapper: HTMLElement): void {
 	);
 
 	// One state per wrapper: the tooltip element is shared by every item (#349).
-	const tip = createTooltipVisibility<Element>((target) => {
-		if (!target) {
-			tooltip.removeClass("tdsl-tooltip-visible");
-			escapeKey.detach();
-			return;
-		}
-		const text = target.item.getAttribute("data-tdsl-tooltip");
-		if (!text) return;
-		tooltip.setText(text);
-		tooltip.addClass("tdsl-tooltip-visible");
-		escapeKey.attach();
-		if (target.source === "focus") {
-			// No pointer to follow: anchor below the focused item instead.
-			const rect = wrapper.getBoundingClientRect();
-			const itemRect = target.item.getBoundingClientRect();
-			tooltip.style.left = `${itemRect.left - rect.left + wrapper.scrollLeft}px`;
-			tooltip.style.top = `${itemRect.bottom - rect.top + wrapper.scrollTop + 4}px`;
-		}
-	});
+	// The grace period lets the pointer cross the gap onto the tooltip body (#364).
+	const tip = createTooltipVisibility<Element>(
+		(target) => {
+			if (!target) {
+				tooltip.removeClass("tdsl-tooltip-visible");
+				escapeKey.detach();
+				return;
+			}
+			const text = target.item.getAttribute("data-tdsl-tooltip");
+			if (!text) return;
+			tooltip.setText(text);
+			tooltip.addClass("tdsl-tooltip-visible");
+			escapeKey.attach();
+			if (target.source === "focus") {
+				// No pointer to follow: anchor below the focused item instead.
+				const rect = wrapper.getBoundingClientRect();
+				const itemRect = target.item.getBoundingClientRect();
+				tooltip.style.left = `${itemRect.left - rect.left + wrapper.scrollLeft}px`;
+				tooltip.style.top = `${itemRect.bottom - rect.top + wrapper.scrollTop + 4}px`;
+			}
+		},
+		{ graceMs: TOOLTIP_LEAVE_GRACE_MS },
+	);
+
+	tooltip.addEventListener("pointerenter", () => tip.setTooltipHover(true));
+	tooltip.addEventListener("pointerleave", () => tip.setTooltipHover(false));
 
 	for (const item of Array.from(items)) {
 		item.querySelector("title")?.remove();

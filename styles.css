@@ -310,7 +310,6 @@
 	padding: 4px 8px;
 	font-size: var(--font-ui-smaller);
 	box-shadow: var(--shadow-s);
-	pointer-events: none;
 	z-index: 20;
 }
 
