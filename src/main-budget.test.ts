@@ -57,7 +57,10 @@ import mainSource from "./main.ts?raw";
 // listener so a hover tooltip closes whatever has focus. The attach/detach and
 // self-cleanup rule lives in escape-listener.ts; what remains is hooking it to
 // the tooltip's visibility, which closes over the wrapper and tooltip state.
-const MAIN_TS_LINE_BUDGET = 1255;
+// Raised by 9 (issue #364): addItemTooltips() wires pointerenter/leave on the
+// tooltip body and passes the grace period. The hold-over rule lives in
+// tooltip-visibility.ts; what remains is DOM listener wiring over the tooltip.
+const MAIN_TS_LINE_BUDGET = 1264;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
