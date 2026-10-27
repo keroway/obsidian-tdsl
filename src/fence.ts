@@ -138,6 +138,12 @@ function quoteDepth(line: string): number {
 }
 
 const LIST_MARKER_RE = /^[ \t]*(?:[-*+]|\d{1,9}[.)])(?:[ \t]|$)/;
+const LIST_ITEM_HEAD_RE = /^[ \t]*(?:[-*+]|\d{1,9}[.)])[ \t]+/;
+
+/** Removes leading blockquote markers (and one optional space after each). */
+function stripQuotes(line: string): string {
+	return line.replace(/^(?:[ \t]*>[ \t]?)+/, "");
+}
 
 /**
  * Whether the fence at `openLine` (indented `indent` columns, unquoted) sits in
@@ -205,9 +211,26 @@ function findClose(
 		(open.listMarker || inListItem(lines, openLine, fenceIndent));
 	const listIndent = inList ? fenceIndent : 0;
 	const topLevel = depth === 0 && !inList && fenceIndent <= 3;
+	// A quoted fence opened on a list item line (`> - ~~~js`) is bounded by the
+	// item as well: measured on the text after the `>` markers, the first
+	// non-blank line indented less than the item's content column leaves it.
+	const quotedListIndent =
+		depth > 0 && open.listMarker
+			? textColumns(
+					LIST_ITEM_HEAD_RE.exec(stripQuotes(lines[openLine] ?? ""))?.[0] ?? "",
+				)
+			: 0;
 	for (let j = openLine + 1; j < lines.length; j++) {
 		const line = lines[j] ?? "";
 		if (depth > 0 && quoteDepth(line) < depth) {
+			return { closeLine: -1, end: j };
+		}
+		if (
+			quotedListIndent >= 2 &&
+			line.trim() !== "" &&
+			stripQuotes(line).trim() !== "" &&
+			leadingColumns(stripQuotes(line)) < quotedListIndent
+		) {
 			return { closeLine: -1, end: j };
 		}
 		// The list boundary is checked before the close fence: a marker outside
