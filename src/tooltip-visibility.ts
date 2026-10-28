@@ -83,8 +83,11 @@ export function createTooltipVisibility<T>(
 			update();
 		},
 		setTooltipHover(active) {
-			if (active) cancelRelease();
-			else if (pointer !== null) releasePointer(pointer);
+			if (active) {
+				cancelRelease();
+				// A focus-only tooltip is handed to the pointer so it survives blur (#372).
+				if (pointer === null && focus !== null) pointer = focus;
+			} else if (pointer !== null) releasePointer(pointer);
 		},
 		dismiss() {
 			cancelRelease();
