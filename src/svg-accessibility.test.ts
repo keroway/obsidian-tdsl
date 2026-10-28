@@ -1,6 +1,9 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { applyRootAccessibility } from "./svg-accessibility";
+import {
+	applyAccessibilityToSvgString,
+	applyRootAccessibility,
+} from "./svg-accessibility";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -133,5 +136,27 @@ describe("applyRootAccessibility", () => {
 		expect(root.getAttribute("aria-label")).toBe("Project roadmap");
 		expect(root.querySelectorAll("title").length).toBe(1);
 		expect(root.firstElementChild?.textContent).toBe("Project roadmap");
+	});
+});
+
+describe("applyAccessibilityToSvgString", () => {
+	it("rewrites the renderer's generic root into a labelled group and keeps focusable children", () => {
+		const out = applyAccessibilityToSvgString(
+			`<svg xmlns="${SVG_NS}" role="img" aria-label="timeline"><g role="group" tabindex="0"/></svg>`,
+			"Export title",
+		);
+		const { root } = parse(out);
+
+		expect(root.getAttribute("role")).toBe("group");
+		expect(root.getAttribute("aria-label")).toBe("Export title");
+		expect(root.firstElementChild?.tagName.toLowerCase()).toBe("title");
+		expect(root.querySelectorAll('[role="group"][tabindex="0"]').length).toBe(
+			1,
+		);
+	});
+
+	it("returns unparseable input unchanged", () => {
+		const broken = "<svg><g></svg";
+		expect(applyAccessibilityToSvgString(broken, "x")).toBe(broken);
 	});
 });

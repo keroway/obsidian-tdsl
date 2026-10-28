@@ -45,7 +45,10 @@ import { svgToPngBlob } from "./png-export";
 import { renderCacheKey, SvgLruCache } from "./render-cache";
 import { populateRenderOptions } from "./render-options";
 import { resolveStandaloneHtmlRender } from "./standalone-html";
-import { applyRootAccessibility } from "./svg-accessibility";
+import {
+	applyAccessibilityToSvgString,
+	applyRootAccessibility,
+} from "./svg-accessibility";
 import {
 	filterTemplates,
 	renderTemplateSnippet,
@@ -434,7 +437,10 @@ class TdslPreview extends MarkdownRenderChild {
 				resolveRenderOptions(parseRenderDirectives(this.source), this.settings),
 				document.body.classList.contains("theme-dark"),
 			);
-			const svg = renderSvg(this.source, render);
+			const svg = applyAccessibilityToSvgString(
+				renderSvg(this.source, render),
+				extractTimelineTitle(this.source) ?? "Timeline",
+			);
 
 			const noteFile = this.app.vault.getAbstractFileByPath(
 				this.ctx.sourcePath,
