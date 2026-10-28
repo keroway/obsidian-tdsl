@@ -94,6 +94,41 @@ describe("createTooltipVisibility", () => {
 		});
 	});
 
+	describe("tooltip hover on a focus-opened tooltip (#372)", () => {
+		function focusHover() {
+			const s = setup();
+			s.v.setFocus("a", true);
+			s.v.setTooltipHover(true);
+			return s;
+		}
+
+		it("stays open after blur while the pointer is on the body", () => {
+			const { v, last } = focusHover();
+			v.setFocus("a", false);
+			expect(last()).toEqual({ item: "a", source: "pointer" });
+		});
+
+		it("closes when the pointer leaves the body after blur", () => {
+			const { v, last } = focusHover();
+			v.setFocus("a", false);
+			v.setTooltipHover(false);
+			expect(last()).toBeNull();
+		});
+
+		it("dismiss closes it", () => {
+			const { v, last } = focusHover();
+			v.setFocus("a", false);
+			v.dismiss();
+			expect(last()).toBeNull();
+		});
+
+		it("does nothing when no tooltip is open", () => {
+			const { v, last } = setup();
+			v.setTooltipHover(true);
+			expect(last()).toBeUndefined();
+		});
+	});
+
 	it("ignores a leave from an item that is not the current owner", () => {
 		const { v, last } = setup();
 		v.setPointer("b", true);
