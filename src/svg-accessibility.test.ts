@@ -155,7 +155,7 @@ describe("applyAccessibilityToSvgString", () => {
 		);
 	});
 
-	it("returns unparseable input unchanged", () => {
+	it("returns malformed input unchanged", () => {
 		const broken = "<svg><g></svg";
 		expect(applyAccessibilityToSvgString(broken, "x")).toBe(broken);
 	});
