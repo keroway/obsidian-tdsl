@@ -325,8 +325,14 @@ export function hasWikidataImport(source: string): boolean {
 
 /** Extracts the timeline title from a `timeline "..."` line, or null. */
 export function extractTimelineTitle(source: string): string | null {
-	const m = stripBlockComments(source).match(/^\s*timeline\s+"([^"]*)"/m);
-	return m?.[1].trim() ? m[1].trim() : null;
+	// 本体は「エスケープ以外の文字」か「バックスラッシュ + 任意の1文字」の繰り返し。
+	// `\"` を閉じ引用符と取り違えない（#370）。
+	const m = stripBlockComments(source).match(
+		/^\s*timeline\s+"((?:[^"\\\n]|\\.)*)"/m,
+	);
+	if (!m) return null;
+	const title = m[1].replace(/\\(["\\])/g, "$1").trim();
+	return title || null;
 }
 
 /**
