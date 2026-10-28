@@ -593,6 +593,16 @@ describe("extractTimelineTitle", () => {
 		expect(extractTimelineTitle('timeline "  Padded  "')).toBe("Padded");
 	});
 
+	it("keeps text after an escaped double quote (#370)", () => {
+		expect(
+			extractTimelineTitle('timeline "He said \\"Hello\\"" { unit year; }'),
+		).toBe('He said "Hello"');
+	});
+
+	it("unescapes an escaped backslash and ends at the real closing quote", () => {
+		expect(extractTimelineTitle('timeline "a\\\\" { unit year; }')).toBe("a\\");
+	});
+
 	it("skips a title commented out inside a block comment (#263)", () => {
 		const source = [
 			"/*",
