@@ -50,3 +50,21 @@ export function applyRootAccessibility(
 	titleEl.textContent = effectiveLabel;
 	root.insertBefore(titleEl, root.firstChild);
 }
+
+/**
+ * String-to-string variant of {@link applyRootAccessibility} for exports that
+ * never pass through the DOM preview (Save as file). Returns the input
+ * unchanged when it is not parseable SVG, so an export is never lost to this
+ * cosmetic step.
+ */
+export function applyAccessibilityToSvgString(
+	svg: string,
+	label: string,
+	parser: DOMParser = new DOMParser(),
+	serializer: XMLSerializer = new XMLSerializer(),
+): string {
+	const doc = parser.parseFromString(svg, "image/svg+xml");
+	if (doc.querySelector("parsererror")) return svg;
+	applyRootAccessibility(doc, doc.documentElement, label);
+	return serializer.serializeToString(doc.documentElement);
+}
