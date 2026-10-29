@@ -327,11 +327,16 @@ export function hasWikidataImport(source: string): boolean {
 export function extractTimelineTitle(source: string): string | null {
 	// 本体は「エスケープ以外の文字」か「バックスラッシュ + 任意の1文字」の繰り返し。
 	// `\"` を閉じ引用符と取り違えない（#370）。
+	// WASM は実改行を含む複数行タイトルも受理するので改行も本体に含め（#376）、
+	// アクセシビリティ名向けに連続する空白・改行は1個のスペースへ畳む。
 	const m = stripBlockComments(source).match(
-		/^\s*timeline\s+"((?:[^"\\\n]|\\.)*)"/m,
+		/^\s*timeline\s+"((?:[^"\\]|\\[\s\S])*)"/m,
 	);
 	if (!m) return null;
-	const title = m[1].replace(/\\(["\\])/g, "$1").trim();
+	const title = m[1]
+		.replace(/\\(["\\])/g, "$1")
+		.replace(/\s+/g, " ")
+		.trim();
 	return title || null;
 }
 

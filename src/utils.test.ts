@@ -603,6 +603,15 @@ describe("extractTimelineTitle", () => {
 		expect(extractTimelineTitle('timeline "a\\\\" { unit year; }')).toBe("a\\");
 	});
 
+	it("extracts a multi-line title and folds line breaks into one space (#376)", () => {
+		expect(
+			extractTimelineTitle('timeline "First\nSecond" { unit year; }'),
+		).toBe("First Second");
+		expect(
+			extractTimelineTitle('timeline "First\r\n  Second" { unit year; }'),
+		).toBe("First Second");
+	});
+
 	it("skips a title commented out inside a block comment (#263)", () => {
 		const source = [
 			"/*",
