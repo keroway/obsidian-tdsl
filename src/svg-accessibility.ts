@@ -68,3 +68,21 @@ export function applyAccessibilityToSvgString(
 	applyRootAccessibility(doc, doc.documentElement, label);
 	return serializer.serializeToString(doc.documentElement);
 }
+
+/**
+ * HTML-document variant of {@link applyAccessibilityToSvgString} for the
+ * standalone HTML export, whose inline `<svg>` carries the same renderer
+ * `role="img"` root. Returns the input unchanged when no `<svg>` is found, so
+ * an export is never lost to this cosmetic step.
+ */
+export function applyAccessibilityToHtmlString(
+	html: string,
+	label: string,
+	parser: DOMParser = new DOMParser(),
+): string {
+	const doc = parser.parseFromString(html, "text/html");
+	const root = doc.querySelector("svg");
+	if (!root) return html;
+	applyRootAccessibility(doc, root, label);
+	return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}\n`;
+}

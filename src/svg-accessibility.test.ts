@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
 import {
+	applyAccessibilityToHtmlString,
 	applyAccessibilityToSvgString,
 	applyRootAccessibility,
 } from "./svg-accessibility";
@@ -158,5 +159,29 @@ describe("applyAccessibilityToSvgString", () => {
 	it("returns malformed input unchanged", () => {
 		const broken = "<svg><g></svg";
 		expect(applyAccessibilityToSvgString(broken, "x")).toBe(broken);
+	});
+});
+
+describe("applyAccessibilityToHtmlString", () => {
+	const html = `<!DOCTYPE html><html><head><title>Doc</title></head><body><h1>Doc</h1><svg xmlns="${SVG_NS}" role="img" aria-label="timeline"><g role="group" tabindex="0"/></svg></body></html>`;
+
+	it("relabels the inline SVG root and keeps focusable children", () => {
+		const out = applyAccessibilityToHtmlString(html, "Doc title");
+		const doc = new DOMParser().parseFromString(out, "text/html");
+		const root = doc.querySelector("svg");
+
+		expect(out.startsWith("<!DOCTYPE html>")).toBe(true);
+		expect(root?.getAttribute("role")).toBe("group");
+		expect(root?.getAttribute("aria-label")).toBe("Doc title");
+		expect(root?.firstElementChild?.tagName.toLowerCase()).toBe("title");
+		expect(root?.querySelectorAll('[role="group"][tabindex="0"]').length).toBe(
+			1,
+		);
+		expect(doc.querySelector("h1")?.textContent).toBe("Doc");
+	});
+
+	it("returns input without an SVG unchanged", () => {
+		const plain = "<!DOCTYPE html><html><body>x</body></html>";
+		expect(applyAccessibilityToHtmlString(plain, "x")).toBe(plain);
 	});
 });

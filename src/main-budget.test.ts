@@ -67,7 +67,11 @@ import mainSource from "./main.ts?raw";
 // Raised by 6 (issue #374): saveSvgToVault() routes the rendered SVG through
 // applyAccessibilityToSvgString(). The rule lives in svg-accessibility.ts; what
 // remains is the import and the call site that supplies the title.
-const MAIN_TS_LINE_BUDGET = 1279;
+// Raised by 4 (issue #380): copyStandaloneHtml() routes the rendered HTML
+// through applyAccessibilityToHtmlString(). The rule lives in
+// svg-accessibility.ts; what remains is the import and the call site that
+// supplies the title.
+const MAIN_TS_LINE_BUDGET = 1283;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
