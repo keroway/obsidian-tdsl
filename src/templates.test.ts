@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	filterTemplates,
+	renderTemplateInsertion,
 	renderTemplateSnippet,
 	TIMELINE_TEMPLATES,
 } from "./templates";
@@ -102,6 +103,44 @@ describe("renderTemplateSnippet", () => {
 			body: 'timeline "T" { unit year; range 0..1; }\n',
 		});
 		expect(snippet).not.toContain("\n\n```");
+	});
+});
+
+describe("renderTemplateInsertion", () => {
+	const t = TIMELINE_TEMPLATES[0];
+	const editorAt = (line: string, ch: number) => ({
+		getCursor: () => ({ line: 0, ch }),
+		getLine: () => line,
+	});
+	const insert = (line: string, ch: number) => {
+		const text = renderTemplateInsertion(t, editorAt(line, ch));
+		return (line.slice(0, ch) + text + line.slice(ch)).split("\n");
+	};
+
+	it("inserts the bare snippet at the start of a line", () => {
+		expect(renderTemplateInsertion(t, editorAt("before after", 0))).toBe(
+			renderTemplateSnippet(t),
+		);
+		expect(insert("before after", 0)[0]).toBe("```tdsl");
+	});
+
+	it("inserts the bare snippet into an empty line", () => {
+		expect(renderTemplateInsertion(t, editorAt("", 0))).toBe(
+			renderTemplateSnippet(t),
+		);
+	});
+
+	it("starts the fence on its own line when inserted mid-line", () => {
+		const lines = insert("before after", 7);
+		expect(lines[0]).toBe("before ");
+		expect(lines[1]).toBe("```tdsl");
+		expect(lines[lines.length - 1]).toBe("after");
+	});
+
+	it("starts the fence on its own line when inserted at the end of a line", () => {
+		const lines = insert("before", 6);
+		expect(lines[0]).toBe("before");
+		expect(lines[1]).toBe("```tdsl");
 	});
 });
 

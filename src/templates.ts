@@ -143,6 +143,30 @@ export function renderTemplateSnippet(template: TimelineTemplate): string {
 }
 
 /**
+ * Renders the snippet for insertion at the editor's cursor.
+ *
+ * A fence only opens when it starts a line, so when text precedes the cursor
+ * the snippet is prefixed with a newline to keep the opening fence on its own
+ * line instead of gluing it onto the existing text.
+ */
+export function renderTemplateInsertion(
+	template: TimelineTemplate,
+	editor: CursorLineSource,
+): string {
+	const { line, ch } = editor.getCursor();
+	const snippet = renderTemplateSnippet(template);
+	return editor.getLine(line).slice(0, ch).length > 0
+		? `\n${snippet}`
+		: snippet;
+}
+
+/** The slice of Obsidian's `Editor` that `renderTemplateInsertion` reads. */
+export interface CursorLineSource {
+	getCursor(): { line: number; ch: number };
+	getLine(line: number): string;
+}
+
+/**
  * Filters the templates for the "Insert timeline template" picker.
  *
  * An empty (or whitespace-only) query yields every template, in declaration
