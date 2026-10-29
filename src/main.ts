@@ -46,6 +46,7 @@ import { renderCacheKey, SvgLruCache } from "./render-cache";
 import { populateRenderOptions } from "./render-options";
 import { resolveStandaloneHtmlRender } from "./standalone-html";
 import {
+	applyAccessibilityToHtmlString,
 	applyAccessibilityToSvgString,
 	applyRootAccessibility,
 } from "./svg-accessibility";
@@ -364,7 +365,10 @@ class TdslPreview extends MarkdownRenderChild {
 				resolveRenderOptions(parseRenderDirectives(this.source), this.settings),
 				document.body.classList.contains("theme-dark"),
 			);
-			const html = renderStandaloneHtml(this.source, render);
+			const html = applyAccessibilityToHtmlString(
+				renderStandaloneHtml(this.source, render),
+				extractTimelineTitle(this.source) ?? "Timeline",
+			);
 			switch (await copyTextToClipboard(html)) {
 				case "copied":
 					new Notice("✔ Copied standalone timeline HTML to the clipboard.");
