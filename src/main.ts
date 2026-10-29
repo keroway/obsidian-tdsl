@@ -51,7 +51,7 @@ import {
 } from "./svg-accessibility";
 import {
 	filterTemplates,
-	renderTemplateSnippet,
+	renderTemplateInsertion,
 	type TimelineTemplate,
 } from "./templates";
 import { createTooltipVisibility } from "./tooltip-visibility";
@@ -1208,7 +1208,7 @@ class TemplateSuggestModal extends SuggestModal<TimelineTemplate> {
 		// replaceRange at the cursor keeps the insert undoable, matching how
 		// formatCurrentBlock edits the document.
 		this.editor.replaceRange(
-			renderTemplateSnippet(template),
+			renderTemplateInsertion(template, this.editor),
 			this.editor.getCursor(),
 		);
 		new Notice(`✔ Inserted the "${template.name}" template.`);
