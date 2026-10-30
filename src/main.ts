@@ -29,6 +29,7 @@ import {
 import { copyImageToClipboard, copyTextToClipboard } from "./clipboard";
 import { tdslEditorHighlight } from "./editor-highlight";
 import { createEscapeListener } from "./escape-listener";
+import { embedExportStyles } from "./export-styles";
 import { idleScheduler } from "./idle-scheduler";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
 import {
@@ -402,7 +403,10 @@ class TdslPreview extends MarkdownRenderChild {
 				resolveRenderOptions(parseRenderDirectives(this.source), this.settings),
 				document.body.classList.contains("theme-dark"),
 			);
-			const svg = renderSvg(this.source, render);
+			const svg = embedExportStyles(
+				renderSvg(this.source, render),
+				render.theme,
+			);
 			const blob = await svgToPngBlob(svg);
 			switch (await copyImageToClipboard(blob, "image/png")) {
 				case "copied":
@@ -442,7 +446,7 @@ class TdslPreview extends MarkdownRenderChild {
 				document.body.classList.contains("theme-dark"),
 			);
 			const svg = applyAccessibilityToSvgString(
-				renderSvg(this.source, render),
+				embedExportStyles(renderSvg(this.source, render), render.theme),
 				extractTimelineTitle(this.source) ?? "Timeline",
 			);
 
