@@ -252,7 +252,11 @@ function findClose(
 
 /** The info string names this block as tdsl (extra info after it is ignored). */
 function isTdsl(fence: Fence): boolean {
-	return fence.info === "tdsl" || fence.info.startsWith("tdsl ");
+	return (
+		fence.info === "tdsl" ||
+		fence.info.startsWith("tdsl ") ||
+		fence.info.startsWith("tdsl\t")
+	);
 }
 
 /**

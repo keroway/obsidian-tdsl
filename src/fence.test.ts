@@ -134,10 +134,21 @@ describe("findTdslFenceAtCursor", () => {
 		});
 	});
 
+	it("accepts a tab between the language identifier and extra info", () => {
+		const lines = ["~~~tdsl\textra", "timeline {}", "~~~"];
+		const range = { openLine: 0, closeLine: 2, prefix: "" };
+		expect(findTdslFenceAtCursor(lines, 1)).toEqual({
+			status: "found",
+			range,
+		});
+		expect(listTdslFenceRanges(lines)).toEqual([range]);
+	});
+
 	it("ignores a language whose name merely starts with tdsl", () => {
 		expect(
 			findTdslFenceAtCursor(["```tdslx", "timeline {}", "```"], 1),
 		).toEqual({ status: "not-in-block" });
+		expect(listTdslFenceRanges(["```tdslx", "timeline {}", "```"])).toEqual([]);
 	});
 
 	it("does not treat a backtick-containing info string as a tdsl fence", () => {
