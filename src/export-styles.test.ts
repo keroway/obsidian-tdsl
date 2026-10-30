@@ -36,7 +36,7 @@ describe("embedExportStyles", () => {
 		);
 	});
 
-	it("returns unparseable input unchanged", () => {
+	it("returns unparsable input unchanged", () => {
 		expect(embedExportStyles("<svg", "dark")).toBe("<svg");
 	});
 });
