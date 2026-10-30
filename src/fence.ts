@@ -166,6 +166,29 @@ function inListItem(
 }
 
 /**
+ * For a quoted fence without a list marker, the indent (measured after the `>`
+ * markers) at which it continues an enclosing quoted list item, or 0 when no
+ * item encloses it. The search stops at a line that leaves the blockquote.
+ */
+function quotedContinuationIndent(
+	lines: readonly string[],
+	openLine: number,
+	depth: number,
+): number {
+	const indent = leadingColumns(stripQuotes(lines[openLine] ?? ""));
+	for (let k = openLine - 1; k >= 0; k--) {
+		const line = lines[k] ?? "";
+		if (quoteDepth(line) < depth) return 0;
+		const text = stripQuotes(line);
+		if (text.trim() === "") continue;
+		if (leadingColumns(text) < indent) {
+			return LIST_MARKER_RE.test(text) ? indent : 0;
+		}
+	}
+	return 0;
+}
+
+/**
  * Parses the line at `index` as a fence *opener*. An unquoted line indented 4+
  * columns outside any list item is an indented code block (CommonMark), so a
  * fence marker there is literal text, not a fence.
@@ -214,12 +237,17 @@ function findClose(
 	// A quoted fence opened on a list item line (`> - ~~~js`) is bounded by the
 	// item as well: measured on the text after the `>` markers, the first
 	// non-blank line indented less than the item's content column leaves it.
-	const quotedListIndent =
-		depth > 0 && open.listMarker
+	// A fence on a continuation line of a quoted list item (`>   ~~~js` under
+	// `> - item`) has no marker of its own; the enclosing item bounds it the same
+	// way, at the fence's own indent.
+	let quotedListIndent = 0;
+	if (depth > 0) {
+		quotedListIndent = open.listMarker
 			? textColumns(
 					LIST_ITEM_HEAD_RE.exec(stripQuotes(lines[openLine] ?? ""))?.[0] ?? "",
 				)
-			: 0;
+			: quotedContinuationIndent(lines, openLine, depth);
+	}
 	for (let j = openLine + 1; j < lines.length; j++) {
 		const line = lines[j] ?? "";
 		if (depth > 0 && quoteDepth(line) < depth) {

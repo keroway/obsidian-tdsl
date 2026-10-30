@@ -505,6 +505,43 @@ describe("unclosed fence in a quoted list item (#368)", () => {
 	});
 });
 
+describe("unclosed fence on a quoted list continuation line (#382)", () => {
+	const lines = [
+		"> - item",
+		">   ~~~js",
+		">   text",
+		"> outside",
+		"> ~~~tdsl",
+		"> timeline {}",
+		"> ~~~",
+	];
+
+	it("detects the later tdsl block after leaving the quoted item", () => {
+		expect(findTdslFenceAtCursor(lines, 5)).toEqual({
+			status: "found",
+			range: { openLine: 4, closeLine: 6, prefix: "> " },
+		});
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 4, closeLine: 6, prefix: "> " },
+		]);
+	});
+
+	it("still closes on an indented marker inside the item (control)", () => {
+		const closed = [
+			"> - item",
+			">   ~~~js",
+			">   text",
+			">   ~~~",
+			"> ~~~tdsl",
+			"> timeline {}",
+			"> ~~~",
+		];
+		expect(listTdslFenceRanges(closed)).toEqual([
+			{ openLine: 4, closeLine: 6, prefix: "> " },
+		]);
+	});
+});
+
 describe("listTdslFenceRanges", () => {
 	it("returns an empty list when the document has no fences", () => {
 		expect(listTdslFenceRanges(["plain markdown", "more text"])).toEqual([]);
