@@ -52,6 +52,10 @@ export function buildExportStyles(theme: string | undefined): string {
 		`.tdsl-axis-day-text{fill:${p.textFaint}}`,
 		`.tdsl-group-label{fill:${p.textMuted}}`,
 		`.tdsl-lane-label{fill:${p.text}}`,
+		// Drawn on a saturated lane colour, so a literal white in every theme.
+		".tdsl-item-label{fill:#fff;font-size:11px;font-weight:500;pointer-events:none}",
+		// Hit area for hover/click in the preview; must stay invisible.
+		".tdsl-event-hit{fill:transparent}",
 	].join("\n");
 }
 

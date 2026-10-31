@@ -13,6 +13,14 @@ describe("buildExportStyles", () => {
 		expect(css).toContain(".tdsl-lane-band-odd{fill:");
 	});
 
+	it("hides event hit areas and styles item labels in every theme", () => {
+		for (const theme of ["default", "dark", "print", undefined]) {
+			const css = buildExportStyles(theme);
+			expect(css).toContain(".tdsl-event-hit{fill:transparent}");
+			expect(css).toContain(".tdsl-item-label{fill:#fff;");
+		}
+	});
+
 	it("differs between dark and other themes", () => {
 		expect(buildExportStyles("dark")).not.toBe(buildExportStyles("default"));
 		expect(buildExportStyles("print")).toBe(buildExportStyles("default"));
