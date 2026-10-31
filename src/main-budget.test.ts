@@ -74,7 +74,12 @@ import mainSource from "./main.ts?raw";
 // Raised by 4 (issue #386): copyPng() and saveSvgToVault() route the rendered
 // SVG through embedExportStyles(). The rule lives in export-styles.ts; what
 // remains is the import and the two call sites that supply the resolved theme.
-const MAIN_TS_LINE_BUDGET = 1287;
+// Raised by 12 (issue #388): copySvg() re-renders with the resolved theme and
+// routes the SVG through embedExportStyles() and applyAccessibilityToSvgString()
+// like saveSvgToVault(), instead of copying the host-CSS-dependent preview SVG.
+// The rules live in export-styles.ts / svg-accessibility.ts; what remains is the
+// call site that supplies the resolved theme and title.
+const MAIN_TS_LINE_BUDGET = 1299;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
