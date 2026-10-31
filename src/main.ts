@@ -185,10 +185,9 @@ class TdslPreview extends MarkdownRenderChild {
 				root,
 				extractTimelineTitle(this.source) ?? "Timeline",
 			);
-			const serializedSvg = new XMLSerializer().serializeToString(root);
 			const adopted = document.adoptNode(root) as unknown as SVGSVGElement;
 			wrapper.appendChild(adopted);
-			this.addCopySvgToolbar(wrapper, serializedSvg, adopted);
+			this.addCopySvgToolbar(wrapper, adopted);
 			this.disposeTooltips = addItemTooltips(wrapper);
 			// Independent of `tdsl-fit` / horizontal-scroll display: pan/zoom
 			// rewrites `viewBox`, which is orthogonal to how the SVG's CSS box is
@@ -290,11 +289,7 @@ class TdslPreview extends MarkdownRenderChild {
 	}
 
 	/** Adds the reusable-export toolbar after a successful safe SVG adoption. */
-	private addCopySvgToolbar(
-		wrapper: HTMLElement,
-		svg: string,
-		svgEl: SVGSVGElement,
-	): void {
+	private addCopySvgToolbar(wrapper: HTMLElement, svgEl: SVGSVGElement): void {
 		const toolbar = wrapper.createDiv({
 			cls: "tdsl-toolbar",
 			attr: { role: "toolbar", "aria-label": "Timeline actions" },
@@ -317,7 +312,7 @@ class TdslPreview extends MarkdownRenderChild {
 			attr: { type: "button" },
 		});
 		copyButton.addEventListener("click", () => {
-			void this.copySvg(svg);
+			void this.copySvg();
 		});
 		const copyHtmlButton = toolbar.createEl("button", {
 			text: "Copy standalone HTML",
@@ -345,17 +340,34 @@ class TdslPreview extends MarkdownRenderChild {
 		});
 	}
 
-	private async copySvg(svg: string): Promise<void> {
-		switch (await copyTextToClipboard(svg)) {
-			case "copied":
-				new Notice("✔ Copied timeline SVG to the clipboard.");
-				break;
-			case "unavailable":
-				new Notice("Timeline DSL: Clipboard API is unavailable.");
-				break;
-			case "failed":
-				new Notice("Timeline DSL: Could not copy SVG to the clipboard.");
-				break;
+	/**
+	 * Copies a standalone SVG: forced theme plus embedded export styles, for the
+	 * same reason as `copyPng` — a pasted SVG has no `.tdsl-preview` host CSS.
+	 */
+	private async copySvg(): Promise<void> {
+		try {
+			await ensureWasm();
+			const render = resolveStandaloneHtmlRender(
+				resolveRenderOptions(parseRenderDirectives(this.source), this.settings),
+				document.body.classList.contains("theme-dark"),
+			);
+			const svg = applyAccessibilityToSvgString(
+				embedExportStyles(renderSvg(this.source, render), render.theme),
+				extractTimelineTitle(this.source) ?? "Timeline",
+			);
+			switch (await copyTextToClipboard(svg)) {
+				case "copied":
+					new Notice("✔ Copied timeline SVG to the clipboard.");
+					break;
+				case "unavailable":
+					new Notice("Timeline DSL: Clipboard API is unavailable.");
+					break;
+				case "failed":
+					new Notice("Timeline DSL: Could not copy SVG to the clipboard.");
+					break;
+			}
+		} catch {
+			new Notice("Timeline DSL: Could not generate SVG.");
 		}
 	}
 
