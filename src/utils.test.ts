@@ -915,6 +915,13 @@ describe("extractFenceBody", () => {
 		expect(extractFenceBody(lines, 0, 2, "  ")).toBe("timeline {}");
 	});
 
+	it("strips nested quote markers spaced differently from the open line (#393)", () => {
+		const lines = ["> > ~~~tdsl", ">> timeline {}", ">>lane a {}", "> > ~~~"];
+		expect(extractFenceBody(lines, 0, 3, "> > ")).toBe(
+			"timeline {}\nlane a {}",
+		);
+	});
+
 	it("strips a tab-indented body line by columns (#347)", () => {
 		const lines = ["-\t```tdsl", "\ttimeline {}", "\t```"];
 		expect(extractFenceBody(lines, 0, 2, "    ")).toBe("timeline {}");
@@ -1321,6 +1328,16 @@ describe("planFenceTransform", () => {
 			text: "> TIMELINE {}\n> LANE A {}\n",
 			from: { line: 1, ch: 0 },
 			to: { line: 3, ch: 0 },
+		});
+	});
+
+	it("strips nested quote markers spaced differently from the open line and restores the open prefix (#393)", () => {
+		const lines = ["> > ~~~tdsl", ">> timeline {}", "> > ~~~"];
+		expect(planFenceTransform(lines, 1, upper, "format")).toEqual({
+			kind: "replace",
+			text: "> > TIMELINE {}\n",
+			from: { line: 1, ch: 0 },
+			to: { line: 2, ch: 0 },
 		});
 	});
 
