@@ -661,6 +661,16 @@ function stripFencePrefix(line: string, prefix: string): string {
 		}
 		if (cols === target) return line.slice(i);
 	}
+	// A blockquote prefix may be spaced differently on the body lines than on the
+	// open line (`> > ` vs `>> `): match each `>` with an optional following space.
+	if (prefix.includes(">")) {
+		let pattern = "";
+		for (const m of prefix.matchAll(/>[ \t]?|[ \t]+/g)) {
+			pattern += m[0].startsWith(">") ? ">[ \\t]?" : "[ \\t]*";
+		}
+		const match = new RegExp(`^${pattern}`).exec(line);
+		if (match) return line.slice(match[0].length);
+	}
 	return line;
 }
 
