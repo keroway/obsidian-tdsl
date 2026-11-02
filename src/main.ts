@@ -140,6 +140,7 @@ class TdslPreview extends MarkdownRenderChild {
 		);
 		const cacheKey = renderCacheKey(this.source, r);
 		if (r.fit) wrapper.addClass("tdsl-fit");
+		if (r.theme) wrapper.setAttribute("data-tdsl-theme", r.theme); // styles.css (#397)
 
 		try {
 			let cached = svgRenderCache.get(cacheKey);

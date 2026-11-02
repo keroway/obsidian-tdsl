@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { buildExportStyles, embedExportStyles } from "./export-styles";
 
@@ -25,6 +26,23 @@ describe("buildExportStyles", () => {
 		expect(buildExportStyles("dark")).not.toBe(buildExportStyles("default"));
 		expect(buildExportStyles("print")).toBe(buildExportStyles("default"));
 		expect(buildExportStyles(undefined)).toBe(buildExportStyles("default"));
+	});
+});
+
+describe("preview explicit-theme CSS (#397)", () => {
+	const css = readFileSync("styles.css", "utf8");
+	const hexes = (theme: string) =>
+		[...buildExportStyles(theme).matchAll(/#[0-9a-f]{6}\b/g)].map((m) => m[0]);
+
+	it("carries every literal palette colour of the export styles", () => {
+		for (const hex of [...hexes("default"), ...hexes("dark")]) {
+			expect(css).toContain(hex);
+		}
+	});
+
+	it("scopes dark colours to data-tdsl-theme=dark", () => {
+		const darkBlock = css.slice(css.indexOf('[data-tdsl-theme="dark"]'));
+		for (const hex of hexes("dark")) expect(darkBlock).toContain(hex);
 	});
 });
 
