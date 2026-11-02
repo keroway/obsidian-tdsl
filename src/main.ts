@@ -80,6 +80,7 @@ import {
 	resolveRenderOptions,
 	resolveUniqueVaultPath,
 	SYNTAX_REFERENCE_URL,
+	sanitizeSettings,
 	type TdslSettings,
 } from "./utils";
 import { createWasmInitializer } from "./wasm-init";
@@ -933,7 +934,7 @@ export default class TimelineDslPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = sanitizeSettings(await this.loadData());
 	}
 
 	async saveSettings(): Promise<void> {

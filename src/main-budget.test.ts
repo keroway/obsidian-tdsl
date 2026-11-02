@@ -84,7 +84,9 @@ import mainSource from "./main.ts?raw";
 // Raised by 6 (issue #399): TdslFullscreenModal.onOpen() carries the inline
 // wrapper's data-tdsl-theme over to its own wrapper. It reads the source SVG's
 // ancestor, so it lives with the Modal lifecycle in main.ts.
-const MAIN_TS_LINE_BUDGET = 1306;
+// Raised by 1 (issue #403): the sanitizeSettings import for loadSettings();
+// the validation logic itself lives in utils.ts.
+const MAIN_TS_LINE_BUDGET = 1307;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
