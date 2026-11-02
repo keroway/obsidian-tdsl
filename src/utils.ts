@@ -242,6 +242,69 @@ export const DEFAULT_SETTINGS: TdslSettings = {
 	panZoom: true,
 };
 
+function pickEnum<T extends string>(
+	raw: unknown,
+	allowed: readonly T[],
+	fallback: T,
+): T {
+	return typeof raw === "string" && (allowed as readonly string[]).includes(raw)
+		? (raw as T)
+		: fallback;
+}
+
+function pickBool(raw: unknown, fallback: boolean): boolean {
+	return typeof raw === "boolean" ? raw : fallback;
+}
+
+/**
+ * Restore persisted settings (`Plugin.loadData()`) defensively. Each field is
+ * validated by type/range; invalid or missing fields fall back to
+ * `DEFAULT_SETTINGS` individually so legacy data with absent keys keeps working.
+ */
+export function sanitizeSettings(raw: unknown): TdslSettings {
+	const d = DEFAULT_SETTINGS;
+	const o: Record<string, unknown> =
+		typeof raw === "object" && raw !== null && !Array.isArray(raw)
+			? (raw as Record<string, unknown>)
+			: {};
+	let scale: TdslSettings["scale"] = d.scale;
+	if (o.scale === "auto" || o.scale === "fit") scale = o.scale;
+	else if (
+		typeof o.scale === "number" &&
+		Number.isFinite(o.scale) &&
+		o.scale > 0
+	)
+		scale = o.scale;
+	const lh = o.laneHeight;
+	return {
+		theme: pickEnum(
+			o.theme,
+			["auto", "default", "dark", "print", "pastel"],
+			d.theme,
+		),
+		grid: pickEnum(o.grid, ["none", "decade", "year", "month"], d.grid),
+		scale,
+		events: pickBool(o.events, d.events),
+		orientation: pickEnum(
+			o.orientation,
+			["horizontal", "vertical"],
+			d.orientation,
+		),
+		layoutStyle: pickEnum(
+			o.layoutStyle,
+			["auto", "timeline", "gantt", "group-bands", "zigzag"],
+			d.layoutStyle,
+		),
+		table: pickBool(o.table, d.table),
+		legend: pickBool(o.legend, d.legend),
+		laneHeight:
+			typeof lh === "number" && Number.isInteger(lh) && lh >= 0
+				? lh
+				: d.laneHeight,
+		panZoom: pickBool(o.panZoom, d.panZoom),
+	};
+}
+
 /**
  * Effective render parameters after merging per-block directives with the
  * plugin settings. Consumed by main.ts to build `JsRenderOptions` + the scale
