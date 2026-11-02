@@ -52,6 +52,8 @@ describe("classify-changes.sh", () => {
 		[["biome.json"], ["lint"]],
 		[["version-bump.mjs"], ["lint"]],
 		[["manifest.json"], ["lint"]],
+		// #401: src/export-styles.test.ts が styles.css を直接読むので test も必要
+		[["styles.css"], ["test", "lint"]],
 		[["README.md"], ["typos"]],
 		[["docs/guide.md"], ["typos"]],
 		[["_typos.toml"], ["typos"]],

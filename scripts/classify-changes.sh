@@ -53,7 +53,12 @@ while IFS= read -r file || [[ -n "${file}" ]]; do
 		lint=true
 		typecheck=true
 		;;
-	biome.json | version-bump.mjs | styles.css | manifest.json | versions.json)
+	biome.json | version-bump.mjs | manifest.json | versions.json)
+		lint=true
+		;;
+	# src/export-styles.test.ts が styles.css を直接読んで配色の整合性を検査する（#401）。
+	styles.css)
+		test=true
 		lint=true
 		;;
 	# ローカルフック設定・just タスク。biome の対象外だが lint ジョブの設定面と地続き。
