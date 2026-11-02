@@ -79,7 +79,9 @@ import mainSource from "./main.ts?raw";
 // like saveSvgToVault(), instead of copying the host-CSS-dependent preview SVG.
 // The rules live in export-styles.ts / svg-accessibility.ts; what remains is the
 // call site that supplies the resolved theme and title.
-const MAIN_TS_LINE_BUDGET = 1299;
+// Raised by 1 (issue #397): renderDiagram() marks the preview wrapper with the
+// resolved explicit theme; the palette itself lives in styles.css.
+const MAIN_TS_LINE_BUDGET = 1300;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;

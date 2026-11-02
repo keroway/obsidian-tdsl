@@ -229,6 +229,61 @@
 	cursor: pointer;
 }
 
+/* ── Explicit theme (main.ts sets data-tdsl-theme unless theme is "auto") ──
+ *
+ * The renderer's SVG does not vary with `theme` (#397), so an explicit
+ * `//! theme:` / Default theme is applied here with literal colours that
+ * mirror export-styles.ts (kept in sync by export-styles.test.ts). Without the
+ * attribute the Obsidian variables above keep driving light/dark.
+ */
+.tdsl-preview[data-tdsl-theme] .tdsl-lane-band-even {
+	fill: #ffffff;
+}
+.tdsl-preview[data-tdsl-theme] .tdsl-lane-band-odd {
+	fill: #f5f6f8;
+}
+.tdsl-preview[data-tdsl-theme] .tdsl-axis-baseline,
+.tdsl-preview[data-tdsl-theme] .tdsl-axis-tick,
+.tdsl-preview[data-tdsl-theme] .tdsl-axis-month-tick,
+.tdsl-preview[data-tdsl-theme] .tdsl-group-separator,
+.tdsl-preview[data-tdsl-theme] .tdsl-event-stem {
+	stroke: #e3e5e8;
+}
+.tdsl-preview[data-tdsl-theme] .tdsl-axis-text,
+.tdsl-preview[data-tdsl-theme] .tdsl-group-label {
+	fill: #5c5f66;
+}
+.tdsl-preview[data-tdsl-theme] .tdsl-axis-day-text {
+	fill: #8a8d93;
+}
+.tdsl-preview[data-tdsl-theme] .tdsl-lane-label {
+	fill: #222222;
+}
+
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-lane-band-even {
+	fill: #1e1e1e;
+}
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-lane-band-odd {
+	fill: #262626;
+}
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-axis-baseline,
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-axis-tick,
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-axis-month-tick,
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-group-separator,
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-event-stem {
+	stroke: #3f3f3f;
+}
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-axis-text,
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-group-label {
+	fill: #a3a3a3;
+}
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-axis-day-text {
+	fill: #7a7a7a;
+}
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-lane-label {
+	fill: #dadada;
+}
+
 /* ── Forced colours (Windows high contrast) ──
  *
  * The lane palette is the only thing distinguishing one item from another, and
