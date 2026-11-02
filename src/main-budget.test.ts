@@ -81,7 +81,10 @@ import mainSource from "./main.ts?raw";
 // call site that supplies the resolved theme and title.
 // Raised by 1 (issue #397): renderDiagram() marks the preview wrapper with the
 // resolved explicit theme; the palette itself lives in styles.css.
-const MAIN_TS_LINE_BUDGET = 1300;
+// Raised by 6 (issue #399): TdslFullscreenModal.onOpen() carries the inline
+// wrapper's data-tdsl-theme over to its own wrapper. It reads the source SVG's
+// ancestor, so it lives with the Modal lifecycle in main.ts.
+const MAIN_TS_LINE_BUDGET = 1306;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;

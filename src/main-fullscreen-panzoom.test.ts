@@ -136,6 +136,34 @@ describe("TdslFullscreenModal viewBox boundary (#237)", () => {
 	});
 });
 
+describe("TdslFullscreenModal explicit theme (#399)", () => {
+	function openWithTheme(theme: string | null): HTMLElement {
+		const { TdslFullscreenModal } = loadFullscreenModal();
+		const source = makeSvg("0 0 800 400");
+		const inline = document.createElement("div");
+		inline.className = "tdsl-preview";
+		if (theme) inline.setAttribute("data-tdsl-theme", theme);
+		inline.append(source);
+		const modal = new TdslFullscreenModal({}, source);
+		modal.onOpen();
+		return modal.contentEl.querySelector(
+			".tdsl-fullscreen-preview",
+		) as HTMLElement;
+	}
+
+	it.each(["dark", "default"])("carries over theme=%s", (theme) => {
+		const wrapper = openWithTheme(theme);
+		expect(wrapper.getAttribute("data-tdsl-theme")).toBe(theme);
+		expect(wrapper.matches(`.tdsl-preview[data-tdsl-theme="${theme}"]`)).toBe(
+			true,
+		);
+	});
+
+	it("sets no attribute when the inline preview has no explicit theme", () => {
+		expect(openWithTheme(null).hasAttribute("data-tdsl-theme")).toBe(false);
+	});
+});
+
 afterEach(() => {
 	vi.useRealTimers();
 });
