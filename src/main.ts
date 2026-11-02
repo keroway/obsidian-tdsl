@@ -669,6 +669,12 @@ class TdslFullscreenModal extends Modal {
 		const wrapper = this.contentEl.createDiv({
 			cls: "tdsl-preview tdsl-fullscreen-preview",
 		});
+		// Explicit-theme CSS keys off this attribute on an ancestor .tdsl-preview
+		// (#397), so carry it over from the inline wrapper (#399).
+		const theme = this.source
+			.closest(".tdsl-preview")
+			?.getAttribute("data-tdsl-theme");
+		if (theme) wrapper.setAttribute("data-tdsl-theme", theme);
 		const clone = this.source.cloneNode(true) as SVGSVGElement;
 		wrapper.appendChild(clone);
 		setupPanZoom(wrapper, clone);
