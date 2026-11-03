@@ -76,12 +76,12 @@ Obsidian は複数の `tdsl` ブロックを同時に描画するため、この
 
 `scale` / `grid` / `theme` などは `.tdsl` 内の `//! key: value` コメント行（`src/utils.ts` の `parseRenderDirectives`）で指定する。`//` は通常の DSL コメントなのでコンパイラは無視する。
 
-`@keroway/tdsl-wasm ^1.27.0` を前提にしている（`package.json` の `dependencies` が正）。
+`@keroway/tdsl-wasm ^2.0.0` を前提にしている（`package.json` の `dependencies` が正）。
 メジャーバージョンアップでシグネチャが変わると描画全体が破綻する。依存バージョンを上げるときは
 API 互換性を必ず確認し、この記述も合わせて更新すること。
 
 **caret 指定でも実際に動くのは lockfile が解決したバージョン**である点に注意。
-`pnpm-lock.yaml` が `1.27.0` をピンしており、さらに配布される `main.js` は
+`pnpm-lock.yaml` が `2.1.0` をピンしており、さらに配布される `main.js` は
 その WASM をビルド時にインライン化した成果物なので、npm 上に新しいマイナーが出ていても
 vault 側の挙動は変わらない。バージョンを上げるときは
 `pnpm update @keroway/tdsl-wasm` → `pnpm run build`（`main.js` の再生成）→ 描画確認
