@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-03
+
+### Fixed
+
+- **Fence detection** — `tdsl` fences inside lists, block quotes and callouts are now detected and closed per CommonMark rules (indentation, tab stops, unclosed fences ending at the list/quote boundary, tab after the language name); 4-space indented code outside lists is no longer mistaken for a fence ([#305](https://github.com/keroway/obsidian-tdsl/pull/305), [#307](https://github.com/keroway/obsidian-tdsl/pull/307), [#319](https://github.com/keroway/obsidian-tdsl/pull/319), [#321](https://github.com/keroway/obsidian-tdsl/pull/321), [#325](https://github.com/keroway/obsidian-tdsl/pull/325), [#339](https://github.com/keroway/obsidian-tdsl/pull/339), [#342](https://github.com/keroway/obsidian-tdsl/pull/342), [#346](https://github.com/keroway/obsidian-tdsl/pull/346), [#348](https://github.com/keroway/obsidian-tdsl/pull/348), [#363](https://github.com/keroway/obsidian-tdsl/pull/363), [#369](https://github.com/keroway/obsidian-tdsl/pull/369), [#384](https://github.com/keroway/obsidian-tdsl/pull/384), [#385](https://github.com/keroway/obsidian-tdsl/pull/385), [#394](https://github.com/keroway/obsidian-tdsl/pull/394))
+- **Directives** — empty, invalid-boolean and multi-line-string contents no longer corrupt render directives or trigger a false `import wikidata` notice; explicit `lane_height: 0` restores the renderer default ([#314](https://github.com/keroway/obsidian-tdsl/pull/314), [#327](https://github.com/keroway/obsidian-tdsl/pull/327), [#331](https://github.com/keroway/obsidian-tdsl/pull/331), [#334](https://github.com/keroway/obsidian-tdsl/pull/334), [#337](https://github.com/keroway/obsidian-tdsl/pull/337))
+- **Theme** — an explicit `theme` directive is reflected in the inline preview and the fullscreen view ([#398](https://github.com/keroway/obsidian-tdsl/pull/398), [#400](https://github.com/keroway/obsidian-tdsl/pull/400))
+- **Export** — Copy SVG, PNG/SVG save and standalone HTML now include theme/structure styles, event hit-area and item-label rules, and accessibility fixes ([#375](https://github.com/keroway/obsidian-tdsl/pull/375), [#381](https://github.com/keroway/obsidian-tdsl/pull/381), [#387](https://github.com/keroway/obsidian-tdsl/pull/387), [#389](https://github.com/keroway/obsidian-tdsl/pull/389), [#392](https://github.com/keroway/obsidian-tdsl/pull/392))
+- **Accessibility** — SVG root uses `role="group"`, and the extracted timeline title (including multi-line and escaped quotes) replaces the generic `aria-label` ([#315](https://github.com/keroway/obsidian-tdsl/pull/315), [#357](https://github.com/keroway/obsidian-tdsl/pull/357), [#371](https://github.com/keroway/obsidian-tdsl/pull/371), [#377](https://github.com/keroway/obsidian-tdsl/pull/377))
+- **Tooltips** — keyboard focus shows item tooltips, Escape closes them, the pointer can move into the tooltip body, and state/listeners are scoped and released per wrapper ([#344](https://github.com/keroway/obsidian-tdsl/pull/344), [#350](https://github.com/keroway/obsidian-tdsl/pull/350), [#361](https://github.com/keroway/obsidian-tdsl/pull/361), [#365](https://github.com/keroway/obsidian-tdsl/pull/365), [#367](https://github.com/keroway/obsidian-tdsl/pull/367), [#373](https://github.com/keroway/obsidian-tdsl/pull/373))
+- **Pan/zoom** — no `NaN` viewBox for zero-size SVGs, no zoom on `deltaY: 0`, drag state released after pointer-capture loss, and no grab cursor / `touch-action: none` when disabled ([#313](https://github.com/keroway/obsidian-tdsl/pull/313), [#318](https://github.com/keroway/obsidian-tdsl/pull/318), [#329](https://github.com/keroway/obsidian-tdsl/pull/329), [#359](https://github.com/keroway/obsidian-tdsl/pull/359))
+- **Editor** — multi-line strings are highlighted through the closing quote, and `tdsl` blocks inside quotes/callouts are highlighted ([#335](https://github.com/keroway/obsidian-tdsl/pull/335), [#406](https://github.com/keroway/obsidian-tdsl/pull/406))
+- **Settings** — saved settings are validated on load and invalid fields fall back to defaults ([#404](https://github.com/keroway/obsidian-tdsl/pull/404))
+- **Misc** — rendering is aborted for previews destroyed while WASM initialises; the template command puts the fence on its own line when inserting mid-line ([#309](https://github.com/keroway/obsidian-tdsl/pull/309), [#379](https://github.com/keroway/obsidian-tdsl/pull/379))
+
+### Changed
+
+- **Dependencies** — `@keroway/tdsl-wasm` updated to v2 (resolved 2.1.0) ([#323](https://github.com/keroway/obsidian-tdsl/pull/323)); `source-map-js` raised to 1.2.2 for GHSA-68fv-2mgg-jv7q ([#298](https://github.com/keroway/obsidian-tdsl/pull/298))
+
 ## [1.1.0] - 2026-10-04
 
 ### Added
@@ -98,7 +117,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mobile-enabled** — `isDesktopOnly: false` in `manifest.json`, so the plugin is not blocked from running on Obsidian Mobile (not extensively verified on-device; see Unreleased)
 - **CI workflow** — GitHub Actions runs ESLint → `tsc --noEmit` → esbuild → verifies `main.js` is produced on every push and pull request to `main`
 
-[Unreleased]: https://github.com/keroway/obsidian-tdsl/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/keroway/obsidian-tdsl/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/keroway/obsidian-tdsl/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/keroway/obsidian-tdsl/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/keroway/obsidian-tdsl/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/keroway/obsidian-tdsl/releases/tag/v0.1.0
