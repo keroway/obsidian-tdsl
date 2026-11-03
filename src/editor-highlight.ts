@@ -10,6 +10,7 @@ import {
 import { highlightTree, tagHighlighter, tags } from "@lezer/highlight";
 import { listTdslFenceRanges } from "./fence";
 import { tdslLanguage } from "./tdsl-language";
+import { stripFencePrefix } from "./utils";
 
 /**
  * Maps `tdslLanguage`'s `tokenTable` tags (see src/tdsl-language.ts) to CSS
@@ -111,10 +112,12 @@ function highlightBlock(
 	builder: RangeSetBuilder<Decoration>,
 	bodyFrom: number,
 	bodyTo: number,
+	prefix: string,
 	budgetMs: number,
 ): boolean {
 	if (bodyFrom >= bodyTo) return true;
-	const text = sourceView.state.sliceDoc(bodyFrom, bodyTo);
+	const raw = sourceView.state.sliceDoc(bodyFrom, bodyTo);
+	const { text, segments } = stripBodyPrefix(raw, prefix);
 	const blockState = EditorState.create({
 		doc: text,
 		extensions: [tdslLanguage],
@@ -123,13 +126,73 @@ function highlightBlock(
 	if (!tree) return false;
 
 	highlightTree(tree, TDSL_HIGHLIGHTER, (from, to, classes) => {
-		builder.add(
-			bodyFrom + from,
-			bodyFrom + to,
-			Decoration.mark({ class: classes }),
-		);
+		for (const r of mapToSource(segments, from, to)) {
+			builder.add(
+				bodyFrom + r.from,
+				bodyFrom + r.to,
+				Decoration.mark({ class: classes }),
+			);
+		}
 	});
 	return true;
+}
+
+/** One body line: where its stripped text starts in the stripped / raw body. */
+export interface BodySegment {
+	strippedStart: number;
+	rawStart: number;
+	length: number;
+}
+
+/**
+ * Strips the fence's nesting prefix (`> ` of a callout, list indentation) from
+ * every body line and records how each line maps back to the raw text, so a
+ * quoted block is parsed as plain DSL (#405) yet decorations land on the
+ * original document positions.
+ */
+export function stripBodyPrefix(
+	raw: string,
+	prefix: string,
+): { text: string; segments: BodySegment[] } {
+	const segments: BodySegment[] = [];
+	const parts: string[] = [];
+	let rawOffset = 0;
+	let strippedOffset = 0;
+	for (const line of raw.split("\n")) {
+		const stripped = stripFencePrefix(line, prefix);
+		segments.push({
+			strippedStart: strippedOffset,
+			rawStart: rawOffset + (line.length - stripped.length),
+			length: stripped.length,
+		});
+		parts.push(stripped);
+		rawOffset += line.length + 1;
+		strippedOffset += stripped.length + 1;
+	}
+	return { text: parts.join("\n"), segments };
+}
+
+/**
+ * Maps a `[from, to)` range of the stripped text back to raw-body ranges,
+ * split per line so a range that spans lines never covers the prefix.
+ */
+export function mapToSource(
+	segments: readonly BodySegment[],
+	from: number,
+	to: number,
+): { from: number; to: number }[] {
+	const out: { from: number; to: number }[] = [];
+	for (const s of segments) {
+		const a = Math.max(from, s.strippedStart);
+		const b = Math.min(to, s.strippedStart + s.length);
+		if (a < b) {
+			out.push({
+				from: s.rawStart + (a - s.strippedStart),
+				to: s.rawStart + (b - s.strippedStart),
+			});
+		}
+	}
+	return out;
 }
 
 /**
@@ -145,7 +208,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 	for (let i = 1; i <= doc.lines; i++) lines.push(doc.line(i).text);
 
 	const start = performance.now();
-	for (const { openLine, closeLine } of listTdslFenceRanges(lines)) {
+	for (const { openLine, closeLine, prefix } of listTdslFenceRanges(lines)) {
 		const body = fenceBodyLineRange(openLine, closeLine);
 		if (body === null) continue;
 
@@ -158,7 +221,7 @@ function buildDecorations(view: EditorView): DecorationSet {
 
 		const remainingBudget = remainingParseBudgetMs(performance.now() - start);
 		if (remainingBudget <= 0) break;
-		highlightBlock(view, builder, bodyFrom, bodyTo, remainingBudget);
+		highlightBlock(view, builder, bodyFrom, bodyTo, prefix, remainingBudget);
 	}
 
 	return builder.finish();
