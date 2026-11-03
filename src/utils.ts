@@ -704,7 +704,7 @@ export function debounce<Args extends unknown[]>(
  * trailing whitespace (a callout's blank line is a bare `">"`), so this also
  * tries the prefix with trailing spaces/tabs removed before giving up.
  */
-function stripFencePrefix(line: string, prefix: string): string {
+export function stripFencePrefix(line: string, prefix: string): string {
 	if (!prefix) return line;
 	if (line.startsWith(prefix)) return line.slice(prefix.length);
 	const bare = prefix.replace(/[ \t]+$/, "");

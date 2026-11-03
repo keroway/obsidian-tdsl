@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
 	fenceBodyLineRange,
 	intersectsVisibleRanges,
+	mapToSource,
 	remainingParseBudgetMs,
+	stripBodyPrefix,
 	TOTAL_PARSE_BUDGET_MS,
 } from "./editor-highlight";
 
@@ -109,5 +111,40 @@ describe("intersectsVisibleRanges", () => {
 
 	it("可視範囲が空なら不可視と判定する", () => {
 		expect(intersectsVisibleRanges(120, 180, [])).toBe(false);
+	});
+});
+
+describe("stripBodyPrefix / mapToSource（引用内ブロック, #405）", () => {
+	const raw = '> //! theme: dark\n>\n> timeline "T" {}';
+
+	it("接頭辞を外した DSL 本文を返す（ディレクティブが行頭に来る）", () => {
+		const { text } = stripBodyPrefix(raw, "> ");
+		expect(text).toBe('//! theme: dark\n\ntimeline "T" {}');
+		expect(text.startsWith("//!")).toBe(true);
+	});
+
+	it("接頭辞なしなら本文をそのまま返し、位置も恒等", () => {
+		const { text, segments } = stripBodyPrefix("a\nbc", "");
+		expect(text).toBe("a\nbc");
+		expect(mapToSource(segments, 2, 4)).toEqual([{ from: 2, to: 4 }]);
+	});
+
+	it("装飾範囲を元の文書位置へ戻す", () => {
+		const { text, segments } = stripBodyPrefix(raw, "> ");
+		// stripped の "//!" (0..3) は raw の 2..5
+		expect(mapToSource(segments, 0, 3)).toEqual([{ from: 2, to: 5 }]);
+		const strippedAt = text.indexOf("timeline");
+		const rawAt = raw.indexOf("timeline");
+		expect(mapToSource(segments, strippedAt, strippedAt + 8)).toEqual([
+			{ from: rawAt, to: rawAt + 8 },
+		]);
+	});
+
+	it("複数行にまたがる範囲は行ごとに分割し、接頭辞を覆わない", () => {
+		const { segments } = stripBodyPrefix("> ab\n> cd", "> ");
+		expect(mapToSource(segments, 1, 4)).toEqual([
+			{ from: 3, to: 4 },
+			{ from: 7, to: 8 },
+		]);
 	});
 });
