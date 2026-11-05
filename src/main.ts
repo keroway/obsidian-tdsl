@@ -45,7 +45,10 @@ import {
 import { svgToPngBlob } from "./png-export";
 import { renderCacheKey, SvgLruCache } from "./render-cache";
 import { populateRenderOptions } from "./render-options";
-import { resolveStandaloneHtmlRender } from "./standalone-html";
+import {
+	replaceEmbeddedSvg,
+	resolveStandaloneHtmlRender,
+} from "./standalone-html";
 import {
 	applyAccessibilityToHtmlString,
 	applyAccessibilityToSvgString,
@@ -625,19 +628,21 @@ function renderSvg(
 	}
 }
 
-/** Renders a portable document with a fresh WASM options instance. */
+/** Portable document; the HTML API has no `scale`, so swap in a scaled SVG (#340). */
 function renderStandaloneHtml(
 	source: string,
 	r: ReturnType<typeof resolveRenderOptions>,
 ): string {
 	const opts = createRenderOptions(r);
 	let ownedByJs = true;
+	let html: string;
 	try {
 		ownedByJs = false;
-		return render_html_from_source_with_options(source, opts);
+		html = render_html_from_source_with_options(source, opts);
 	} finally {
 		if (ownedByJs) opts.free();
 	}
+	return r.scale > 0 ? replaceEmbeddedSvg(html, renderSvg(source, r)) : html;
 }
 
 /** Populates a newly allocated options instance for one ownership-transferring call. */
