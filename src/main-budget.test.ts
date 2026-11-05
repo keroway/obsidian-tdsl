@@ -86,7 +86,10 @@ import mainSource from "./main.ts?raw";
 // ancestor, so it lives with the Modal lifecycle in main.ts.
 // Raised by 1 (issue #403): the sanitizeSettings import for loadSettings();
 // the validation logic itself lives in utils.ts.
-const MAIN_TS_LINE_BUDGET = 1307;
+// Raised by 5 (issue #340): renderStandaloneHtml() swaps in the scaled SVG, since the
+// WASM HTML API takes no scale. It shares renderSvg()'s JsRenderOptions
+// ownership handling, so it stays in main.ts; the substitution lives in standalone-html.ts.
+const MAIN_TS_LINE_BUDGET = 1312;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
