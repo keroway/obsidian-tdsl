@@ -22,6 +22,19 @@ describe("buildExportStyles", () => {
 		}
 	});
 
+	it("draws now-ended items dashed in export and preview CSS (#410)", () => {
+		const preview = readFileSync("styles.css", "utf8");
+		for (const theme of ["default", "dark"]) {
+			const css = buildExportStyles(theme);
+			expect(css).toContain(".tdsl-item-open-ended .tdsl-span");
+			expect(css).toContain(".tdsl-item-open-ended .tdsl-event-range");
+			expect(css).toContain("stroke-dasharray:4 2");
+		}
+		expect(preview).toContain(".tdsl-item-open-ended .tdsl-span");
+		expect(preview).toContain(".tdsl-item-open-ended .tdsl-event-range");
+		expect(preview).toContain("stroke-dasharray: 4 2");
+	});
+
 	it("differs between dark and other themes", () => {
 		expect(buildExportStyles("dark")).not.toBe(buildExportStyles("default"));
 		expect(buildExportStyles("print")).toBe(buildExportStyles("default"));

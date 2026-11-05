@@ -224,6 +224,13 @@
 	stroke-width: 1;
 	stroke-dasharray: 2 2;
 }
+/* now-ended items: dashed outline (#410). Keep in sync with export-styles.ts. */
+.tdsl-preview .tdsl-item-open-ended .tdsl-span,
+.tdsl-preview .tdsl-item-open-ended .tdsl-event-range {
+	stroke: #fff;
+	stroke-width: 1;
+	stroke-dasharray: 4 2;
+}
 .tdsl-preview .tdsl-event-hit {
 	fill: transparent;
 	cursor: pointer;
