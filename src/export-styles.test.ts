@@ -59,6 +59,24 @@ describe("preview explicit-theme CSS (#397)", () => {
 	});
 });
 
+describe("preview lane variables reach the SVG root (#412)", () => {
+	const css = readFileSync("styles.css", "utf8");
+
+	it("defines lane variables on .tdsl-root for light and dark", () => {
+		const blockFor = (selector: string) => {
+			const start = css.indexOf(`${selector} {`);
+			expect(start).toBeGreaterThan(-1);
+			return css.slice(start, css.indexOf("}", start));
+		};
+		const light = blockFor(".tdsl-preview,\n.tdsl-preview .tdsl-root");
+		const dark = blockFor(
+			".theme-dark .tdsl-preview,\n.theme-dark .tdsl-preview .tdsl-root",
+		);
+		expect(light).toContain("--tdsl-lane-0: #4682b4");
+		expect(dark).toContain("--tdsl-lane-0: #5ba3d8");
+	});
+});
+
 describe("embedExportStyles", () => {
 	it("prepends a <style> carrying the theme palette", () => {
 		const out = embedExportStyles(SVG, "dark");
