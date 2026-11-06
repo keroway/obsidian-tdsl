@@ -77,6 +77,34 @@ describe("preview lane variables reach the SVG root (#412)", () => {
 	});
 });
 
+describe("event label colour follows the theme (#413)", () => {
+	const upstream =
+		'<svg xmlns="http://www.w3.org/2000/svg"><style>.tdsl-event-label{fill:#333}</style><text class="tdsl-event-label">x</text></svg>';
+
+	it("emits a rule that outranks the renderer's later .tdsl-event-label", () => {
+		expect(buildExportStyles("dark")).toContain(
+			"svg .tdsl-event-label{fill:#dadada}",
+		);
+		expect(buildExportStyles("default")).toContain(
+			"svg .tdsl-event-label{fill:#222222}",
+		);
+		// Embedded before the upstream <style>, which therefore comes last.
+		const out = embedExportStyles(upstream, "dark");
+		expect(out.indexOf("svg .tdsl-event-label")).toBeLessThan(
+			out.indexOf(".tdsl-event-label{fill:#333}"),
+		);
+	});
+
+	it("styles the preview for explicit and variable themes", () => {
+		const css = readFileSync("styles.css", "utf8");
+		expect(css).toContain(".tdsl-preview .tdsl-event-label {");
+		expect(css).toContain(
+			'.tdsl-preview[data-tdsl-theme="dark"] .tdsl-event-label',
+		);
+		expect(css).toContain(".tdsl-preview[data-tdsl-theme] .tdsl-event-label");
+	});
+});
+
 describe("embedExportStyles", () => {
 	it("prepends a <style> carrying the theme palette", () => {
 		const out = embedExportStyles(SVG, "dark");

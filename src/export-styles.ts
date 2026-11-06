@@ -52,6 +52,10 @@ export function buildExportStyles(theme: string | undefined): string {
 		`.tdsl-axis-day-text{fill:${p.textFaint}}`,
 		`.tdsl-group-label{fill:${p.textMuted}}`,
 		`.tdsl-lane-label{fill:${p.text}}`,
+		// The renderer's own <style> sets `.tdsl-event-label{fill:#333}` and comes
+		// later in document order, so equal specificity would lose; the `svg`
+		// type selector outranks it (#413).
+		`svg .tdsl-event-label{fill:${p.text}}`,
 		// Drawn on a saturated lane colour, so a literal white in every theme.
 		".tdsl-item-label{fill:#fff;font-size:11px;font-weight:500;pointer-events:none}",
 		// `now`-ended items: dashed outline on the saturated lane colour (#410).
