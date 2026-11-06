@@ -196,6 +196,10 @@
 	font-size: 13px;
 	font-weight: 500;
 }
+/* Beats the renderer's in-SVG `.tdsl-event-label{fill:#333}` by specificity (#413). */
+.tdsl-preview .tdsl-event-label {
+	fill: var(--text-normal);
+}
 .tdsl-preview .tdsl-item-label {
 	fill: #fff;
 	font-size: 11px;
@@ -263,7 +267,8 @@
 .tdsl-preview[data-tdsl-theme] .tdsl-axis-day-text {
 	fill: #8a8d93;
 }
-.tdsl-preview[data-tdsl-theme] .tdsl-lane-label {
+.tdsl-preview[data-tdsl-theme] .tdsl-lane-label,
+.tdsl-preview[data-tdsl-theme] .tdsl-event-label {
 	fill: #222222;
 }
 
@@ -287,7 +292,8 @@
 .tdsl-preview[data-tdsl-theme="dark"] .tdsl-axis-day-text {
 	fill: #7a7a7a;
 }
-.tdsl-preview[data-tdsl-theme="dark"] .tdsl-lane-label {
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-lane-label,
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-event-label {
 	fill: #dadada;
 }
 
