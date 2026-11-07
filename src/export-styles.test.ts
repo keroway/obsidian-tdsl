@@ -77,6 +77,37 @@ describe("preview lane variables reach the SVG root (#412)", () => {
 	});
 });
 
+describe("export lane variables follow the theme (#418)", () => {
+	const css = readFileSync("styles.css", "utf8");
+	const upstream =
+		'<svg xmlns="http://www.w3.org/2000/svg" class="tdsl-root"><style>:where(.tdsl-root){--tdsl-lane-0:#4682B4}</style></svg>';
+
+	it("emits themed --tdsl-lane-N on the root, before the renderer style", () => {
+		expect(buildExportStyles("dark")).toContain(
+			"svg.tdsl-root{--tdsl-lane-0:#5ba3d8;--tdsl-lane-1:#f0983a;",
+		);
+		expect(buildExportStyles("default")).toContain(
+			"svg.tdsl-root{--tdsl-lane-0:#4682b4;--tdsl-lane-1:#e67e22;",
+		);
+		const out = embedExportStyles(upstream, "dark");
+		expect(out.indexOf("--tdsl-lane-0:#5ba3d8")).toBeLessThan(
+			out.indexOf(":where(.tdsl-root)"),
+		);
+	});
+
+	it("matches the preview lane palette in styles.css", () => {
+		for (const theme of ["default", "dark"]) {
+			const vars = [
+				...buildExportStyles(theme).matchAll(/--tdsl-lane-\d:#[0-9a-f]{6}/g),
+			];
+			expect(vars).toHaveLength(8);
+			for (const [v] of vars) {
+				expect(css).toContain(v.replace(":", ": "));
+			}
+		}
+	});
+});
+
 describe("event label colour follows the theme (#413)", () => {
 	const upstream =
 		'<svg xmlns="http://www.w3.org/2000/svg"><style>.tdsl-event-label{fill:#333}</style><text class="tdsl-event-label">x</text></svg>';

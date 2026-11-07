@@ -16,9 +16,21 @@ interface ExportPalette {
 	textMuted: string;
 	textFaint: string;
 	text: string;
+	/** Default lane colours, `--tdsl-lane-0..7` (mirrors styles.css). */
+	lanes: readonly string[];
 }
 
 const LIGHT: ExportPalette = {
+	lanes: [
+		"#4682b4",
+		"#e67e22",
+		"#27ae60",
+		"#8e44ad",
+		"#e74c3c",
+		"#1abc9c",
+		"#f39c12",
+		"#2980b9",
+	],
 	bandEven: "#ffffff",
 	bandOdd: "#f5f6f8",
 	line: "#e3e5e8",
@@ -28,6 +40,16 @@ const LIGHT: ExportPalette = {
 };
 
 const DARK: ExportPalette = {
+	lanes: [
+		"#5ba3d8",
+		"#f0983a",
+		"#3cc174",
+		"#a55cc7",
+		"#f05a4a",
+		"#22d3b6",
+		"#f7b731",
+		"#3a97d4",
+	],
 	bandEven: "#1e1e1e",
 	bandOdd: "#262626",
 	line: "#3f3f3f",
@@ -50,7 +72,11 @@ export function buildEventLabelRule(theme: string | undefined): string {
 export function buildExportStyles(theme: string | undefined): string {
 	const p = theme === "dark" ? DARK : LIGHT;
 	const stroke = (cls: string) => `.${cls}{stroke:${p.line};stroke-width:1}`;
+	const laneVars = p.lanes.map((c, i) => `--tdsl-lane-${i}:${c}`).join(";");
 	return [
+		// The renderer defines these on the root via `:where(.tdsl-root)` (zero
+		// specificity), so this rule wins regardless of order (#418).
+		`svg.tdsl-root{${laneVars}}`,
 		`.tdsl-lane-band-even{fill:${p.bandEven}}`,
 		`.tdsl-lane-band-odd{fill:${p.bandOdd}}`,
 		stroke("tdsl-axis-baseline"),
