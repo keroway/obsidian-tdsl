@@ -11,9 +11,17 @@ export interface CachedRender {
  *
  * A cache hit must be exactly equivalent to a fresh check/render, so this
  * intentionally does not rely on caller object-property order.
+ *
+ * The renderer resolves `now` to the current UTC year, so that year is part of
+ * the key: entries rendered in a previous year are never reused (#420).
  */
-export function renderCacheKey(source: string, r: ResolvedRender): string {
+export function renderCacheKey(
+	source: string,
+	r: ResolvedRender,
+	nowMs: number = Date.now(),
+): string {
 	return JSON.stringify([
+		new Date(nowMs).getUTCFullYear(),
 		source,
 		r.scale,
 		r.fit,
