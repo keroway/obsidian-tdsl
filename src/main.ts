@@ -46,6 +46,7 @@ import { svgToPngBlob } from "./png-export";
 import { renderCacheKey, SvgLruCache } from "./render-cache";
 import { populateRenderOptions } from "./render-options";
 import {
+	embedEventLabelStyle,
 	replaceEmbeddedSvg,
 	resolveStandaloneHtmlRender,
 } from "./standalone-html";
@@ -384,7 +385,10 @@ class TdslPreview extends MarkdownRenderChild {
 				document.body.classList.contains("theme-dark"),
 			);
 			const html = applyAccessibilityToHtmlString(
-				renderStandaloneHtml(this.source, render),
+				embedEventLabelStyle(
+					renderStandaloneHtml(this.source, render),
+					render.theme,
+				),
 				extractTimelineTitle(this.source) ?? "Timeline",
 			);
 			switch (await copyTextToClipboard(html)) {

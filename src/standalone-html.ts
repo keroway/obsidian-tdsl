@@ -1,3 +1,4 @@
+import { buildEventLabelRule } from "./export-styles";
 import type { ResolvedRender } from "./utils";
 
 /**
@@ -15,6 +16,20 @@ export function resolveStandaloneHtmlRender(
 		...render,
 		theme: render.theme ?? (isDark ? "dark" : "default"),
 	};
+}
+
+/**
+ * Appends the theme-aware event-label colour rule to the page's `<head>`
+ * (#416). The HTML API output keeps `.tdsl-event-label{fill:#333}` on a dark
+ * page background otherwise. Returns `html` unchanged when it has no `</head>`.
+ */
+export function embedEventLabelStyle(
+	html: string,
+	theme: string | undefined,
+): string {
+	const at = html.indexOf("</head>");
+	if (at < 0) return html;
+	return `${html.slice(0, at)}<style>${buildEventLabelRule(theme)}</style>${html.slice(at)}`;
 }
 
 /**

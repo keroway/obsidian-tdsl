@@ -36,6 +36,16 @@ const DARK: ExportPalette = {
 	text: "#dadada",
 };
 
+/**
+ * The event-label colour rule alone, for the standalone HTML page whose own
+ * template already themes everything else (#416). The `svg` type selector
+ * outranks the renderer's later `.tdsl-event-label{fill:#333}` (#413).
+ */
+export function buildEventLabelRule(theme: string | undefined): string {
+	const p = theme === "dark" ? DARK : LIGHT;
+	return `svg .tdsl-event-label{fill:${p.text}}`;
+}
+
 /** Builds the CSS text for a concrete (non-`auto`) renderer theme. */
 export function buildExportStyles(theme: string | undefined): string {
 	const p = theme === "dark" ? DARK : LIGHT;
