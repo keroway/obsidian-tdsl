@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	embedEventLabelStyle,
 	replaceEmbeddedSvg,
 	resolveStandaloneHtmlRender,
 } from "./standalone-html";
@@ -34,6 +35,25 @@ describe("resolveStandaloneHtmlRender", () => {
 			resolveStandaloneHtmlRender({ ...autoThemeRender, theme: "pastel" }, true)
 				.theme,
 		).toBe("pastel");
+	});
+});
+
+describe("embedEventLabelStyle", () => {
+	const html = "<html><head><style>.a{}</style></head><body></body></html>";
+
+	it("adds the dark event-label rule inside the head", () => {
+		const out = embedEventLabelStyle(html, "dark");
+		expect(out).toContain(
+			"<style>svg .tdsl-event-label{fill:#dadada}</style></head>",
+		);
+	});
+
+	it("uses the light colour for non-dark themes", () => {
+		expect(embedEventLabelStyle(html, "default")).toContain("fill:#222222");
+	});
+
+	it("returns the document unchanged without a head", () => {
+		expect(embedEventLabelStyle("<p>x</p>", "dark")).toBe("<p>x</p>");
 	});
 });
 

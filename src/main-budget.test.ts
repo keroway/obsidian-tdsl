@@ -89,7 +89,10 @@ import mainSource from "./main.ts?raw";
 // Raised by 5 (issue #340): renderStandaloneHtml() swaps in the scaled SVG, since the
 // WASM HTML API takes no scale. It shares renderSvg()'s JsRenderOptions
 // ownership handling, so it stays in main.ts; the substitution lives in standalone-html.ts.
-const MAIN_TS_LINE_BUDGET = 1312;
+// Raised by 5 (issue #416): copyStandaloneHtml() routes the HTML through
+// embedEventLabelStyle(). The rule lives in standalone-html.ts / export-styles.ts;
+// what remains is the import and the call site that supplies the resolved theme.
+const MAIN_TS_LINE_BUDGET = 1317;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;
