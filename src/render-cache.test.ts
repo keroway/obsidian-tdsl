@@ -69,6 +69,17 @@ describe("renderCacheKey", () => {
 		}
 	});
 
+	it("changes when the UTC year changes (now resolves to the current year)", () => {
+		const lastMoment = Date.UTC(2026, 11, 31, 23, 59, 59);
+		const firstMoment = Date.UTC(2027, 0, 1);
+		expect(renderCacheKey("timeline {}", resolved, lastMoment)).not.toBe(
+			renderCacheKey("timeline {}", resolved, firstMoment),
+		);
+		expect(renderCacheKey("timeline {}", resolved, lastMoment)).toBe(
+			renderCacheKey("timeline {}", resolved, Date.UTC(2026, 0, 1)),
+		);
+	});
+
 	it("distinguishes unset and explicit renderer options", () => {
 		expect(renderCacheKey("timeline {}", resolved)).not.toBe(
 			renderCacheKey("timeline {}", { ...resolved, theme: "default" }),
