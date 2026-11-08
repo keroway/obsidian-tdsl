@@ -43,9 +43,17 @@ describe("embedEventLabelStyle", () => {
 
 	it("adds the dark event-label rule inside the head", () => {
 		const out = embedEventLabelStyle(html, "dark");
-		expect(out).toContain(
-			"<style>svg .tdsl-event-label{fill:#dadada}</style></head>",
-		);
+		expect(out).toContain("svg .tdsl-event-label{fill:#dadada}</style></head>");
+	});
+
+	it("adds the dark lane colour variables for the dark theme (#428)", () => {
+		const out = embedEventLabelStyle(html, "dark");
+		expect(out).toContain("svg.tdsl-root{--tdsl-lane-0:#5ba3d8;");
+	});
+
+	it("adds the light lane colour variables for non-dark themes (#428)", () => {
+		const out = embedEventLabelStyle(html, "default");
+		expect(out).toContain("svg.tdsl-root{--tdsl-lane-0:#4682b4;");
 	});
 
 	it("uses the light colour for non-dark themes", () => {

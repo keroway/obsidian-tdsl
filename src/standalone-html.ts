@@ -1,4 +1,4 @@
-import { buildEventLabelRule } from "./export-styles";
+import { buildEventLabelRule, buildLaneVarsRule } from "./export-styles";
 import type { ResolvedRender } from "./utils";
 
 /**
@@ -19,9 +19,10 @@ export function resolveStandaloneHtmlRender(
 }
 
 /**
- * Appends the theme-aware event-label colour rule to the page's `<head>`
- * (#416). The HTML API output keeps `.tdsl-event-label{fill:#333}` on a dark
- * page background otherwise. Returns `html` unchanged when it has no `</head>`.
+ * Appends the theme-aware event-label colour rule (#416) and lane colour
+ * variables (#428) to the page's `<head>`. The HTML API output keeps
+ * `.tdsl-event-label{fill:#333}` and light lane colours on a dark page
+ * otherwise. Returns `html` unchanged when it has no `</head>`.
  */
 export function embedEventLabelStyle(
 	html: string,
@@ -29,7 +30,8 @@ export function embedEventLabelStyle(
 ): string {
 	const at = html.indexOf("</head>");
 	if (at < 0) return html;
-	return `${html.slice(0, at)}<style>${buildEventLabelRule(theme)}</style>${html.slice(at)}`;
+	const css = `${buildLaneVarsRule(theme)}\n${buildEventLabelRule(theme)}`;
+	return `${html.slice(0, at)}<style>${css}</style>${html.slice(at)}`;
 }
 
 /**
