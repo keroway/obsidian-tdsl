@@ -641,6 +641,49 @@ describe("extractTimelineTitle", () => {
 	it("does not treat an identifier ending in timeline as the keyword (#423)", () => {
 		expect(extractTimelineTitle('mytimeline "No"')).toBeNull();
 	});
+
+	describe("title property (#427)", () => {
+		it("prefers the title property over the declaration name", () => {
+			const source =
+				'timeline "Internal" { title "Visible"; unit year; range 2000..2030; }';
+			expect(extractTimelineTitle(source)).toBe("Visible");
+		});
+
+		it("falls back to the declaration name when there is no title property", () => {
+			expect(extractTimelineTitle('timeline "Internal" { unit year; }')).toBe(
+				"Internal",
+			);
+		});
+
+		it("ignores title text inside comments and strings", () => {
+			const source = [
+				'timeline "Internal" {',
+				'  // title "LineComment";',
+				'  /* title "BlockComment"; */',
+				"  unit year;",
+				'  span a 2000..2001 "title \\"InString\\"" {};',
+				"}",
+			].join("\n");
+			expect(extractTimelineTitle(source)).toBe("Internal");
+		});
+
+		it("ignores a title that is nested deeper than the timeline body", () => {
+			const source =
+				'timeline "Internal" { unit year; lane "A" as a {} span a 1..2 "X" { title "Nested"; }; }';
+			expect(extractTimelineTitle(source)).toBe("Internal");
+		});
+
+		it("unescapes and collapses whitespace in the title property", () => {
+			const source = 'timeline "Internal" { title "A  \\"B\\"\nC"; }';
+			expect(extractTimelineTitle(source)).toBe('A "B" C');
+		});
+
+		it("falls back when the title property is blank", () => {
+			expect(extractTimelineTitle('timeline "Internal" { title "  "; }')).toBe(
+				"Internal",
+			);
+		});
+	});
 });
 
 // ----------------------------------------------------------------------------
