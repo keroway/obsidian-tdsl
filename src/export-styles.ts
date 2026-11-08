@@ -68,15 +68,23 @@ export function buildEventLabelRule(theme: string | undefined): string {
 	return `svg .tdsl-event-label{fill:${p.text}}`;
 }
 
+/**
+ * Lane colour variables for the SVG root. The renderer defines them via
+ * `:where(.tdsl-root)` (zero specificity), so this rule wins regardless of
+ * order (#418). Shared by SVG/PNG exports and the standalone HTML page (#428).
+ */
+export function buildLaneVarsRule(theme: string | undefined): string {
+	const p = theme === "dark" ? DARK : LIGHT;
+	const laneVars = p.lanes.map((c, i) => `--tdsl-lane-${i}:${c}`).join(";");
+	return `svg.tdsl-root{${laneVars}}`;
+}
+
 /** Builds the CSS text for a concrete (non-`auto`) renderer theme. */
 export function buildExportStyles(theme: string | undefined): string {
 	const p = theme === "dark" ? DARK : LIGHT;
 	const stroke = (cls: string) => `.${cls}{stroke:${p.line};stroke-width:1}`;
-	const laneVars = p.lanes.map((c, i) => `--tdsl-lane-${i}:${c}`).join(";");
 	return [
-		// The renderer defines these on the root via `:where(.tdsl-root)` (zero
-		// specificity), so this rule wins regardless of order (#418).
-		`svg.tdsl-root{${laneVars}}`,
+		buildLaneVarsRule(theme),
 		`.tdsl-lane-band-even{fill:${p.bandEven}}`,
 		`.tdsl-lane-band-odd{fill:${p.bandOdd}}`,
 		stroke("tdsl-axis-baseline"),
