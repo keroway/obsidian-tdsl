@@ -401,11 +401,46 @@ export function extractTimelineTitle(source: string): string | null {
 	);
 	const decl = /(?<![\w$])timeline\s+"/.exec(blanked);
 	if (!decl) return null;
+	const live = stripBlockComments(source);
 	const re = /timeline\s+"((?:[^"\\]|\\[\s\S])*)"/y;
 	re.lastIndex = decl.index;
-	const m = re.exec(stripBlockComments(source));
+	const m = re.exec(live);
 	if (!m) return null;
-	const title = m[1]
+	const declared = normalizeTitle(m[1]);
+
+	// 宣言直後の `{ ... }` 本体の直下（深さ1）にある `title "..."` プロパティは、
+	// レンダラーがページタイトル・表示名に使う値なので宣言名より優先する（#427）。
+	// 空白化済みの `blanked` で深さと位置を求め、文字列が残る `live` から読む。
+	const open = blanked.indexOf("{", decl.index + m[0].length);
+	if (
+		open !== -1 &&
+		/^\s*$/.test(blanked.slice(decl.index + m[0].length, open))
+	) {
+		const prop = /(?<![\w$])title\s+"/y;
+		let depth = 0;
+		for (let i = open; i < blanked.length; i++) {
+			const c = blanked[i];
+			if (c === "{") depth++;
+			else if (c === "}") {
+				depth--;
+				if (depth === 0) break;
+			} else if (depth === 1 && c === "t") {
+				prop.lastIndex = i;
+				if (prop.test(blanked)) {
+					const pm = /title\s+"((?:[^"\\]|\\[\s\S])*)"/y;
+					pm.lastIndex = i;
+					const pt = pm.exec(live);
+					const value = pt ? normalizeTitle(pt[1]) : null;
+					if (value) return value;
+				}
+			}
+		}
+	}
+	return declared;
+}
+
+function normalizeTitle(raw: string): string | null {
+	const title = raw
 		.replace(/\\(["\\])/g, "$1")
 		.replace(/\s+/g, " ")
 		.trim();
