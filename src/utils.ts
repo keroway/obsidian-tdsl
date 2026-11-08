@@ -392,9 +392,18 @@ export function extractTimelineTitle(source: string): string | null {
 	// `\"` を閉じ引用符と取り違えない（#370）。
 	// WASM は実改行を含む複数行タイトルも受理するので改行も本体に含め（#376）、
 	// アクセシビリティ名向けに連続する空白・改行は1個のスペースへ畳む。
-	const m = stripBlockComments(source).match(
-		/^\s*timeline\s+"((?:[^"\\]|\\[\s\S])*)"/m,
+	// 行頭に限らず（同一行の `import wikidata {} timeline "..."` も受理される）、
+	// 文字列・行コメント・ブロックコメントの外にある宣言だけを対象にする。
+	// 文字列とブロックコメントを空白化しても文字数は変わらないので、空白化した
+	// 側で見つけた位置を、文字列が残っている側へそのまま持ち込める。
+	const blanked = stripBlockComments(source, true).replace(/\/\/[^\n]*/g, (s) =>
+		" ".repeat(s.length),
 	);
+	const decl = /(?<![\w$])timeline\s+"/.exec(blanked);
+	if (!decl) return null;
+	const re = /timeline\s+"((?:[^"\\]|\\[\s\S])*)"/y;
+	re.lastIndex = decl.index;
+	const m = re.exec(stripBlockComments(source));
 	if (!m) return null;
 	const title = m[1]
 		.replace(/\\(["\\])/g, "$1")

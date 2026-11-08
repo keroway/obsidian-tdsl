@@ -621,6 +621,26 @@ describe("extractTimelineTitle", () => {
 		].join("\n");
 		expect(extractTimelineTitle(source)).toBe("Real title");
 	});
+
+	it("extracts the title after an import declaration on the same line (#423)", () => {
+		expect(
+			extractTimelineTitle(
+				'import wikidata {} timeline "Actual title" { unit year; range 1..10; }',
+			),
+		).toBe("Actual title");
+	});
+
+	it("ignores timeline declarations inside strings and line comments (#423)", () => {
+		const source = [
+			'// timeline "Line comment"',
+			'import wikidata { q "x timeline \\"Fake\\" y" } timeline "Real" { }',
+		].join("\n");
+		expect(extractTimelineTitle(source)).toBe("Real");
+	});
+
+	it("does not treat an identifier ending in timeline as the keyword (#423)", () => {
+		expect(extractTimelineTitle('mytimeline "No"')).toBeNull();
+	});
 });
 
 // ----------------------------------------------------------------------------
