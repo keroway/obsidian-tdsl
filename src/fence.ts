@@ -303,12 +303,7 @@ export function findTdslFenceAtCursor(
 	lines: readonly string[],
 	cursorLine: number,
 ): TdslFenceResult {
-	for (let i = 0; i < lines.length; i++) {
-		const open = parseOpenFence(lines, i);
-		if (!open) continue;
-
-		const { closeLine, end } = findClose(lines, i, open);
-
+	for (const { openLine: i, open, closeLine, end } of scanFences(lines)) {
 		// Only the body lines of a tdsl block count — neither the fence markers
 		// themselves nor another language's block do.
 		const cursorInBody =
@@ -322,13 +317,65 @@ export function findTdslFenceAtCursor(
 						range: { openLine: i, closeLine, prefix: open.prefix },
 					};
 		}
-
-		// An unclosed block runs to the end of its container; resume scanning
-		// after it (at the document end this finishes the loop).
-		i = end - 1;
 	}
 
 	return { status: "not-in-block" };
+}
+
+interface ScannedFence {
+	openLine: number;
+	open: Fence;
+	closeLine: number;
+	end: number;
+}
+
+/**
+ * Updates the "inside an HTML comment" state across one non-fence line. A
+ * comment opens at `<!--` and closes at the next `-->`, possibly on a later
+ * line. Inline code spans are blanked first so a literal `` `<!--` `` in prose
+ * does not hide the rest of the document.
+ */
+function advanceCommentState(line: string, inComment: boolean): boolean {
+	let rest = line.replace(/(`+)[^`]*?\1/g, (m) => " ".repeat(m.length));
+	let state = inComment;
+	for (;;) {
+		if (state) {
+			const close = rest.indexOf("-->");
+			if (close === -1) return true;
+			rest = rest.slice(close + 3);
+			state = false;
+		} else {
+			const open = rest.indexOf("<!--");
+			if (open === -1) return false;
+			rest = rest.slice(open + 4);
+			state = true;
+		}
+	}
+}
+
+/**
+ * Yields every fenced code block outside HTML comments, in document order.
+ * A fence marker inside a `<!-- ... -->` comment is hidden text, not a code
+ * block, so it is skipped (#434). Comment markers inside a fence body are
+ * literal code and never reach `advanceCommentState`.
+ */
+function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
+	let inComment = false;
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i] ?? "";
+		if (!inComment) {
+			const open = parseOpenFence(lines, i);
+			if (open) {
+				const { closeLine, end } = findClose(lines, i, open);
+				yield { openLine: i, open, closeLine, end };
+				// An unclosed block runs to the end of its container; resume
+				// scanning after it.
+				i = end - 1;
+				continue;
+			}
+		}
+		inComment = advanceCommentState(line, inComment);
+	}
 }
 
 /**
@@ -347,15 +394,9 @@ export function listTdslFenceRanges(
 ): TdslFenceRange[] {
 	const ranges: TdslFenceRange[] = [];
 
-	for (let i = 0; i < lines.length; i++) {
-		const open = parseOpenFence(lines, i);
-		if (!open) continue;
-
-		const { closeLine, end } = findClose(lines, i, open);
-
+	for (const { openLine, open, closeLine } of scanFences(lines)) {
 		if (closeLine !== -1 && isTdsl(open))
-			ranges.push({ openLine: i, closeLine, prefix: open.prefix });
-		i = end - 1;
+			ranges.push({ openLine, closeLine, prefix: open.prefix });
 	}
 
 	return ranges;

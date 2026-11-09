@@ -666,3 +666,49 @@ describe("tab and space indentation are compared by columns (#347)", () => {
 		expect(listTdslFenceRanges(mixed)).toHaveLength(1);
 	});
 });
+
+describe("fence inside an HTML comment is not a code block (#434)", () => {
+	const commented = [
+		"<!--",
+		"```tdsl",
+		'timeline "Hidden" { unit year; range 0..10; }',
+		"```",
+		"-->",
+	];
+
+	it("does not detect a commented-out fence at the cursor", () => {
+		expect(findTdslFenceAtCursor(commented, 2)).toEqual({
+			status: "not-in-block",
+		});
+		expect(listTdslFenceRanges(commented)).toEqual([]);
+	});
+
+	it("handles a single-line comment and a comment closing mid-line", () => {
+		expect(
+			listTdslFenceRanges(["<!-- note -->", "```tdsl", "x", "```"]),
+		).toEqual([{ openLine: 1, closeLine: 3, prefix: "" }]);
+		expect(
+			listTdslFenceRanges(["<!-- a", "```tdsl", "```", "--> text"]),
+		).toEqual([]);
+	});
+
+	it("detects a normal fence after the comment closes", () => {
+		const lines = [...commented, "", "```tdsl", "timeline {};", "```"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 6, closeLine: 8, prefix: "" },
+		]);
+		expect(findTdslFenceAtCursor(lines, 7).status).toBe("found");
+	});
+
+	it("keeps a comment marker inside a code fence body literal", () => {
+		const lines = ["```js", "<!--", "```", "```tdsl", "timeline {};", "```"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 3, closeLine: 5, prefix: "" },
+		]);
+	});
+
+	it("ignores a comment marker inside an inline code span", () => {
+		const lines = ["use `<!--` to comment", "```tdsl", "x", "```"];
+		expect(listTdslFenceRanges(lines)).toHaveLength(1);
+	});
+});
