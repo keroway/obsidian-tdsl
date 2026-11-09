@@ -546,6 +546,33 @@
 	--tdsl-lane-7: #3a97d4;
 }
 
+/* 明示的な default / dark テーマ (#437)。画面モード (.theme-dark) ではなく
+ * data-tdsl-theme を優先し、エクスポートと同じ配色にする。auto は上のルールで
+ * 画面モードへ追従する。.theme-dark ブロックより後ろに置き、同詳細度で勝たせる。 */
+.tdsl-preview[data-tdsl-theme="default"],
+.tdsl-preview[data-tdsl-theme="default"] .tdsl-root {
+	--tdsl-lane-0: #4682b4;
+	--tdsl-lane-1: #e67e22;
+	--tdsl-lane-2: #27ae60;
+	--tdsl-lane-3: #8e44ad;
+	--tdsl-lane-4: #e74c3c;
+	--tdsl-lane-5: #1abc9c;
+	--tdsl-lane-6: #f39c12;
+	--tdsl-lane-7: #2980b9;
+}
+
+.tdsl-preview[data-tdsl-theme="dark"],
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-root {
+	--tdsl-lane-0: #5ba3d8;
+	--tdsl-lane-1: #f0983a;
+	--tdsl-lane-2: #3cc174;
+	--tdsl-lane-3: #a55cc7;
+	--tdsl-lane-4: #f05a4a;
+	--tdsl-lane-5: #22d3b6;
+	--tdsl-lane-6: #f7b731;
+	--tdsl-lane-7: #3a97d4;
+}
+
 /* pastel / print lanes (#433). Later than the .theme-dark block so an explicit
  * theme wins over the Obsidian colour scheme at equal specificity. */
 .tdsl-preview[data-tdsl-theme="pastel"],
