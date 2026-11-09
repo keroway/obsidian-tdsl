@@ -58,13 +58,66 @@ const DARK: ExportPalette = {
 	text: "#dadada",
 };
 
+/** Soft, low-saturation lanes on warm paper-like bands (#433). */
+const PASTEL: ExportPalette = {
+	lanes: [
+		"#6f9fc8",
+		"#e0985a",
+		"#6fb98a",
+		"#a583bd",
+		"#df7f78",
+		"#68bfae",
+		"#d9ab55",
+		"#6f8fc2",
+	],
+	bandEven: "#fffaf3",
+	bandOdd: "#f7efe4",
+	line: "#e6dccd",
+	textMuted: "#6b6258",
+	textFaint: "#968c80",
+	text: "#3a342d",
+};
+
+/** Dark, high-contrast lanes on pure white with black ink for paper (#433). */
+const PRINT: ExportPalette = {
+	lanes: [
+		"#1f4e79",
+		"#a14a00",
+		"#1b6b3a",
+		"#5b2c83",
+		"#9b1c1c",
+		"#0f6b5c",
+		"#7a5500",
+		"#17407a",
+	],
+	bandEven: "#ffffff",
+	bandOdd: "#ffffff",
+	line: "#9a9a9a",
+	textMuted: "#333333",
+	textFaint: "#555555",
+	text: "#000000",
+};
+
+function paletteFor(theme: string | undefined): ExportPalette {
+	switch (theme) {
+		case "dark":
+			return DARK;
+		case "pastel":
+			return PASTEL;
+		case "print":
+			return PRINT;
+		default:
+			return LIGHT;
+	}
+}
+
 /**
  * The event-label colour rule alone, for the standalone HTML page whose own
  * template already themes everything else (#416). The `svg` type selector
  * outranks the renderer's later `.tdsl-event-label{fill:#333}` (#413).
  */
 export function buildEventLabelRule(theme: string | undefined): string {
-	const p = theme === "dark" ? DARK : LIGHT;
+	const p = paletteFor(theme);
 	return `svg .tdsl-event-label{fill:${p.text}}`;
 }
 
@@ -74,14 +127,14 @@ export function buildEventLabelRule(theme: string | undefined): string {
  * order (#418). Shared by SVG/PNG exports and the standalone HTML page (#428).
  */
 export function buildLaneVarsRule(theme: string | undefined): string {
-	const p = theme === "dark" ? DARK : LIGHT;
+	const p = paletteFor(theme);
 	const laneVars = p.lanes.map((c, i) => `--tdsl-lane-${i}:${c}`).join(";");
 	return `svg.tdsl-root{${laneVars}}`;
 }
 
 /** Builds the CSS text for a concrete (non-`auto`) renderer theme. */
 export function buildExportStyles(theme: string | undefined): string {
-	const p = theme === "dark" ? DARK : LIGHT;
+	const p = paletteFor(theme);
 	const stroke = (cls: string) => `.${cls}{stroke:${p.line};stroke-width:1}`;
 	return [
 		buildLaneVarsRule(theme),
