@@ -678,6 +678,17 @@ describe("extractTimelineTitle", () => {
 			expect(extractTimelineTitle(source)).toBe('A "B" C');
 		});
 
+		it("uses the last title property when several are given (#431)", () => {
+			const source =
+				'timeline "Internal" { title "First"; title "Last"; unit year; }';
+			expect(extractTimelineTitle(source)).toBe("Last");
+		});
+
+		it("keeps the previous title when the last one is blank", () => {
+			const source = 'timeline "Internal" { title "First"; title "  "; }';
+			expect(extractTimelineTitle(source)).toBe("First");
+		});
+
 		it("falls back when the title property is blank", () => {
 			expect(extractTimelineTitle('timeline "Internal" { title "  "; }')).toBe(
 				"Internal",

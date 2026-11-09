@@ -418,6 +418,7 @@ export function extractTimelineTitle(source: string): string | null {
 	) {
 		const prop = /(?<![\w$])title\s+"/y;
 		let depth = 0;
+		let last: string | null = null;
 		for (let i = open; i < blanked.length; i++) {
 			const c = blanked[i];
 			if (c === "{") depth++;
@@ -431,10 +432,12 @@ export function extractTimelineTitle(source: string): string | null {
 					pm.lastIndex = i;
 					const pt = pm.exec(live);
 					const value = pt ? normalizeTitle(pt[1]) : null;
-					if (value) return value;
+					// 複数指定ではレンダラーが最後の指定を採用するので走査を続ける（#431）。
+					if (value) last = value;
 				}
 			}
 		}
+		if (last) return last;
 	}
 	return declared;
 }
