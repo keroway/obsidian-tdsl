@@ -103,6 +103,39 @@ describe("preview lane variables reach the SVG root (#412)", () => {
 	});
 });
 
+describe("explicit theme lanes beat the Obsidian colour scheme (#437)", () => {
+	const css = readFileSync("styles.css", "utf8");
+	const laneOf = (scheme: string, theme: string): string => {
+		document.head.innerHTML = "";
+		const style = document.createElement("style");
+		style.textContent = css;
+		document.head.appendChild(style);
+		document.body.className = scheme;
+		document.body.innerHTML = `<div class="tdsl-preview" data-tdsl-theme="${theme}"><svg class="tdsl-root"></svg></div>`;
+		const svg = document.querySelector("svg.tdsl-root");
+		if (!svg) throw new Error("svg not found");
+		return getComputedStyle(svg).getPropertyValue("--tdsl-lane-0").trim();
+	};
+
+	it.each([
+		["theme-light", "dark", "#5ba3d8"],
+		["theme-dark", "default", "#4682b4"],
+		["theme-dark", "dark", "#5ba3d8"],
+		["theme-light", "default", "#4682b4"],
+	])("%s + %s => %s", (scheme, theme, expected) => {
+		expect(laneOf(scheme, theme)).toBe(expected);
+		const exported = buildExportStyles(theme).match(
+			/--tdsl-lane-0:(#[0-9a-f]{6})/,
+		);
+		expect(exported?.[1]).toBe(expected);
+	});
+
+	it("auto still follows the colour scheme", () => {
+		expect(laneOf("theme-dark", "auto")).toBe("#5ba3d8");
+		expect(laneOf("theme-light", "auto")).toBe("#4682b4");
+	});
+});
+
 describe("export lane variables follow the theme (#418)", () => {
 	const css = readFileSync("styles.css", "utf8");
 	const upstream =
