@@ -297,6 +297,55 @@
 	fill: #dadada;
 }
 
+/* pastel / print (#433). Keep in sync with export-styles.ts. */
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-lane-band-even {
+	fill: #fffaf3;
+}
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-lane-band-odd {
+	fill: #f7efe4;
+}
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-axis-baseline,
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-axis-tick,
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-axis-month-tick,
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-group-separator,
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-event-stem {
+	stroke: #e6dccd;
+}
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-axis-text,
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-group-label {
+	fill: #6b6258;
+}
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-axis-day-text {
+	fill: #968c80;
+}
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-lane-label,
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-event-label {
+	fill: #3a342d;
+}
+
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-lane-band-even,
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-lane-band-odd {
+	fill: #ffffff;
+}
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-axis-baseline,
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-axis-tick,
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-axis-month-tick,
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-group-separator,
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-event-stem {
+	stroke: #9a9a9a;
+}
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-axis-text,
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-group-label {
+	fill: #333333;
+}
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-axis-day-text {
+	fill: #555555;
+}
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-lane-label,
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-event-label {
+	fill: #000000;
+}
+
 /* ── Forced colours (Windows high contrast) ──
  *
  * The lane palette is the only thing distinguishing one item from another, and
@@ -495,6 +544,32 @@
 	--tdsl-lane-5: #22d3b6;
 	--tdsl-lane-6: #f7b731;
 	--tdsl-lane-7: #3a97d4;
+}
+
+/* pastel / print lanes (#433). Later than the .theme-dark block so an explicit
+ * theme wins over the Obsidian colour scheme at equal specificity. */
+.tdsl-preview[data-tdsl-theme="pastel"],
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-root {
+	--tdsl-lane-0: #6f9fc8;
+	--tdsl-lane-1: #e0985a;
+	--tdsl-lane-2: #6fb98a;
+	--tdsl-lane-3: #a583bd;
+	--tdsl-lane-4: #df7f78;
+	--tdsl-lane-5: #68bfae;
+	--tdsl-lane-6: #d9ab55;
+	--tdsl-lane-7: #6f8fc2;
+}
+
+.tdsl-preview[data-tdsl-theme="print"],
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-root {
+	--tdsl-lane-0: #1f4e79;
+	--tdsl-lane-1: #a14a00;
+	--tdsl-lane-2: #1b6b3a;
+	--tdsl-lane-3: #5b2c83;
+	--tdsl-lane-4: #9b1c1c;
+	--tdsl-lane-5: #0f6b5c;
+	--tdsl-lane-6: #7a5500;
+	--tdsl-lane-7: #17407a;
 }
 
 /* ── Print / PDF export ──

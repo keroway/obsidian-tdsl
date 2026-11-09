@@ -37,8 +37,34 @@ describe("buildExportStyles", () => {
 
 	it("differs between dark and other themes", () => {
 		expect(buildExportStyles("dark")).not.toBe(buildExportStyles("default"));
-		expect(buildExportStyles("print")).toBe(buildExportStyles("default"));
 		expect(buildExportStyles(undefined)).toBe(buildExportStyles("default"));
+	});
+
+	it("gives print and pastel their own palettes (#433)", () => {
+		const styles = ["default", "dark", "print", "pastel"].map((t) =>
+			buildExportStyles(t),
+		);
+		expect(new Set(styles).size).toBe(4);
+	});
+
+	it("embeds distinct SVG for print / pastel / default (#433)", () => {
+		const svg = '<svg xmlns="http://www.w3.org/2000/svg"><g/></svg>';
+		const out = ["default", "print", "pastel"].map((t) =>
+			embedExportStyles(svg, t),
+		);
+		expect(new Set(out).size).toBe(3);
+	});
+
+	it("mirrors print / pastel palettes in the preview CSS (#433)", () => {
+		const css = readFileSync("styles.css", "utf8");
+		for (const theme of ["print", "pastel"]) {
+			const block = css.slice(css.indexOf(`[data-tdsl-theme="${theme}"]`));
+			for (const hex of [
+				...buildExportStyles(theme).matchAll(/#[0-9a-f]{6}\b/g),
+			]) {
+				expect(block).toContain(hex[0]);
+			}
+		}
 	});
 });
 
