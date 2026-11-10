@@ -224,6 +224,40 @@ describe("event label colour follows the theme (#413)", () => {
 	});
 });
 
+describe("axis day label colour beats the renderer's own CSS (#450)", () => {
+	const source =
+		'timeline "T" { unit day; range 2026-01-01..2026-02-05; } lane "A" as a {} span a 2026-01-01..2026-01-02 "X" {};';
+
+	const cases = [
+		["default", "#8a8d93"],
+		["dark", "#7a7a7a"],
+		["print", "#555555"],
+		["pastel", "#968c80"],
+	] as const;
+
+	it.each(cases)(
+		"%s theme paints day labels %s in real WASM output",
+		async (theme, color) => {
+			const wasm = await import("@keroway/tdsl-wasm");
+			wasm.initSync({
+				module: readFileSync(
+					"node_modules/@keroway/tdsl-wasm/tdsl_wasm_bg.wasm",
+				),
+			});
+			const opts = new wasm.JsRenderOptions();
+			opts.theme = theme;
+			const svg = wasm.render_svg_from_source_with_options(source, 36525, opts);
+			const out = embedExportStyles(svg, theme);
+			const doc = new DOMParser().parseFromString(out, "image/svg+xml");
+			document.body.appendChild(document.adoptNode(doc.documentElement));
+			const label = document.querySelector(".tdsl-axis-day-text");
+			expect(label).not.toBeNull();
+			expect(getComputedStyle(label as Element).fill).toBe(color);
+			document.body.replaceChildren();
+		},
+	);
+});
+
 describe("embedExportStyles", () => {
 	it("prepends a <style> carrying the theme palette", () => {
 		const out = embedExportStyles(SVG, "dark");
