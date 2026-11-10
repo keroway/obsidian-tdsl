@@ -206,6 +206,10 @@
 	font-weight: 500;
 	pointer-events: none;
 }
+/* Labels outside a short bar sit on the lane band, not the lane colour (#439). */
+.tdsl-preview .tdsl-item-label.tdsl-item-label-external {
+	fill: var(--text-normal);
+}
 .tdsl-preview .tdsl-group-label {
 	fill: var(--text-muted);
 }
@@ -268,7 +272,8 @@
 	fill: #8a8d93;
 }
 .tdsl-preview[data-tdsl-theme] .tdsl-lane-label,
-.tdsl-preview[data-tdsl-theme] .tdsl-event-label {
+.tdsl-preview[data-tdsl-theme] .tdsl-event-label,
+.tdsl-preview[data-tdsl-theme] .tdsl-item-label-external {
 	fill: #222222;
 }
 
@@ -293,7 +298,8 @@
 	fill: #7a7a7a;
 }
 .tdsl-preview[data-tdsl-theme="dark"] .tdsl-lane-label,
-.tdsl-preview[data-tdsl-theme="dark"] .tdsl-event-label {
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-event-label,
+.tdsl-preview[data-tdsl-theme="dark"] .tdsl-item-label-external {
 	fill: #dadada;
 }
 
@@ -319,7 +325,8 @@
 	fill: #968c80;
 }
 .tdsl-preview[data-tdsl-theme="pastel"] .tdsl-lane-label,
-.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-event-label {
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-event-label,
+.tdsl-preview[data-tdsl-theme="pastel"] .tdsl-item-label-external {
 	fill: #3a342d;
 }
 
@@ -342,7 +349,8 @@
 	fill: #555555;
 }
 .tdsl-preview[data-tdsl-theme="print"] .tdsl-lane-label,
-.tdsl-preview[data-tdsl-theme="print"] .tdsl-event-label {
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-event-label,
+.tdsl-preview[data-tdsl-theme="print"] .tdsl-item-label-external {
 	fill: #000000;
 }
 
