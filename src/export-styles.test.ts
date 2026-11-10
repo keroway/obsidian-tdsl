@@ -278,3 +278,38 @@ describe("embedExportStyles", () => {
 		expect(embedExportStyles("<svg", "dark")).toBe("<svg");
 	});
 });
+
+describe("data table colours follow the theme (#449)", () => {
+	const css = readFileSync("styles.css", "utf8");
+	const expected: Record<string, [string, string, string]> = {
+		default: ["#e3e5e8", "#f5f6f8", "#222222"],
+		dark: ["#3f3f3f", "#262626", "#dadada"],
+		pastel: ["#e6dccd", "#f7efe4", "#3a342d"],
+		print: ["#9a9a9a", "#ffffff", "#000000"],
+	};
+
+	it("emits header background, alt row and text fills in the export", () => {
+		for (const [theme, [head, alt, text]] of Object.entries(expected)) {
+			const out = buildExportStyles(theme);
+			expect(out).toContain(`.tdsl-table-header-bg{fill:${head}}`);
+			expect(out).toContain(`.tdsl-table-row-alt{fill:${alt}}`);
+			expect(out).toContain(
+				`.tdsl-table-header,.tdsl-table-cell{fill:${text}}`,
+			);
+		}
+	});
+
+	it("mirrors the same colours in the preview CSS", () => {
+		for (const [theme, [head, alt, text]] of Object.entries(expected)) {
+			const scope =
+				theme === "default"
+					? ".tdsl-preview[data-tdsl-theme]"
+					: `.tdsl-preview[data-tdsl-theme="${theme}"]`;
+			expect(css).toContain(
+				`${scope} .tdsl-table-header-bg {\n\tfill: ${head};`,
+			);
+			expect(css).toContain(`${scope} .tdsl-table-row-alt {\n\tfill: ${alt};`);
+			expect(css).toContain(`${scope} .tdsl-table-cell {\n\tfill: ${text};`);
+		}
+	});
+});

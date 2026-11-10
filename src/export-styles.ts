@@ -188,6 +188,12 @@ export function buildExportStyles(theme: string | undefined): string {
 		buildExternalLabelRule(theme),
 		// `now`-ended items: dashed outline on the saturated lane colour (#410).
 		".tdsl-item-open-ended .tdsl-span,.tdsl-item-open-ended .tdsl-event-range{stroke:#fff;stroke-width:1;stroke-dasharray:4 2}",
+		// Data table: the renderer paints header/alt-row backgrounds with fixed
+		// light greys and leaves cell text unfilled (#449). Header background reuses
+		// the theme's line colour; alt rows reuse the odd band colour.
+		`.tdsl-table-header-bg{fill:${p.line}}`,
+		`.tdsl-table-row-alt{fill:${p.bandOdd}}`,
+		`.tdsl-table-header,.tdsl-table-cell{fill:${p.text}}`,
 		// Hit area for hover/click in the preview; must stay invisible.
 		".tdsl-event-hit{fill:transparent}",
 	].join("\n");
