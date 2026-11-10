@@ -43,7 +43,8 @@ describe("embedEventLabelStyle", () => {
 
 	it("adds the dark event-label rule inside the head", () => {
 		const out = embedEventLabelStyle(html, "dark");
-		expect(out).toContain("svg .tdsl-event-label{fill:#dadada}</style></head>");
+		expect(out).toContain("svg .tdsl-event-label{fill:#dadada}");
+		expect(out).toContain("</style></head>");
 	});
 
 	it("adds the dark lane colour variables for the dark theme (#428)", () => {
@@ -60,6 +61,17 @@ describe("embedEventLabelStyle", () => {
 		const rule = ".tdsl-item-label.tdsl-item-label-external{fill:";
 		expect(embedEventLabelStyle(html, "default")).toContain(`${rule}#222222}`);
 		expect(embedEventLabelStyle(html, "dark")).toContain(`${rule}#dadada}`);
+	});
+
+	it("darkens the interactive header and legend for the dark theme (#446)", () => {
+		const out = embedEventLabelStyle(html, "dark");
+		expect(out).toContain("#tdsl-header{background:#1e1e1e;");
+		expect(out).toContain("#tdsl-header h1{color:#dadada}");
+		expect(out).toContain("#tdsl-legend{background:#262626;");
+	});
+
+	it("leaves the header and legend to the template for other themes (#446)", () => {
+		expect(embedEventLabelStyle(html, "default")).not.toContain("#tdsl-header");
 	});
 
 	it("uses the light colour for non-dark themes", () => {
