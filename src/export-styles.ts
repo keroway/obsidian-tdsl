@@ -122,6 +122,16 @@ export function buildEventLabelRule(theme: string | undefined): string {
 }
 
 /**
+ * Text colour for labels the renderer moved outside a short bar (#439, #445).
+ * They sit on the lane band, not the lane colour, so they take the theme's
+ * text colour; shared by SVG exports and the standalone HTML page.
+ */
+export function buildExternalLabelRule(theme: string | undefined): string {
+	const p = paletteFor(theme);
+	return `.tdsl-item-label.tdsl-item-label-external{fill:${p.text}}`;
+}
+
+/**
  * Lane colour variables for the SVG root. The renderer defines them via
  * `:where(.tdsl-root)` (zero specificity), so this rule wins regardless of
  * order (#418). Shared by SVG/PNG exports and the standalone HTML page (#428).
@@ -157,7 +167,7 @@ export function buildExportStyles(theme: string | undefined): string {
 		".tdsl-item-label{fill:#fff;font-size:11px;font-weight:500;pointer-events:none}",
 		// Labels the renderer moved outside a short bar sit on the lane band, not
 		// on the lane colour, so they take the theme's text colour (#439).
-		`.tdsl-item-label.tdsl-item-label-external{fill:${p.text}}`,
+		buildExternalLabelRule(theme),
 		// `now`-ended items: dashed outline on the saturated lane colour (#410).
 		".tdsl-item-open-ended .tdsl-span,.tdsl-item-open-ended .tdsl-event-range{stroke:#fff;stroke-width:1;stroke-dasharray:4 2}",
 		// Hit area for hover/click in the preview; must stay invisible.

@@ -56,6 +56,12 @@ describe("embedEventLabelStyle", () => {
 		expect(out).toContain("svg.tdsl-root{--tdsl-lane-0:#4682b4;");
 	});
 
+	it("adds the theme text colour for outside-bar labels (#445)", () => {
+		const rule = ".tdsl-item-label.tdsl-item-label-external{fill:";
+		expect(embedEventLabelStyle(html, "default")).toContain(`${rule}#222222}`);
+		expect(embedEventLabelStyle(html, "dark")).toContain(`${rule}#dadada}`);
+	});
+
 	it("uses the light colour for non-dark themes", () => {
 		expect(embedEventLabelStyle(html, "default")).toContain("fill:#222222");
 	});
