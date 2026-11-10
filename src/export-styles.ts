@@ -172,7 +172,9 @@ export function buildExportStyles(theme: string | undefined): string {
 		stroke("tdsl-group-separator"),
 		`.tdsl-event-stem{stroke:${p.line};stroke-width:1;stroke-dasharray:2 2}`,
 		`.tdsl-axis-text{fill:${p.textMuted}}`,
-		`.tdsl-axis-day-text{fill:${p.textFaint}}`,
+		// The renderer's later <style> sets `.tdsl-axis-day-text{fill:#888}`; the
+		// `svg` type selector outranks it, as for event labels (#450).
+		`svg .tdsl-axis-day-text{fill:${p.textFaint}}`,
 		`.tdsl-group-label{fill:${p.textMuted}}`,
 		`.tdsl-lane-label{fill:${p.text}}`,
 		// The renderer's own <style> sets `.tdsl-event-label{fill:#333}` and comes
