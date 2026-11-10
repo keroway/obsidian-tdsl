@@ -757,3 +757,44 @@ describe("fence inside a raw HTML block (pre / script) is not a code block (#441
 		).toHaveLength(1);
 	});
 });
+
+describe("comment opener in code / escape context does not hide later fences (#442)", () => {
+	const fence = [
+		"~~~tdsl",
+		'timeline "Hidden" { unit year; range 0..10; }',
+		"~~~",
+	];
+
+	it("ignores <!-- in an indented code block", () => {
+		const lines = ["    <!--", "", ...fence];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 2, closeLine: 4, prefix: "" },
+		]);
+		expect(findTdslFenceAtCursor(lines, 3).status).toBe("found");
+	});
+
+	it("ignores an escaped <!--", () => {
+		const lines = ["\\<!--", "", ...fence];
+		expect(listTdslFenceRanges(lines)).toHaveLength(1);
+	});
+
+	it("ignores <!-- inside a multi-line inline code span", () => {
+		const lines = ["text `code", "<!-- more` end", "", ...fence];
+		expect(listTdslFenceRanges(lines)).toHaveLength(1);
+	});
+
+	it("still hides a fence inside a real comment after a closed code span", () => {
+		const lines = ["`x` <!--", ...fence, "-->"];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+	});
+
+	it("still treats an indented <!-- continuing a paragraph as a comment", () => {
+		const lines = ["para", "    <!--", ...fence, "-->"];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+	});
+
+	it("an unclosed code span does not leak past a blank line", () => {
+		const lines = ["a ` b", "", "<!-- c -->", ...fence];
+		expect(listTdslFenceRanges(lines)).toHaveLength(1);
+	});
+});

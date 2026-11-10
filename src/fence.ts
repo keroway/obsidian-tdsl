@@ -329,28 +329,71 @@ interface ScannedFence {
 	end: number;
 }
 
+interface InlineState {
+	/** Inside an HTML comment (`<!--` seen, `-->` not yet). */
+	comment: boolean;
+	/** Length of an inline code span's opening backtick run still unclosed, or 0. */
+	span: number;
+}
+
+/** Index of the first backtick run of exactly `n` backticks at or after `from`, or -1. */
+function findBacktickRun(line: string, n: number, from: number): number {
+	let i = from;
+	while (i < line.length) {
+		if (line[i] !== "`") {
+			i++;
+			continue;
+		}
+		let j = i;
+		while (line[j] === "`") j++;
+		if (j - i === n) return i;
+		i = j;
+	}
+	return -1;
+}
+
 /**
- * Updates the "inside an HTML comment" state across one non-fence line. A
- * comment opens at `<!--` and closes at the next `-->`, possibly on a later
- * line. Inline code spans are blanked first so a literal `` `<!--` `` in prose
- * does not hide the rest of the document.
+ * Updates the inline state across one non-fence line. A comment opens at
+ * `<!--` and closes at the next `-->`, possibly on a later line. `<!--` does
+ * not open a comment inside an inline code span (which may span lines within a
+ * paragraph, #442) or when escaped with a backslash.
  */
-function advanceCommentState(line: string, inComment: boolean): boolean {
-	let rest = line.replace(/(`+)[^`]*?\1/g, (m) => " ".repeat(m.length));
-	let state = inComment;
-	for (;;) {
-		if (state) {
-			const close = rest.indexOf("-->");
-			if (close === -1) return true;
-			rest = rest.slice(close + 3);
-			state = false;
+function advanceInlineState(line: string, state: InlineState): InlineState {
+	let { comment, span } = state;
+	let i = 0;
+	while (i < line.length) {
+		if (comment) {
+			const close = line.indexOf("-->", i);
+			if (close === -1) return { comment, span };
+			i = close + 3;
+			comment = false;
+		} else if (span > 0) {
+			const close = findBacktickRun(line, span, i);
+			if (close === -1) return { comment, span };
+			i = close + span;
+			span = 0;
+		} else if (line[i] === "\\") {
+			i += 2;
+		} else if (line[i] === "`") {
+			let j = i;
+			while (line[j] === "`") j++;
+			const n = j - i;
+			const close = findBacktickRun(line, n, j);
+			if (close === -1) {
+				// Possibly closed on a later line of the same paragraph.
+				span = n;
+				i = line.length;
+			} else {
+				i = close + n;
+			}
+		} else if (line.startsWith("<!--", i)) {
+			comment = true;
+			i += 4;
 		} else {
-			const open = rest.indexOf("<!--");
-			if (open === -1) return false;
-			rest = rest.slice(open + 4);
-			state = true;
+			i++;
 		}
 	}
+	return { comment, span };
 }
 
 /**
@@ -377,15 +420,24 @@ function closesRawHtml(line: string, tag: string): boolean {
  * fence body are literal code and never reach `advanceCommentState`.
  */
 function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
-	let inComment = false;
+	let state: InlineState = { comment: false, span: 0 };
 	let rawHtmlTag: string | null = null;
+	let prevBlank = true;
+	let prevCode = false;
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i] ?? "";
 		if (rawHtmlTag !== null) {
 			if (closesRawHtml(line, rawHtmlTag)) rawHtmlTag = null;
 			continue;
 		}
-		if (!inComment) {
+		if (line.trim() === "") {
+			// A blank line ends the paragraph, so an unclosed code span cannot
+			// continue past it. An open comment does continue.
+			state = { comment: state.comment, span: 0 };
+			prevBlank = true;
+			continue;
+		}
+		if (!state.comment) {
 			const open = parseOpenFence(lines, i);
 			if (open) {
 				const { closeLine, end } = findClose(lines, i, open);
@@ -393,6 +445,9 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 				// An unclosed block runs to the end of its container; resume
 				// scanning after it.
 				i = end - 1;
+				state = { comment: false, span: 0 };
+				prevBlank = false;
+				prevCode = false;
 				continue;
 			}
 			const tag = rawHtmlBlockTag(line);
@@ -400,8 +455,22 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 				if (!closesRawHtml(line, tag)) rawHtmlTag = tag;
 				continue;
 			}
+			// An unquoted line indented 4+ columns that starts a block (after a
+			// blank line, or continuing indented code) outside a list item is an
+			// indented code block: `<!--` there is literal text (#442).
+			const indentedCode: boolean =
+				quoteDepth(line) === 0 &&
+				leadingColumns(line) >= 4 &&
+				(prevBlank || prevCode) &&
+				!inListItem(lines, i, leadingColumns(line));
+			prevBlank = false;
+			prevCode = indentedCode;
+			if (indentedCode) continue;
+		} else {
+			prevBlank = false;
+			prevCode = false;
 		}
-		inComment = advanceCommentState(line, inComment);
+		state = advanceInlineState(line, state);
 	}
 }
 
