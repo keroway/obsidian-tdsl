@@ -354,15 +354,37 @@ function advanceCommentState(line: string, inComment: boolean): boolean {
 }
 
 /**
- * Yields every fenced code block outside HTML comments, in document order.
- * A fence marker inside a `<!-- ... -->` comment is hidden text, not a code
- * block, so it is skipped (#434). Comment markers inside a fence body are
- * literal code and never reach `advanceCommentState`.
+ * CommonMark HTML block type 1: a line starting (0-3 spaces of indent) with
+ * `<pre`, `<script`, `<style` or `<textarea` runs until a line containing the
+ * matching closing tag. Its content is raw HTML, so a fence marker inside is
+ * literal text, not a code block (#441). Returns the tag name, or null.
+ */
+const RAW_HTML_OPEN_RE = /^ {0,3}<(pre|script|style|textarea)(?=[\s>]|$)/i;
+
+function rawHtmlBlockTag(line: string): string | null {
+	const m = RAW_HTML_OPEN_RE.exec(line);
+	return m?.[1] ? m[1].toLowerCase() : null;
+}
+
+function closesRawHtml(line: string, tag: string): boolean {
+	return line.toLowerCase().includes(`</${tag}>`);
+}
+
+/**
+ * Yields every fenced code block outside HTML comments and raw HTML blocks, in
+ * document order. A fence marker inside a `<!-- ... -->` comment is hidden
+ * text, not a code block, so it is skipped (#434). Comment markers inside a
+ * fence body are literal code and never reach `advanceCommentState`.
  */
 function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 	let inComment = false;
+	let rawHtmlTag: string | null = null;
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i] ?? "";
+		if (rawHtmlTag !== null) {
+			if (closesRawHtml(line, rawHtmlTag)) rawHtmlTag = null;
+			continue;
+		}
 		if (!inComment) {
 			const open = parseOpenFence(lines, i);
 			if (open) {
@@ -371,6 +393,11 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 				// An unclosed block runs to the end of its container; resume
 				// scanning after it.
 				i = end - 1;
+				continue;
+			}
+			const tag = rawHtmlBlockTag(line);
+			if (tag !== null) {
+				if (!closesRawHtml(line, tag)) rawHtmlTag = tag;
 				continue;
 			}
 		}

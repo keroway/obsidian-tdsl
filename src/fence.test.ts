@@ -712,3 +712,48 @@ describe("fence inside an HTML comment is not a code block (#434)", () => {
 		expect(listTdslFenceRanges(lines)).toHaveLength(1);
 	});
 });
+
+describe("fence inside a raw HTML block (pre / script) is not a code block (#441)", () => {
+	for (const tag of ["pre", "script"]) {
+		const hidden = [
+			`<${tag}>`,
+			"~~~tdsl",
+			'timeline "Hidden" { unit year; range 0..10; }',
+			"~~~",
+			`</${tag}>`,
+		];
+
+		it(`does not detect a fence inside <${tag}>`, () => {
+			expect(listTdslFenceRanges(hidden)).toEqual([]);
+			expect(findTdslFenceAtCursor(hidden, 2)).toEqual({
+				status: "not-in-block",
+			});
+		});
+
+		it(`detects a normal fence after </${tag}>`, () => {
+			const lines = [...hidden, "", "```tdsl", "timeline {};", "```"];
+			expect(listTdslFenceRanges(lines)).toEqual([
+				{ openLine: 6, closeLine: 8, prefix: "" },
+			]);
+		});
+	}
+
+	it("handles a block closed on its opening line", () => {
+		expect(
+			listTdslFenceRanges(["<pre>x</pre>", "```tdsl", "x", "```"]),
+		).toHaveLength(1);
+	});
+
+	it("does not treat HTML text inside a code fence body as a block", () => {
+		const lines = ["```js", "<pre>", "```", "```tdsl", "x", "```"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 3, closeLine: 5, prefix: "" },
+		]);
+	});
+
+	it("does not match tags that merely start with pre", () => {
+		expect(
+			listTdslFenceRanges(["<preview>", "```tdsl", "x", "```"]),
+		).toHaveLength(1);
+	});
+});
