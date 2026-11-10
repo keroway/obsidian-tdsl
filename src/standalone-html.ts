@@ -2,6 +2,7 @@ import {
 	buildEventLabelRule,
 	buildExternalLabelRule,
 	buildLaneVarsRule,
+	buildPageChromeRule,
 } from "./export-styles";
 import type { ResolvedRender } from "./utils";
 
@@ -38,7 +39,10 @@ export function embedEventLabelStyle(
 		buildLaneVarsRule(theme),
 		buildExternalLabelRule(theme),
 		buildEventLabelRule(theme),
-	].join("\n");
+		buildPageChromeRule(theme),
+	]
+		.filter((rule) => rule !== "")
+		.join("\n");
 	return `${html.slice(0, at)}<style>${css}</style>${html.slice(at)}`;
 }
 

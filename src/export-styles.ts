@@ -132,6 +132,22 @@ export function buildExternalLabelRule(theme: string | undefined): string {
 }
 
 /**
+ * Colours for the standalone HTML page's interactive header and legend (#446).
+ * The WASM template hard-codes `#fff` / `#fafafa` backgrounds for them while
+ * its dark body only lightens the text, leaving light-on-light chrome. Only
+ * `dark` needs a correction; other themes keep the template's own light chrome.
+ */
+export function buildPageChromeRule(theme: string | undefined): string {
+	if (theme !== "dark") return "";
+	const p = DARK;
+	return [
+		`#tdsl-header{background:${p.bandEven};border-bottom-color:${p.line};color:${p.text}}`,
+		`#tdsl-header h1{color:${p.text}}`,
+		`#tdsl-legend{background:${p.bandOdd};border-right-color:${p.line};color:${p.text}}`,
+	].join("\n");
+}
+
+/**
  * Lane colour variables for the SVG root. The renderer defines them via
  * `:where(.tdsl-root)` (zero specificity), so this rule wins regardless of
  * order (#418). Shared by SVG/PNG exports and the standalone HTML page (#428).
