@@ -1,4 +1,8 @@
-import { buildEventLabelRule, buildLaneVarsRule } from "./export-styles";
+import {
+	buildEventLabelRule,
+	buildExternalLabelRule,
+	buildLaneVarsRule,
+} from "./export-styles";
 import type { ResolvedRender } from "./utils";
 
 /**
@@ -30,7 +34,11 @@ export function embedEventLabelStyle(
 ): string {
 	const at = html.indexOf("</head>");
 	if (at < 0) return html;
-	const css = `${buildLaneVarsRule(theme)}\n${buildEventLabelRule(theme)}`;
+	const css = [
+		buildLaneVarsRule(theme),
+		buildExternalLabelRule(theme),
+		buildEventLabelRule(theme),
+	].join("\n");
 	return `${html.slice(0, at)}<style>${css}</style>${html.slice(at)}`;
 }
 
