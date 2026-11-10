@@ -22,6 +22,35 @@ describe("buildExportStyles", () => {
 		}
 	});
 
+	it("paints external item labels with the theme text colour, not white (#439)", () => {
+		const expected: Record<string, string> = {
+			default: "#222222",
+			dark: "#dadada",
+			pastel: "#3a342d",
+			print: "#000000",
+		};
+		const preview = readFileSync("styles.css", "utf8");
+		for (const [theme, hex] of Object.entries(expected)) {
+			expect(buildExportStyles(theme)).toContain(
+				`.tdsl-item-label.tdsl-item-label-external{fill:${hex}}`,
+			);
+			if (theme !== "default") {
+				const block = preview.slice(
+					preview.indexOf(
+						`.tdsl-preview[data-tdsl-theme="${theme}"] .tdsl-item-label-external`,
+					),
+				);
+				expect(block).toContain(`fill: ${hex};`);
+			}
+		}
+		expect(preview).toContain(
+			".tdsl-preview .tdsl-item-label.tdsl-item-label-external",
+		);
+		expect(preview).toContain(
+			".tdsl-preview[data-tdsl-theme] .tdsl-item-label-external",
+		);
+	});
+
 	it("draws now-ended items dashed in export and preview CSS (#410)", () => {
 		const preview = readFileSync("styles.css", "utf8");
 		for (const theme of ["default", "dark"]) {

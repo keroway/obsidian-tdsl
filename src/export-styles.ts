@@ -155,6 +155,9 @@ export function buildExportStyles(theme: string | undefined): string {
 		`svg .tdsl-event-label{fill:${p.text}}`,
 		// Drawn on a saturated lane colour, so a literal white in every theme.
 		".tdsl-item-label{fill:#fff;font-size:11px;font-weight:500;pointer-events:none}",
+		// Labels the renderer moved outside a short bar sit on the lane band, not
+		// on the lane colour, so they take the theme's text colour (#439).
+		`.tdsl-item-label.tdsl-item-label-external{fill:${p.text}}`,
 		// `now`-ended items: dashed outline on the saturated lane colour (#410).
 		".tdsl-item-open-ended .tdsl-span,.tdsl-item-open-ended .tdsl-event-range{stroke:#fff;stroke-width:1;stroke-dasharray:4 2}",
 		// Hit area for hover/click in the preview; must stay invisible.
