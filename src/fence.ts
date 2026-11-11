@@ -405,7 +405,8 @@ function advanceInlineState(line: string, state: InlineState): InlineState {
 const RAW_HTML_OPEN_RE = /^ {0,3}<(pre|script|style|textarea)(?=[\s>]|$)/i;
 
 function rawHtmlBlockTag(line: string): string | null {
-	const m = RAW_HTML_OPEN_RE.exec(line);
+	// A blockquote container (`> <pre>`) holds the HTML block too (#453).
+	const m = RAW_HTML_OPEN_RE.exec(stripQuotes(line));
 	return m?.[1] ? m[1].toLowerCase() : null;
 }
 
@@ -422,10 +423,15 @@ function closesRawHtml(line: string, tag: string): boolean {
 function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 	let state: InlineState = { comment: false, span: 0 };
 	let rawHtmlTag: string | null = null;
+	let rawHtmlDepth = 0;
 	let prevBlank = true;
 	let prevCode = false;
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i] ?? "";
+		// An HTML block inside a blockquote ends where the quote does.
+		if (rawHtmlTag !== null && quoteDepth(line) < rawHtmlDepth) {
+			rawHtmlTag = null;
+		}
 		if (rawHtmlTag !== null) {
 			if (closesRawHtml(line, rawHtmlTag)) rawHtmlTag = null;
 			continue;
@@ -452,7 +458,10 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 			}
 			const tag = rawHtmlBlockTag(line);
 			if (tag !== null) {
-				if (!closesRawHtml(line, tag)) rawHtmlTag = tag;
+				if (!closesRawHtml(line, tag)) {
+					rawHtmlTag = tag;
+					rawHtmlDepth = quoteDepth(line);
+				}
 				continue;
 			}
 			// An unquoted line indented 4+ columns that starts a block (after a

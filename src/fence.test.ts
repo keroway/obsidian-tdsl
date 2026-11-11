@@ -758,6 +758,39 @@ describe("fence inside a raw HTML block (pre / script) is not a code block (#441
 	});
 });
 
+describe("fence inside a quoted raw HTML block is not a code block (#453)", () => {
+	for (const tag of ["pre", "script"]) {
+		const hidden = [
+			`> <${tag}>`,
+			"> ~~~tdsl",
+			'> timeline "Hidden" { unit year; range 0..10; }',
+			"> ~~~",
+			`> </${tag}>`,
+		];
+
+		it(`does not detect a fence inside a quoted <${tag}>`, () => {
+			expect(listTdslFenceRanges(hidden)).toEqual([]);
+			expect(findTdslFenceAtCursor(hidden, 2)).toEqual({
+				status: "not-in-block",
+			});
+		});
+
+		it(`detects a quoted fence after </${tag}>`, () => {
+			const lines = [...hidden, ">", "> ```tdsl", "> timeline {};", "> ```"];
+			expect(listTdslFenceRanges(lines)).toEqual([
+				{ openLine: 6, closeLine: 8, prefix: "> " },
+			]);
+		});
+	}
+
+	it("ends the quoted HTML block when the blockquote ends", () => {
+		const lines = ["> <pre>", "", "```tdsl", "x", "```"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 2, closeLine: 4, prefix: "" },
+		]);
+	});
+});
+
 describe("comment opener in code / escape context does not hide later fences (#442)", () => {
 	const fence = [
 		"~~~tdsl",
