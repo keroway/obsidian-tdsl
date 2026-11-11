@@ -29,17 +29,19 @@ export default defineConfig({
 			thresholds: {
 				// 除外後の実測値に沿ったラチェット。下げるのではなく、
 				// 実態が上がったら上げること（下げる変更は理由を PR に書く）。
-				// 実測 (2026-09-06, #232 で本番未使用の formatDiagnosticMessages /
+				// 実測 (2026-11-11, #456): statements 93.3 / branches 89.34 /
+				// functions 89.72 / lines 94.01。直下に 0.3〜1pt の余白を置いた。
+				// 以下は 2026-09-06 時点の経緯（#232 で本番未使用の formatDiagnosticMessages /
 				// formatLintIssues / joinDiagnosticParts とそのテストを削除):
 				//   statements 90.05 / branches 87.93 / functions 85.71 / lines 90.24
 				// functions のみ、テストだけが呼んでいた3関数の削除で分母に対する
 				// カバー済み関数の比率が下がったため 87 → 85 に下げた
 				// （到達不能コードで嵩上げされていた分が剥がれた、が実害はない）。
 				// 直下に置いて、通常の変動では落ちず実質的な劣化では落ちるようにする。
-				statements: 89,
-				branches: 87,
-				functions: 85,
-				lines: 89,
+				statements: 93,
+				branches: 89,
+				functions: 89,
+				lines: 93.5,
 				// 集約値だけでは「1 ファイルが丸ごと 0% でも全体は通る」（#191）。
 				// 実際 editor-highlight.ts は 147 行すべて未テストのまま
 				// 87.63% の集約閾値を通過していた。ファイル単位の下限で塞ぐ。
@@ -47,13 +49,28 @@ export default defineConfig({
 				// ViewPlugin 本体は EditorView に密結合でテスト対象外のため
 				// 到達可能な上限は高くない。切り出した純関数（予算配分・本文範囲・
 				// 可視判定）のテストが消えたら落ちる高さに置く。
-				// 実測 (2026-08-11): statements 24.44 / branches 22.22 /
-				//                    functions 40 / lines 24.32
+				// 実測 (2026-11-11): statements 44.61 / branches 30 / functions 50 / lines 47.36
+				// （旧 2026-08-11: statements 24.44 / branches 22.22 /
+				//                    functions 40 / lines 24.32）
+				"src/png-export.ts": {
+					// #456: 実測 statements 85.71 / branches 61.53 / functions 55.55 / lines 85.18
+					statements: 84,
+					branches: 60,
+					functions: 54,
+					lines: 84,
+				},
+				"src/render-cache.ts": {
+					// #456: 実測 statements 83.33 / branches 83.33 / functions 100 / lines 82.35
+					statements: 82,
+					branches: 82,
+					functions: 100,
+					lines: 81,
+				},
 				"src/editor-highlight.ts": {
-					statements: 22,
-					branches: 20,
-					functions: 38,
-					lines: 22,
+					statements: 43,
+					branches: 28,
+					functions: 48,
+					lines: 45,
 				},
 			},
 		},
