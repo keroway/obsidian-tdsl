@@ -92,7 +92,10 @@ import mainSource from "./main.ts?raw";
 // Raised by 5 (issue #416): copyStandaloneHtml() routes the HTML through
 // embedEventLabelStyle(). The rule lives in standalone-html.ts / export-styles.ts;
 // what remains is the import and the call site that supplies the resolved theme.
-const MAIN_TS_LINE_BUDGET = 1317;
+// Raised by 7 (issue #455): the export commands and ensureWasm() catch sites
+// now pass the exception to logError() (src/log-error.ts); each adds one line
+// plus the import.
+const MAIN_TS_LINE_BUDGET = 1324;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;

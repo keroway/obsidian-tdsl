@@ -31,6 +31,7 @@ import { tdslEditorHighlight } from "./editor-highlight";
 import { createEscapeListener } from "./escape-listener";
 import { embedExportStyles } from "./export-styles";
 import { idleScheduler } from "./idle-scheduler";
+import { logError } from "./log-error";
 import { rerenderMarkdownPreviewView } from "./obsidian-rerender";
 import {
 	contentRect,
@@ -372,7 +373,8 @@ class TdslPreview extends MarkdownRenderChild {
 					new Notice("Timeline DSL: Could not copy SVG to the clipboard.");
 					break;
 			}
-		} catch {
+		} catch (e) {
+			logError("copy SVG", e);
 			new Notice("Timeline DSL: Could not generate SVG.");
 		}
 	}
@@ -404,7 +406,8 @@ class TdslPreview extends MarkdownRenderChild {
 					);
 					break;
 			}
-		} catch {
+		} catch (e) {
+			logError("copy standalone HTML", e);
 			new Notice("Timeline DSL: Could not generate standalone HTML.");
 		}
 	}
@@ -440,7 +443,8 @@ class TdslPreview extends MarkdownRenderChild {
 					new Notice("Timeline DSL: Could not copy PNG to the clipboard.");
 					break;
 			}
-		} catch {
+		} catch (e) {
+			logError("copy PNG", e);
 			new Notice("Timeline DSL: Could not generate a PNG image.");
 		}
 	}
@@ -494,7 +498,8 @@ class TdslPreview extends MarkdownRenderChild {
 				new TextEncoder().encode(svg).buffer as ArrayBuffer,
 			);
 			new Notice(`✔ Saved timeline to ${path}. Embed it with ![[${path}]].`);
-		} catch {
+		} catch (e) {
+			logError("save SVG to vault", e);
 			new Notice("Timeline DSL: Could not save the timeline to the vault.");
 		}
 	}
@@ -899,7 +904,8 @@ export default class TimelineDslPlugin extends Plugin {
 			editorCallback: async (editor: Editor) => {
 				try {
 					await ensureWasm();
-				} catch {
+				} catch (e) {
+					logError("renderer initialization (format)", e);
 					new Notice("Timeline DSL: Could not initialize the renderer.");
 					return;
 				}
@@ -913,7 +919,8 @@ export default class TimelineDslPlugin extends Plugin {
 			editorCallback: async (editor: Editor) => {
 				try {
 					await ensureWasm();
-				} catch {
+				} catch (e) {
+					logError("renderer initialization (lint fix)", e);
 					new Notice("Timeline DSL: Could not initialize the renderer.");
 					return;
 				}
