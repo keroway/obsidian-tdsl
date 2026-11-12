@@ -3,6 +3,7 @@ import {
 	buildExternalLabelRule,
 	buildLaneVarsRule,
 	buildPageChromeRule,
+	buildTableRule,
 } from "./export-styles";
 import type { ResolvedRender } from "./utils";
 
@@ -40,6 +41,7 @@ export function embedEventLabelStyle(
 		buildExternalLabelRule(theme),
 		buildEventLabelRule(theme),
 		buildPageChromeRule(theme),
+		buildTableRule(theme),
 	]
 		.filter((rule) => rule !== "")
 		.join("\n");
