@@ -956,7 +956,8 @@ export default class TimelineDslPlugin extends Plugin {
 	async saveSettings(): Promise<void> {
 		try {
 			await this.saveData(this.settings);
-		} catch {
+		} catch (e) {
+			logError("save settings", e);
 			new Notice("Timeline DSL: Could not save settings.");
 			return;
 		}
