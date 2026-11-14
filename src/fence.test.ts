@@ -791,6 +791,40 @@ describe("fence inside a quoted raw HTML block is not a code block (#453)", () =
 	});
 });
 
+describe("fence inside a block-level HTML block (type 6) is not a code block (#466)", () => {
+	const hidden = ["<div>", "~~~tdsl", "timeline {}", "~~~", "</div>"];
+
+	it("does not detect a fence directly inside a div", () => {
+		expect(listTdslFenceRanges(hidden)).toEqual([]);
+		expect(findTdslFenceAtCursor(hidden, 2)).toEqual({
+			status: "not-in-block",
+		});
+	});
+
+	it("detects a real fence after the blank line that ends the HTML block", () => {
+		const lines = [...hidden, "", "```tdsl", "x", "```"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 6, closeLine: 8, prefix: "" },
+		]);
+	});
+
+	it("keeps a fence preceded by a blank line inside a div", () => {
+		const lines = ["<div>", "", "```tdsl", "x", "```", "</div>"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 2, closeLine: 4, prefix: "" },
+		]);
+	});
+
+	it("does not treat HTML text inside code or unknown tags as a block", () => {
+		expect(listTdslFenceRanges(["<divx>", "```tdsl", "x", "```"])).toHaveLength(
+			1,
+		);
+		expect(
+			listTdslFenceRanges(["```js", "<div>", "```", "```tdsl", "x", "```"]),
+		).toEqual([{ openLine: 3, closeLine: 5, prefix: "" }]);
+	});
+});
+
 describe("comment opener in code / escape context does not hide later fences (#442)", () => {
 	const fence = [
 		"~~~tdsl",
