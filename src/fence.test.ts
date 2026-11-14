@@ -825,6 +825,46 @@ describe("fence inside a block-level HTML block (type 6) is not a code block (#4
 	});
 });
 
+describe("fence inside a processing instruction / CDATA is not a code block (#468)", () => {
+	const body = ["~~~tdsl", "timeline {}", "~~~"];
+	const cases: [string, string, string][] = [
+		["processing instruction", "<?example", "?>"],
+		["CDATA", "<![CDATA[", "]]>"],
+	];
+
+	for (const [name, open, close] of cases) {
+		const hidden = [open, ...body, close];
+
+		it(`does not detect a fence inside a ${name}`, () => {
+			expect(listTdslFenceRanges(hidden)).toEqual([]);
+			expect(findTdslFenceAtCursor(hidden, 2)).toEqual({
+				status: "not-in-block",
+			});
+		});
+
+		it(`detects a real fence after the ${name} ends`, () => {
+			const lines = [...hidden, "", "```tdsl", "x", "```"];
+			expect(listTdslFenceRanges(lines)).toEqual([
+				{ openLine: 6, closeLine: 8, prefix: "" },
+			]);
+		});
+
+		it(`ends a single-line ${name} on its own line`, () => {
+			const lines = [`${open} ${close}`, "```tdsl", "x", "```"];
+			expect(listTdslFenceRanges(lines)).toEqual([
+				{ openLine: 1, closeLine: 3, prefix: "" },
+			]);
+		});
+	}
+
+	it("keeps the same symbols inside a normal fence body as DSL text", () => {
+		const lines = ["```tdsl", "<?x", "<![CDATA[", "```"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 0, closeLine: 3, prefix: "" },
+		]);
+	});
+});
+
 describe("comment opener in code / escape context does not hide later fences (#442)", () => {
 	const fence = [
 		"~~~tdsl",

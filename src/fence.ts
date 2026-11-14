@@ -404,14 +404,30 @@ function advanceInlineState(line: string, state: InlineState): InlineState {
  */
 const RAW_HTML_OPEN_RE = /^ {0,3}<(pre|script|style|textarea)(?=[\s>]|$)/i;
 
-function rawHtmlBlockTag(line: string): string | null {
+/**
+ * CommonMark HTML block types 3 and 5: a line starting (0-3 spaces of indent)
+ * with `<?` (processing instruction) or `<![CDATA[` runs until a line containing
+ * `?>` / `]]>`. Their content is raw too (#468).
+ */
+const PROCESSING_INSTRUCTION_OPEN_RE = /^ {0,3}<\?/;
+const CDATA_OPEN_RE = /^ {0,3}<!\[CDATA\[/;
+
+/**
+ * Returns the end marker (lowercase) that terminates the raw HTML block the
+ * line opens, or null when the line does not open one.
+ */
+function rawHtmlBlockCloser(line: string): string | null {
 	// A blockquote container (`> <pre>`) holds the HTML block too (#453).
-	const m = RAW_HTML_OPEN_RE.exec(stripQuotes(line));
-	return m?.[1] ? m[1].toLowerCase() : null;
+	const text = stripQuotes(line);
+	const m = RAW_HTML_OPEN_RE.exec(text);
+	if (m?.[1]) return `</${m[1].toLowerCase()}>`;
+	if (PROCESSING_INSTRUCTION_OPEN_RE.test(text)) return "?>";
+	if (CDATA_OPEN_RE.test(text)) return "]]>";
+	return null;
 }
 
-function closesRawHtml(line: string, tag: string): boolean {
-	return line.toLowerCase().includes(`</${tag}>`);
+function closesRawHtml(line: string, closer: string): boolean {
+	return line.toLowerCase().includes(closer);
 }
 
 /**
@@ -486,10 +502,10 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 				prevCode = false;
 				continue;
 			}
-			const tag = rawHtmlBlockTag(line);
-			if (tag !== null) {
-				if (!closesRawHtml(line, tag)) {
-					rawHtmlTag = tag;
+			const closer = rawHtmlBlockCloser(line);
+			if (closer !== null) {
+				if (!closesRawHtml(line, closer)) {
+					rawHtmlTag = closer;
 					rawHtmlDepth = quoteDepth(line);
 				}
 				continue;
