@@ -415,6 +415,22 @@ function closesRawHtml(line: string, tag: string): boolean {
 }
 
 /**
+ * CommonMark HTML block type 6: a line starting (0-3 spaces of indent) with an
+ * opening or closing block-level tag (`<div>`, `</section>`, `<table`, ...)
+ * runs until the next blank line. A fence marker inside is literal text (#466).
+ */
+const BLOCK_HTML_TAGS =
+	"address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h1|h2|h3|h4|h5|h6|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul";
+const BLOCK_HTML_OPEN_RE = new RegExp(
+	`^ {0,3}</?(?:${BLOCK_HTML_TAGS})(?=[\\s>]|/>|$)`,
+	"i",
+);
+
+function startsBlockHtml(line: string): boolean {
+	return BLOCK_HTML_OPEN_RE.test(stripQuotes(line));
+}
+
+/**
  * Yields every fenced code block outside HTML comments and raw HTML blocks, in
  * document order. A fence marker inside a `<!-- ... -->` comment is hidden
  * text, not a code block, so it is skipped (#434). Comment markers inside a
@@ -424,6 +440,8 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 	let state: InlineState = { comment: false, span: 0 };
 	let rawHtmlTag: string | null = null;
 	let rawHtmlDepth = 0;
+	let blockHtml = false;
+	let blockHtmlDepth = 0;
 	let prevBlank = true;
 	let prevCode = false;
 	for (let i = 0; i < lines.length; i++) {
@@ -434,6 +452,18 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 		}
 		if (rawHtmlTag !== null) {
 			if (closesRawHtml(line, rawHtmlTag)) rawHtmlTag = null;
+			continue;
+		}
+		// A type 6 HTML block ends at a blank line or where its quote ends.
+		if (
+			blockHtml &&
+			(quoteDepth(line) < blockHtmlDepth || stripQuotes(line).trim() === "")
+		) {
+			blockHtml = false;
+		}
+		if (blockHtml) {
+			prevBlank = false;
+			prevCode = false;
 			continue;
 		}
 		if (line.trim() === "") {
@@ -462,6 +492,13 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 					rawHtmlTag = tag;
 					rawHtmlDepth = quoteDepth(line);
 				}
+				continue;
+			}
+			if (startsBlockHtml(line)) {
+				blockHtml = true;
+				blockHtmlDepth = quoteDepth(line);
+				prevBlank = false;
+				prevCode = false;
 				continue;
 			}
 			// An unquoted line indented 4+ columns that starts a block (after a
