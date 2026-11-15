@@ -905,3 +905,33 @@ describe("comment opener in code / escape context does not hide later fences (#4
 		expect(listTdslFenceRanges(lines)).toHaveLength(1);
 	});
 });
+
+describe("fence inside YAML frontmatter is not a code block (#472)", () => {
+	const fence = ["```tdsl", 'timeline "T" { unit year; range 1..10; }', "```"];
+	const meta = ["---", "example: |", ...fence.map((l) => `  ${l}`), "---"];
+
+	it("ignores a tdsl fence in frontmatter and finds the body one", () => {
+		const lines = [...meta, "", ...fence];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 7, closeLine: 9, prefix: "" },
+		]);
+		expect(findTdslFenceAtCursor(lines, 3)).toEqual({
+			status: "not-in-block",
+		});
+	});
+
+	it("treats `...` as a frontmatter closer", () => {
+		const lines = [...meta.slice(0, -1), "...", ...fence];
+		expect(listTdslFenceRanges(lines)).toHaveLength(1);
+	});
+
+	it("does not treat an unclosed leading --- as frontmatter", () => {
+		const lines = ["---", ...fence];
+		expect(listTdslFenceRanges(lines)).toHaveLength(1);
+	});
+
+	it("only a first-line --- opens frontmatter", () => {
+		const lines = ["", ...meta];
+		expect(listTdslFenceRanges(lines)).toHaveLength(1);
+	});
+});
