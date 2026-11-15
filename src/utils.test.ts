@@ -684,15 +684,29 @@ describe("extractTimelineTitle", () => {
 			expect(extractTimelineTitle(source)).toBe("Last");
 		});
 
-		it("keeps the previous title when the last one is blank", () => {
-			const source = 'timeline "Internal" { title "First"; title "  "; }';
-			expect(extractTimelineTitle(source)).toBe("First");
+		it("does not reuse the previous title when the last one is blank (#470)", () => {
+			expect(
+				extractTimelineTitle(
+					'timeline "Internal" { title "First"; title "  "; }',
+				),
+			).toBeNull();
+			expect(
+				extractTimelineTitle(
+					'timeline "Declared" { title "First"; title ""; }',
+				),
+			).toBeNull();
 		});
 
-		it("falls back when the title property is blank", () => {
-			expect(extractTimelineTitle('timeline "Internal" { title "  "; }')).toBe(
-				"Internal",
-			);
+		it("returns null when the only title property is blank (#470)", () => {
+			expect(
+				extractTimelineTitle('timeline "Internal" { title "  "; }'),
+			).toBeNull();
+		});
+
+		it("uses a later non-blank title after a blank one", () => {
+			expect(
+				extractTimelineTitle('timeline "Internal" { title ""; title "Last"; }'),
+			).toBe("Last");
 		});
 	});
 });
