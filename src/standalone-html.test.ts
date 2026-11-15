@@ -74,6 +74,15 @@ describe("embedEventLabelStyle", () => {
 		expect(embedEventLabelStyle(html, "default")).not.toContain("#tdsl-header");
 	});
 
+	it("darkens the detail panel for the dark theme only (#477)", () => {
+		const out = embedEventLabelStyle(html, "dark");
+		expect(out).toContain("#tdsl-detail{background:#262626;");
+		expect(out).toContain("#tdsl-detail dd{color:#dadada}");
+		expect(embedEventLabelStyle(html, "default")).not.toContain(
+			"#tdsl-detail{",
+		);
+	});
+
 	it("adds the dark data table colours (#460)", () => {
 		const out = embedEventLabelStyle(html, "dark");
 		expect(out).toContain(".tdsl-table-header-bg{fill:#3f3f3f}");

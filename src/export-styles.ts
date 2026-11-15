@@ -159,6 +159,11 @@ export function buildPageChromeRule(theme: string | undefined): string {
 		`#tdsl-header{background:${p.bandEven};border-bottom-color:${p.line};color:${p.text}}`,
 		`#tdsl-header h1{color:${p.text}}`,
 		`#tdsl-legend{background:${p.bandOdd};border-right-color:${p.line};color:${p.text}}`,
+		// The detail panel keeps the template's #fafafa background and inherits
+		// the dark body's light text (#477).
+		`#tdsl-detail{background:${p.bandOdd};border-color:${p.line};color:${p.text}}`,
+		`#tdsl-detail dt{color:${p.textMuted}}`,
+		`#tdsl-detail dd{color:${p.text}}`,
 	].join("\n");
 }
 
