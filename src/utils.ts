@@ -419,6 +419,7 @@ export function extractTimelineTitle(source: string): string | null {
 		const prop = /(?<![\w$])title\s+"/y;
 		let depth = 0;
 		let last: string | null = null;
+		let specified = false;
 		for (let i = open; i < blanked.length; i++) {
 			const c = blanked[i];
 			if (c === "{") depth++;
@@ -431,13 +432,18 @@ export function extractTimelineTitle(source: string): string | null {
 					const pm = /title\s+"((?:[^"\\]|\\[\s\S])*)"/y;
 					pm.lastIndex = i;
 					const pt = pm.exec(live);
-					const value = pt ? normalizeTitle(pt[1]) : null;
 					// 複数指定ではレンダラーが最後の指定を採用するので走査を続ける（#431）。
-					if (value) last = value;
+					// 最後の指定が空でも以前の値は再利用しない（#470）。
+					if (pt) {
+						last = normalizeTitle(pt[1]);
+						specified = true;
+					}
 				}
 			}
 		}
-		if (last) return last;
+		// レンダラーは空 title を採用し見出しを空にするので、宣言名にも戻さず
+		// 呼び出し側の汎用ラベルへ委ねる（#470）。
+		if (specified) return last;
 	}
 	return declared;
 }
