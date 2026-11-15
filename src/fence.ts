@@ -447,6 +447,21 @@ function startsBlockHtml(line: string): boolean {
 }
 
 /**
+ * Number of leading lines taken by a YAML frontmatter block (0 when absent).
+ * Frontmatter opens with a `---` first line and closes at the next `---` or
+ * `...` line; without a closer it is not frontmatter. Its content is metadata,
+ * so a fence marker inside is literal text, not a code block (#472).
+ */
+function frontmatterEnd(lines: readonly string[]): number {
+	if ((lines[0] ?? "").trimEnd() !== "---") return 0;
+	for (let i = 1; i < lines.length; i++) {
+		const text = (lines[i] ?? "").trimEnd();
+		if (text === "---" || text === "...") return i + 1;
+	}
+	return 0;
+}
+
+/**
  * Yields every fenced code block outside HTML comments and raw HTML blocks, in
  * document order. A fence marker inside a `<!-- ... -->` comment is hidden
  * text, not a code block, so it is skipped (#434). Comment markers inside a
@@ -460,7 +475,7 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 	let blockHtmlDepth = 0;
 	let prevBlank = true;
 	let prevCode = false;
-	for (let i = 0; i < lines.length; i++) {
+	for (let i = frontmatterEnd(lines); i < lines.length; i++) {
 		const line = lines[i] ?? "";
 		// An HTML block inside a blockquote ends where the quote does.
 		if (rawHtmlTag !== null && quoteDepth(line) < rawHtmlDepth) {
