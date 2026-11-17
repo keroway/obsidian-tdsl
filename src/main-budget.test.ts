@@ -95,7 +95,10 @@ import mainSource from "./main.ts?raw";
 // Raised by 7 (issue #455): the export commands and ensureWasm() catch sites
 // now pass the exception to logError() (src/log-error.ts); each adds one line
 // plus the import.
-const MAIN_TS_LINE_BUDGET = 1324;
+// Raised by 11 (issue #481): copyStandaloneHtml() now surfaces the embed
+// helpers' silent fallbacks via createFallbackCollector() (standalone-html.ts),
+// logError() and a Notice; renderStandaloneHtml() forwards the callback.
+const MAIN_TS_LINE_BUDGET = 1335;
 
 describe("src/main.ts size budget", () => {
 	const lineCount = mainSource.split("\n").length - 1;

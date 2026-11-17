@@ -47,6 +47,7 @@ import { svgToPngBlob } from "./png-export";
 import { renderCacheKey, SvgLruCache } from "./render-cache";
 import { populateRenderOptions } from "./render-options";
 import {
+	createFallbackCollector,
 	embedEventLabelStyle,
 	replaceEmbeddedSvg,
 	resolveStandaloneHtmlRender,
@@ -386,13 +387,20 @@ class TdslPreview extends MarkdownRenderChild {
 				resolveRenderOptions(parseRenderDirectives(this.source), this.settings),
 				document.body.classList.contains("theme-dark"),
 			);
+			const { onFallback, summary } = createFallbackCollector();
 			const html = applyAccessibilityToHtmlString(
 				embedEventLabelStyle(
-					renderStandaloneHtml(this.source, render),
+					renderStandaloneHtml(this.source, render, onFallback),
 					render.theme,
+					onFallback,
 				),
 				extractTimelineTitle(this.source) ?? "Timeline",
 			);
+			const degraded = summary();
+			if (degraded) {
+				logError("standalone HTML export (degraded)", degraded);
+				new Notice("Timeline DSL: Standalone HTML lacks some styling.");
+			}
 			switch (await copyTextToClipboard(html)) {
 				case "copied":
 					new Notice("✔ Copied standalone timeline HTML to the clipboard.");
@@ -641,6 +649,7 @@ function renderSvg(
 function renderStandaloneHtml(
 	source: string,
 	r: ReturnType<typeof resolveRenderOptions>,
+	onFallback?: (reason: string) => void,
 ): string {
 	const opts = createRenderOptions(r);
 	let ownedByJs = true;
@@ -651,7 +660,9 @@ function renderStandaloneHtml(
 	} finally {
 		if (ownedByJs) opts.free();
 	}
-	return r.scale > 0 ? replaceEmbeddedSvg(html, renderSvg(source, r)) : html;
+	return r.scale > 0
+		? replaceEmbeddedSvg(html, renderSvg(source, r), onFallback)
+		: html;
 }
 
 /** Populates a newly allocated options instance for one ownership-transferring call. */

@@ -24,18 +24,37 @@ export function resolveStandaloneHtmlRender(
 	};
 }
 
+/** Collects fallback reasons from the embed helpers (#481). */
+export function createFallbackCollector(): {
+	onFallback: (reason: string) => void;
+	summary: () => string | null;
+} {
+	const reasons: string[] = [];
+	return {
+		onFallback: (reason) => {
+			reasons.push(reason);
+		},
+		summary: () => (reasons.length > 0 ? reasons.join("; ") : null),
+	};
+}
+
 /**
  * Appends the theme-aware event-label colour rule (#416) and lane colour
  * variables (#428) to the page's `<head>`. The HTML API output keeps
  * `.tdsl-event-label{fill:#333}` and light lane colours on a dark page
- * otherwise. Returns `html` unchanged when it has no `</head>`.
+ * otherwise. Returns `html` unchanged when it has no `</head>`, after calling
+ * `onFallback` so the caller can surface the degradation (#481).
  */
 export function embedEventLabelStyle(
 	html: string,
 	theme: string | undefined,
+	onFallback?: (reason: string) => void,
 ): string {
 	const at = html.indexOf("</head>");
-	if (at < 0) return html;
+	if (at < 0) {
+		onFallback?.("standalone HTML has no </head>; theme CSS was not applied");
+		return html;
+	}
 	const css = [
 		buildLaneVarsRule(theme),
 		buildExternalLabelRule(theme),
@@ -59,10 +78,18 @@ export function embedEventLabelStyle(
  *
  * Returns `html` unchanged when it holds no `<svg>` element, so a template
  * change upstream degrades to the old behaviour instead of corrupting output.
+ * `onFallback` is called in that case so the caller can surface it (#481).
  */
-export function replaceEmbeddedSvg(html: string, svg: string): string {
+export function replaceEmbeddedSvg(
+	html: string,
+	svg: string,
+	onFallback?: (reason: string) => void,
+): string {
 	const start = html.indexOf("<svg");
 	const end = html.lastIndexOf("</svg>");
-	if (start < 0 || end < start) return html;
+	if (start < 0 || end < start) {
+		onFallback?.("standalone HTML has no <svg>; scale was not applied");
+		return html;
+	}
 	return html.slice(0, start) + svg.trim() + html.slice(end + "</svg>".length);
 }

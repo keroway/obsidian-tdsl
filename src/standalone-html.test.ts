@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	createFallbackCollector,
 	embedEventLabelStyle,
 	replaceEmbeddedSvg,
 	resolveStandaloneHtmlRender,
@@ -97,6 +98,18 @@ describe("embedEventLabelStyle", () => {
 	it("returns the document unchanged without a head", () => {
 		expect(embedEventLabelStyle("<p>x</p>", "dark")).toBe("<p>x</p>");
 	});
+
+	it("reports the fallback without a head (#481)", () => {
+		const reasons: string[] = [];
+		embedEventLabelStyle("<p>x</p>", "dark", (r) => reasons.push(r));
+		expect(reasons).toHaveLength(1);
+	});
+
+	it("does not report when a head exists (#481)", () => {
+		const reasons: string[] = [];
+		embedEventLabelStyle(html, "dark", (r) => reasons.push(r));
+		expect(reasons).toEqual([]);
+	});
 });
 
 describe("replaceEmbeddedSvg", () => {
@@ -119,5 +132,30 @@ describe("replaceEmbeddedSvg", () => {
 	it("returns the document unchanged when it embeds no SVG", () => {
 		const html = "<html><body>no diagram</body></html>";
 		expect(replaceEmbeddedSvg(html, "<svg/>")).toBe(html);
+	});
+
+	it("reports the fallback when it embeds no SVG (#481)", () => {
+		const reasons: string[] = [];
+		replaceEmbeddedSvg("<p>x</p>", "<svg/>", (r) => reasons.push(r));
+		expect(reasons).toHaveLength(1);
+	});
+
+	it("does not report when the SVG is swapped (#481)", () => {
+		const reasons: string[] = [];
+		replaceEmbeddedSvg(page("<svg></svg>"), "<svg/>", (r) => reasons.push(r));
+		expect(reasons).toEqual([]);
+	});
+});
+
+describe("createFallbackCollector", () => {
+	it("returns null when nothing fell back", () => {
+		expect(createFallbackCollector().summary()).toBeNull();
+	});
+
+	it("joins the collected reasons (#481)", () => {
+		const c = createFallbackCollector();
+		c.onFallback("a");
+		c.onFallback("b");
+		expect(c.summary()).toBe("a; b");
 	});
 });
