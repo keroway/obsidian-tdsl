@@ -359,7 +359,7 @@ pnpm run lint         # Biome lint
 pnpm run typecheck    # tsc --noEmit
 ```
 
-CI classifies the changed files and runs only the affected checks among test (`pnpm run test:coverage`, enforcing coverage thresholds), lint (`pnpm run format:check` and `pnpm run lint`), typecheck, build (also verifies that `main.js` is produced), and audit (`pnpm audit --audit-level high`). See [CONTRIBUTING.md](./CONTRIBUTING.md) for a full guide.
+CI classifies the changed files and runs only the affected checks among test (`pnpm run test:coverage`, enforcing coverage thresholds), lint (`pnpm exec biome check --error-on-warnings .`: format + lint + organizeImports), typecheck, build (also verifies that `main.js` is produced), and audit (`pnpm audit --audit-level high`). See [CONTRIBUTING.md](./CONTRIBUTING.md) for a full guide.
 
 ## Related projects
 
