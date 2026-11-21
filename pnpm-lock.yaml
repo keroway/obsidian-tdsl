@@ -181,8 +181,8 @@ importers:
   .:
     dependencies:
       '@keroway/tdsl-wasm':
-        specifier: ^2.0.0
-        version: 2.1.0
+        specifier: ^3.0.0
+        version: 3.0.0
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.5
@@ -500,8 +500,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@keroway/tdsl-wasm@2.1.0':
-    resolution: {integrity: sha512-BErSbcpva1sKbBSQUBdYUK4cvN5paGlsrWiblUTFi2ytHYL/XS4CPxgvDY3VXkmADq0gs1AFA5Emda874+U3HA==}
+  '@keroway/tdsl-wasm@3.0.0':
+    resolution: {integrity: sha512-Hti+nLs1nVe/kdtRKTyotxG3PTzPEieKxkx+JCnsa5L+uKC5xx9JHakrCT5swqxJwSlEh+nMUSM0zIPds/BtRA==}
 
   '@lezer/common@1.5.2':
     resolution: {integrity: sha512-sxQE460fPZyU3sdc8lafxiPwJHBzZRy/udNFynGQky1SePYBdhkBl1kOagA9uT3pxR8K09bOrmTUqA9wb/PjSQ==}
@@ -1345,7 +1345,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@keroway/tdsl-wasm@2.1.0': {}
+  '@keroway/tdsl-wasm@3.0.0': {}
 
   '@lezer/common@1.5.2': {}
 
