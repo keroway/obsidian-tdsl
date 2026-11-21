@@ -642,6 +642,24 @@ describe("extractTimelineTitle", () => {
 		expect(extractTimelineTitle('mytimeline "No"')).toBeNull();
 	});
 
+	describe("line comments between tokens (#487)", () => {
+		it("reads a declaration name after a line comment", () => {
+			const source = 'timeline // comment\n"Demo" { unit year; }';
+			expect(extractTimelineTitle(source)).toBe("Demo");
+		});
+
+		it("reads a title property after a line comment", () => {
+			const source =
+				'timeline "Demo" { title // comment\n"Visible"; unit year; }';
+			expect(extractTimelineTitle(source)).toBe("Visible");
+		});
+
+		it("keeps // inside strings", () => {
+			const source = 'timeline "http://example.com" { unit year; }';
+			expect(extractTimelineTitle(source)).toBe("http://example.com");
+		});
+	});
+
 	describe("title property (#427)", () => {
 		it("prefers the title property over the declaration name", () => {
 			const source =
