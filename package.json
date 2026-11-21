@@ -43,6 +43,6 @@
 	},
 	"packageManager": "pnpm@12.22.0",
 	"dependencies": {
-		"@keroway/tdsl-wasm": "^2.0.0"
+		"@keroway/tdsl-wasm": "^3.0.0"
 	}
 }

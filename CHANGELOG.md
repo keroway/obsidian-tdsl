@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Dependencies** — `@keroway/tdsl-wasm` updated to v3 (resolved 3.0.0). User-visible behaviour changes from upstream: duplicate properties within one block, unsupported calendars, invalid times and undeclared references are now rejected as errors, so notes that used to render may show a diagnostic; auto-generated lane IDs starting with a digit get a `lane_` prefix ([#491](https://github.com/keroway/obsidian-tdsl/issues/491))
+- **Editor** — syntax highlighting recognises the new keywords `filter` / `entity` / `startswith` / `contains` / `to` ([#491](https://github.com/keroway/obsidian-tdsl/issues/491))
+
 ## [1.1.1] - 2026-11-03
 
 ### Fixed

@@ -72,4 +72,9 @@ export const MISC_KEYWORDS: readonly string[] = [
 	"color",
 	"expand",
 	"qualifier",
+	"filter",
+	"entity",
+	"startswith",
+	"contains",
+	"to",
 ];
