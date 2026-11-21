@@ -396,12 +396,17 @@ export function extractTimelineTitle(source: string): string | null {
 	// 文字列・行コメント・ブロックコメントの外にある宣言だけを対象にする。
 	// 文字列とブロックコメントを空白化しても文字数は変わらないので、空白化した
 	// 側で見つけた位置を、文字列が残っている側へそのまま持ち込める。
-	const blanked = stripBlockComments(source, true).replace(/\/\/[^\n]*/g, (s) =>
-		" ".repeat(s.length),
-	);
+	const noStrings = stripBlockComments(source, true);
+	const blanked = noStrings.replace(/\/\/[^\n]*/g, (s) => " ".repeat(s.length));
+	// 行コメントの範囲は文字列を空白化した側でだけ正しく求まる（文字列内の `//` を
+	// 巻き込まない）。同じ範囲を `live` でも空白化し、キーワードと引用符の間に挟まった
+	// コメントを再マッチ時に読み飛ばせるようにする（#487）。
+	const live = stripBlockComments(source)
+		.split("")
+		.map((ch, i) => (blanked[i] === " " && noStrings[i] !== " " ? " " : ch))
+		.join("");
 	const decl = /(?<![\w$])timeline\s+"/.exec(blanked);
 	if (!decl) return null;
-	const live = stripBlockComments(source);
 	const re = /timeline\s+"((?:[^"\\]|\\[\s\S])*)"/y;
 	re.lastIndex = decl.index;
 	const m = re.exec(live);
