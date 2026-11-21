@@ -645,6 +645,37 @@ describe("indented code block is not a fence (#338)", () => {
 	});
 });
 
+describe("indented code block inside a blockquote is not a fence (#489)", () => {
+	it("ignores a quoted fence indented 4+ columns after the quote marker", () => {
+		const lines = [
+			">     ~~~tdsl",
+			'>     timeline "Demo" {unit year;range 0..100;}',
+			">     ~~~",
+		];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+		expect(findTdslFenceAtCursor(lines, 1)).toEqual({
+			status: "not-in-block",
+		});
+	});
+
+	it("keeps a deeply indented fence inside a quoted list item", () => {
+		const lines = [
+			"> - item",
+			">     ~~~tdsl",
+			">     timeline {}",
+			">     ~~~",
+		];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 1, closeLine: 3, prefix: ">     " },
+		]);
+	});
+
+	it("keeps an ordinary quoted fence", () => {
+		const lines = ["> ~~~tdsl", "> timeline {}", "> ~~~"];
+		expect(listTdslFenceRanges(lines)).toHaveLength(1);
+	});
+});
+
 describe("tab and space indentation are compared by columns (#347)", () => {
 	const tabbed = ["-\t~~~tdsl", "\ttimeline {};", "\t~~~"];
 	const mixed = ["- item", "    ~~~tdsl", "\ttimeline {};", "\t~~~"];

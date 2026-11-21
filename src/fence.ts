@@ -204,6 +204,17 @@ function parseOpenFence(lines: readonly string[], index: number): Fence | null {
 	) {
 		return null;
 	}
+	// Inside a blockquote, the container is removed first: the text after the
+	// `>` markers (and one optional space) indented 4+ columns outside a quoted
+	// list item is an indented code block too (#489).
+	const depth = quoteDepth(line);
+	if (
+		depth > 0 &&
+		leadingColumns(stripQuotes(line)) >= 4 &&
+		quotedContinuationIndent(lines, index, depth) === 0
+	) {
+		return null;
+	}
 	return open;
 }
 
