@@ -458,6 +458,24 @@ function startsBlockHtml(line: string): boolean {
 }
 
 /**
+ * CommonMark HTML block type 7: a line holding only a complete opening or
+ * closing tag (any name except the type 1 raw tags) followed by whitespace
+ * runs until the next blank line. Unlike type 6 it cannot interrupt a
+ * paragraph, so the caller must only test it at a block start (#493).
+ */
+const TAG_NAME =
+	"(?!(?:pre|script|style|textarea)(?:[\\s>/]|$))[A-Za-z][A-Za-z0-9-]*";
+const TAG_ATTR = `\\s+[A-Za-z_:][A-Za-z0-9_.:-]*(?:\\s*=\\s*(?:[^\\s"'=<>\`]+|'[^']*'|"[^"]*"))?`;
+const LONE_TAG_RE = new RegExp(
+	`^ {0,3}(?:<${TAG_NAME}(?:${TAG_ATTR})*\\s*/?>|</${TAG_NAME}\\s*>)\\s*$`,
+	"i",
+);
+
+function startsLoneTagHtml(line: string): boolean {
+	return LONE_TAG_RE.test(stripQuotes(line));
+}
+
+/**
  * Number of leading lines taken by a YAML frontmatter block (0 when absent).
  * Frontmatter opens with a `---` first line and closes at the next `---` or
  * `...` line; without a closer it is not frontmatter. Its content is metadata,
@@ -486,6 +504,9 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 	let blockHtmlDepth = 0;
 	let prevBlank = true;
 	let prevCode = false;
+	// True while the previous line was paragraph text (type 7 HTML cannot
+	// interrupt it).
+	let inParagraph = false;
 	for (let i = frontmatterEnd(lines); i < lines.length; i++) {
 		const line = lines[i] ?? "";
 		// An HTML block inside a blockquote ends where the quote does.
@@ -506,6 +527,7 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 		if (blockHtml) {
 			prevBlank = false;
 			prevCode = false;
+			inParagraph = false;
 			continue;
 		}
 		if (line.trim() === "") {
@@ -513,6 +535,7 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 			// continue past it. An open comment does continue.
 			state = { comment: state.comment, span: 0 };
 			prevBlank = true;
+			inParagraph = false;
 			continue;
 		}
 		if (!state.comment) {
@@ -526,6 +549,7 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 				state = { comment: false, span: 0 };
 				prevBlank = false;
 				prevCode = false;
+				inParagraph = false;
 				continue;
 			}
 			const closer = rawHtmlBlockCloser(line);
@@ -534,13 +558,15 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 					rawHtmlTag = closer;
 					rawHtmlDepth = quoteDepth(line);
 				}
+				inParagraph = false;
 				continue;
 			}
-			if (startsBlockHtml(line)) {
+			if (startsBlockHtml(line) || (!inParagraph && startsLoneTagHtml(line))) {
 				blockHtml = true;
 				blockHtmlDepth = quoteDepth(line);
 				prevBlank = false;
 				prevCode = false;
+				inParagraph = false;
 				continue;
 			}
 			// An unquoted line indented 4+ columns that starts a block (after a
@@ -553,10 +579,12 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 				!inListItem(lines, i, leadingColumns(line));
 			prevBlank = false;
 			prevCode = indentedCode;
+			inParagraph = !indentedCode;
 			if (indentedCode) continue;
 		} else {
 			prevBlank = false;
 			prevCode = false;
+			inParagraph = true;
 		}
 		state = advanceInlineState(line, state);
 	}

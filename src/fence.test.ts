@@ -784,7 +784,7 @@ describe("fence inside a raw HTML block (pre / script) is not a code block (#441
 
 	it("does not match tags that merely start with pre", () => {
 		expect(
-			listTdslFenceRanges(["<preview>", "```tdsl", "x", "```"]),
+			listTdslFenceRanges(["<preview>x", "```tdsl", "x", "```"]),
 		).toHaveLength(1);
 	});
 });
@@ -847,12 +847,60 @@ describe("fence inside a block-level HTML block (type 6) is not a code block (#4
 	});
 
 	it("does not treat HTML text inside code or unknown tags as a block", () => {
-		expect(listTdslFenceRanges(["<divx>", "```tdsl", "x", "```"])).toHaveLength(
-			1,
-		);
+		expect(
+			listTdslFenceRanges(["<divx a=1 b>x", "```tdsl", "x", "```"]),
+		).toHaveLength(1);
 		expect(
 			listTdslFenceRanges(["```js", "<div>", "```", "```tdsl", "x", "```"]),
 		).toEqual([{ openLine: 3, closeLine: 5, prefix: "" }]);
+	});
+});
+
+describe("fence inside a lone-tag HTML block (type 7) is not a code block (#493)", () => {
+	for (const tag of ["span", "custom-widget", "divx", "a href='x'", "br/"]) {
+		const name = tag.split(/[\s/]/)[0];
+		const hidden = [
+			"",
+			`<${tag}>`,
+			"~~~tdsl",
+			"timeline {}",
+			"~~~",
+			`</${name}>`,
+		];
+
+		it(`does not detect a fence inside <${tag}>`, () => {
+			expect(listTdslFenceRanges(hidden)).toEqual([]);
+			expect(findTdslFenceAtCursor(hidden, 3)).toEqual({
+				status: "not-in-block",
+			});
+		});
+	}
+
+	it("detects a real fence after the blank line that ends the block", () => {
+		const lines = ["<span>", "x", "", "```tdsl", "x", "```"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 3, closeLine: 5, prefix: "" },
+		]);
+	});
+
+	it("keeps a fence preceded by a blank line inside the tag", () => {
+		const lines = ["<span>", "", "```tdsl", "x", "```", "</span>"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 2, closeLine: 4, prefix: "" },
+		]);
+	});
+
+	it("cannot interrupt a paragraph", () => {
+		const lines = ["text", "<span>", "```tdsl", "x", "```"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 2, closeLine: 4, prefix: "" },
+		]);
+	});
+
+	it("does not treat a tag followed by text or a raw tag as type 7", () => {
+		expect(
+			listTdslFenceRanges(["<span>x</span>", "```tdsl", "x", "```"]),
+		).toHaveLength(1);
 	});
 });
 
