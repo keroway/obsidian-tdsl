@@ -424,6 +424,13 @@ const PROCESSING_INSTRUCTION_OPEN_RE = /^ {0,3}<\?/;
 const CDATA_OPEN_RE = /^ {0,3}<!\[CDATA\[/;
 
 /**
+ * CommonMark HTML block type 4: a line starting (0-3 spaces of indent) with
+ * `<!` and an ASCII letter (`<!DOCTYPE`, ...) runs until a line containing `>`
+ * (#495).
+ */
+const DECLARATION_OPEN_RE = /^ {0,3}<![A-Za-z]/;
+
+/**
  * Returns the end marker (lowercase) that terminates the raw HTML block the
  * line opens, or null when the line does not open one.
  */
@@ -434,6 +441,7 @@ function rawHtmlBlockCloser(line: string): string | null {
 	if (m?.[1]) return `</${m[1].toLowerCase()}>`;
 	if (PROCESSING_INSTRUCTION_OPEN_RE.test(text)) return "?>";
 	if (CDATA_OPEN_RE.test(text)) return "]]>";
+	if (DECLARATION_OPEN_RE.test(text)) return ">";
 	return null;
 }
 

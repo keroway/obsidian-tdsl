@@ -909,6 +909,7 @@ describe("fence inside a processing instruction / CDATA is not a code block (#46
 	const cases: [string, string, string][] = [
 		["processing instruction", "<?example", "?>"],
 		["CDATA", "<![CDATA[", "]]>"],
+		["HTML declaration (#495)", "<!DOCTYPE html [", "]>"],
 	];
 
 	for (const [name, open, close] of cases) {
