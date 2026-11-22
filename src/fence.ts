@@ -166,6 +166,27 @@ function inListItem(
 }
 
 /**
+ * Content column of the list item enclosing a line indented `indent` columns
+ * (the nearest earlier non-blank line indented less must be its marker line),
+ * or 0 when no item encloses it.
+ */
+function enclosingListColumn(
+	lines: readonly string[],
+	index: number,
+	indent: number,
+): number {
+	for (let k = index - 1; k >= 0; k--) {
+		const line = lines[k] ?? "";
+		if (line.trim() === "") continue;
+		if (leadingColumns(line) < indent) {
+			const head = LIST_ITEM_HEAD_RE.exec(line);
+			return head ? textColumns(head[0]) : 0;
+		}
+	}
+	return 0;
+}
+
+/**
  * For a quoted fence without a list marker, the indent (measured after the `>`
  * markers) at which it continues an enclosing quoted list item, or 0 when no
  * item encloses it. The search stops at a line that leaves the blockquote.
@@ -434,15 +455,43 @@ const DECLARATION_OPEN_RE = /^ {0,3}<![A-Za-z]/;
  * Returns the end marker (lowercase) that terminates the raw HTML block the
  * line opens, or null when the line does not open one.
  */
-function rawHtmlBlockCloser(line: string): string | null {
-	// A blockquote container (`> <pre>`) holds the HTML block too (#453).
-	const text = stripQuotes(line);
+function rawHtmlBlockCloser(text: string): string | null {
 	const m = RAW_HTML_OPEN_RE.exec(text);
 	if (m?.[1]) return `</${m[1].toLowerCase()}>`;
 	if (PROCESSING_INSTRUCTION_OPEN_RE.test(text)) return "?>";
 	if (CDATA_OPEN_RE.test(text)) return "]]>";
 	if (DECLARATION_OPEN_RE.test(text)) return ">";
 	return null;
+}
+
+/**
+ * The text of line `index` with its container removed, for HTML block start
+ * detection: blockquote markers (`> <pre>`, #453) and an unquoted list item's
+ * marker (`- <pre>`) or continuation indent (`    <pre>` under `1. item`,
+ * #498). `listColumn` is the item's content column (0 outside a list item).
+ */
+function htmlBlockText(
+	lines: readonly string[],
+	index: number,
+): { text: string; listColumn: number } {
+	const line = lines[index] ?? "";
+	const text = stripQuotes(line);
+	if (quoteDepth(line) > 0) return { text, listColumn: 0 };
+	const head = LIST_ITEM_HEAD_RE.exec(line);
+	if (head) {
+		return {
+			text: line.slice(head[0].length),
+			listColumn: textColumns(head[0]),
+		};
+	}
+	const indent = leadingColumns(line);
+	if (indent >= 4) {
+		const column = enclosingListColumn(lines, index, indent);
+		if (column > 0 && indent - column <= 3) {
+			return { text: line.trimStart(), listColumn: column };
+		}
+	}
+	return { text, listColumn: 0 };
 }
 
 function closesRawHtml(line: string, closer: string): boolean {
@@ -508,6 +557,7 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 	let state: InlineState = { comment: false, span: 0 };
 	let rawHtmlTag: string | null = null;
 	let rawHtmlDepth = 0;
+	let rawHtmlListColumn = 0;
 	let blockHtml = false;
 	let blockHtmlDepth = 0;
 	let prevBlank = true;
@@ -519,6 +569,15 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 		const line = lines[i] ?? "";
 		// An HTML block inside a blockquote ends where the quote does.
 		if (rawHtmlTag !== null && quoteDepth(line) < rawHtmlDepth) {
+			rawHtmlTag = null;
+		}
+		// A raw HTML block in a list item ends where the item does.
+		if (
+			rawHtmlTag !== null &&
+			rawHtmlListColumn >= 2 &&
+			line.trim() !== "" &&
+			leadingColumns(line) < rawHtmlListColumn
+		) {
 			rawHtmlTag = null;
 		}
 		if (rawHtmlTag !== null) {
@@ -560,11 +619,13 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 				inParagraph = false;
 				continue;
 			}
-			const closer = rawHtmlBlockCloser(line);
+			const html = htmlBlockText(lines, i);
+			const closer = rawHtmlBlockCloser(html.text);
 			if (closer !== null) {
-				if (!closesRawHtml(line, closer)) {
+				if (!closesRawHtml(html.text, closer)) {
 					rawHtmlTag = closer;
 					rawHtmlDepth = quoteDepth(line);
+					rawHtmlListColumn = html.listColumn;
 				}
 				inParagraph = false;
 				continue;
