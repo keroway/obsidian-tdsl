@@ -1063,6 +1063,23 @@ describe("comment opener in code / escape context does not hide later fences (#4
 		expect(findTdslFenceAtCursor(lines, 3).status).toBe("found");
 	});
 
+	it("ignores <!-- in an indented code block inside a blockquote (#502)", () => {
+		const lines = ["> " + "    <!--", "", ...fence];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 2, closeLine: 4, prefix: "" },
+		]);
+	});
+
+	it("still treats a quoted <!-- in a paragraph as a comment (#502)", () => {
+		const lines = ["> text", ">     <!--", ...fence, "-->"];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+	});
+
+	it("still treats a quoted <!-- inside a quoted list item as a comment (#502)", () => {
+		const lines = ["> - item", ">", ">     <!--", ...fence, "-->"];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+	});
+
 	it("ignores an escaped <!--", () => {
 		const lines = ["\\<!--", "", ...fence];
 		expect(listTdslFenceRanges(lines)).toHaveLength(1);

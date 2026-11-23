@@ -654,11 +654,17 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 			// An unquoted line indented 4+ columns that starts a block (after a
 			// blank line, or continuing indented code) outside a list item is an
 			// indented code block: `<!--` there is literal text (#442).
+			// Inside a blockquote the container is removed first, so the text after
+			// the `>` markers gets the same treatment outside a quoted list item
+			// (#502).
+			const depth = quoteDepth(line);
 			const indentedCode: boolean =
-				quoteDepth(line) === 0 &&
-				leadingColumns(line) >= 4 &&
 				(prevBlank || prevCode) &&
-				!inListItem(lines, i, leadingColumns(line));
+				(depth === 0
+					? leadingColumns(line) >= 4 &&
+						!inListItem(lines, i, leadingColumns(line))
+					: leadingColumns(stripQuotes(line)) >= 4 &&
+						quotedContinuationIndent(lines, i, depth) === 0);
 			prevBlank = false;
 			prevCode = indentedCode;
 			inParagraph = !indentedCode;
