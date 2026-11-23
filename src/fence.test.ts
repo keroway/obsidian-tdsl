@@ -1071,12 +1071,43 @@ describe("comment opener in code / escape context does not hide later fences (#4
 	});
 
 	it("still treats a quoted <!-- in a paragraph as a comment (#502)", () => {
-		const lines = ["> text", ">     <!--", ...fence, "-->"];
+		const lines = [
+			"> text",
+			">     <!--",
+			...fence.map((l) => `> ${l}`),
+			"> -->",
+		];
 		expect(listTdslFenceRanges(lines)).toEqual([]);
 	});
 
 	it("still treats a quoted <!-- inside a quoted list item as a comment (#502)", () => {
-		const lines = ["> - item", ">", ">     <!--", ...fence, "-->"];
+		const lines = [
+			"> - item",
+			">",
+			">     <!--",
+			...fence.map((l) => `> ${l}`),
+			"> -->",
+		];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+	});
+
+	it("an unclosed quoted <!-- does not hide a fence after the quote (#504)", () => {
+		const lines = ["> <!--", "", ...fence];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 2, closeLine: 4, prefix: "" },
+		]);
+		expect(findTdslFenceAtCursor(lines, 3).status).toBe("found");
+	});
+
+	it("an unclosed quoted <!-- ends at a non-quoted line without a blank (#504)", () => {
+		const lines = ["> <!--", ...fence];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 1, closeLine: 3, prefix: "" },
+		]);
+	});
+
+	it("a quoted <!-- still hides a fence in the same quote (#504)", () => {
+		const lines = ["> <!--", ">", ...fence.map((l) => `> ${l}`)];
 		expect(listTdslFenceRanges(lines)).toEqual([]);
 	});
 
