@@ -1003,6 +1003,51 @@ describe("fence inside a raw HTML block in a list item is not a code block (#498
 	});
 });
 
+describe("HTML block in a quoted list or a list div/span hides fences (#500)", () => {
+	it("hides a fence inside `> - <pre>`", () => {
+		const lines = [
+			"> - <pre>",
+			">   ~~~tdsl",
+			">   timeline {}",
+			">   ~~~",
+			">   </pre>",
+		];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+		expect(findTdslFenceAtCursor(lines, 2)).toEqual({ status: "not-in-block" });
+	});
+
+	it.each(["div", "span"])(
+		"hides a fence inside an indented <%s> under a numbered item",
+		(tag) => {
+			const lines = [
+				"1. item",
+				"",
+				`    <${tag}>`,
+				"    ~~~tdsl",
+				"    timeline {}",
+				"    ~~~",
+				`    </${tag}>`,
+			];
+			expect(listTdslFenceRanges(lines)).toEqual([]);
+			expect(findTdslFenceAtCursor(lines, 4)).toEqual({
+				status: "not-in-block",
+			});
+		},
+	);
+
+	it("still detects a real fence in a quoted list", () => {
+		const lines = ["> - ~~~tdsl", ">   x", ">   ~~~"];
+		expect(listTdslFenceRanges(lines)).toHaveLength(1);
+	});
+
+	it("detects a real fence after the quoted list HTML ends", () => {
+		const lines = ["> - <pre>", ">   </pre>", "", "```tdsl", "x", "```"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 3, closeLine: 5, prefix: "" },
+		]);
+	});
+});
+
 describe("comment opener in code / escape context does not hide later fences (#442)", () => {
 	const fence = [
 		"~~~tdsl",

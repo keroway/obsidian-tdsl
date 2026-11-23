@@ -174,9 +174,13 @@ function enclosingListColumn(
 	lines: readonly string[],
 	index: number,
 	indent: number,
+	depth = 0,
 ): number {
 	for (let k = index - 1; k >= 0; k--) {
-		const line = lines[k] ?? "";
+		const raw = lines[k] ?? "";
+		// Inside a blockquote the search stops where the quote ends.
+		if (depth > 0 && quoteDepth(raw) < depth) return 0;
+		const line = depth > 0 ? stripQuotes(raw) : raw;
 		if (line.trim() === "") continue;
 		if (leadingColumns(line) < indent) {
 			const head = LIST_ITEM_HEAD_RE.exec(line);
@@ -475,20 +479,21 @@ function htmlBlockText(
 	index: number,
 ): { text: string; listColumn: number } {
 	const line = lines[index] ?? "";
+	const depth = quoteDepth(line);
+	// Resolve the list inside the blockquote (`> - <pre>`, #500).
 	const text = stripQuotes(line);
-	if (quoteDepth(line) > 0) return { text, listColumn: 0 };
-	const head = LIST_ITEM_HEAD_RE.exec(line);
+	const head = LIST_ITEM_HEAD_RE.exec(text);
 	if (head) {
 		return {
-			text: line.slice(head[0].length),
+			text: text.slice(head[0].length),
 			listColumn: textColumns(head[0]),
 		};
 	}
-	const indent = leadingColumns(line);
+	const indent = leadingColumns(text);
 	if (indent >= 4) {
-		const column = enclosingListColumn(lines, index, indent);
+		const column = enclosingListColumn(lines, index, indent, depth);
 		if (column > 0 && indent - column <= 3) {
-			return { text: line.trimStart(), listColumn: column };
+			return { text: text.trimStart(), listColumn: column };
 		}
 	}
 	return { text, listColumn: 0 };
@@ -560,6 +565,7 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 	let rawHtmlListColumn = 0;
 	let blockHtml = false;
 	let blockHtmlDepth = 0;
+	let blockHtmlListColumn = 0;
 	let prevBlank = true;
 	let prevCode = false;
 	// True while the previous line was paragraph text (type 7 HTML cannot
@@ -576,7 +582,7 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 			rawHtmlTag !== null &&
 			rawHtmlListColumn >= 2 &&
 			line.trim() !== "" &&
-			leadingColumns(line) < rawHtmlListColumn
+			leadingColumns(stripQuotes(line)) < rawHtmlListColumn
 		) {
 			rawHtmlTag = null;
 		}
@@ -587,7 +593,10 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 		// A type 6 HTML block ends at a blank line or where its quote ends.
 		if (
 			blockHtml &&
-			(quoteDepth(line) < blockHtmlDepth || stripQuotes(line).trim() === "")
+			(quoteDepth(line) < blockHtmlDepth ||
+				stripQuotes(line).trim() === "" ||
+				(blockHtmlListColumn >= 2 &&
+					leadingColumns(stripQuotes(line)) < blockHtmlListColumn))
 		) {
 			blockHtml = false;
 		}
@@ -630,9 +639,13 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 				inParagraph = false;
 				continue;
 			}
-			if (startsBlockHtml(line) || (!inParagraph && startsLoneTagHtml(line))) {
+			if (
+				startsBlockHtml(html.text) ||
+				(!inParagraph && startsLoneTagHtml(html.text))
+			) {
 				blockHtml = true;
 				blockHtmlDepth = quoteDepth(line);
+				blockHtmlListColumn = html.listColumn;
 				prevBlank = false;
 				prevCode = false;
 				inParagraph = false;
