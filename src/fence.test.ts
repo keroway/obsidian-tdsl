@@ -945,6 +945,64 @@ describe("fence inside a processing instruction / CDATA is not a code block (#46
 	});
 });
 
+describe("fence inside a raw HTML block in a list item is not a code block (#498)", () => {
+	const real = ["```tdsl", "x", "```"];
+
+	it("hides a fence inside `- <pre>`", () => {
+		const lines = [
+			"- <pre>",
+			"  ~~~tdsl",
+			"  timeline {}",
+			"  ~~~",
+			"  </pre>",
+		];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+		expect(findTdslFenceAtCursor(lines, 2)).toEqual({ status: "not-in-block" });
+	});
+
+	it("hides a fence inside an indented <pre> under a numbered item", () => {
+		const lines = [
+			"1. item",
+			"",
+			"    <pre>",
+			"    ~~~tdsl",
+			"    timeline {}",
+			"    ~~~",
+			"    </pre>",
+		];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+	});
+
+	it("detects a real fence after the list ends", () => {
+		const lines = [
+			"- <pre>",
+			"  ~~~tdsl",
+			"  x",
+			"  ~~~",
+			"  </pre>",
+			"",
+			...real,
+		];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 6, closeLine: 8, prefix: "" },
+		]);
+	});
+
+	it("ends an unclosed list <pre> where the item ends", () => {
+		const lines = ["- <pre>", "  text", "", ...real];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 3, closeLine: 5, prefix: "" },
+		]);
+	});
+
+	it("still detects an ordinary fence in a list item", () => {
+		const lines = ["- ~~~tdsl", "  x", "  ~~~"];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 0, closeLine: 2, prefix: "  " },
+		]);
+	});
+});
+
 describe("comment opener in code / escape context does not hide later fences (#442)", () => {
 	const fence = [
 		"~~~tdsl",
