@@ -1085,8 +1085,8 @@ describe("comment opener in code / escape context does not hide later fences (#4
 			"> - item",
 			">",
 			">     <!--",
-			...fence.map((l) => `> ${l}`),
-			"> -->",
+			...fence.map((l) => `>   ${l}`),
+			">   -->",
 		];
 		expect(listTdslFenceRanges(lines)).toEqual([]);
 	});
@@ -1108,6 +1108,32 @@ describe("comment opener in code / escape context does not hide later fences (#4
 
 	it("a quoted <!-- still hides a fence in the same quote (#504)", () => {
 		const lines = ["> <!--", ">", ...fence.map((l) => `> ${l}`)];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+	});
+
+	it("an unclosed <!-- in a list item does not hide a fence after the list (#506)", () => {
+		const lines = ["- <!--", "", ...fence];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 2, closeLine: 4, prefix: "" },
+		]);
+		expect(findTdslFenceAtCursor(lines, 3).status).toBe("found");
+	});
+
+	it("an unclosed <!-- in a quoted list item does not hide a fence after it (#506)", () => {
+		const outside = ["> - <!--", "", ...fence];
+		expect(listTdslFenceRanges(outside)).toEqual([
+			{ openLine: 2, closeLine: 4, prefix: "" },
+		]);
+		const sameQuote = ["> - <!--", ">", ...fence.map((l) => `> ${l}`)];
+		expect(listTdslFenceRanges(sameQuote)).toEqual([
+			{ openLine: 2, closeLine: 4, prefix: "> " },
+		]);
+		const inItem = ["> - <!--", ">", ...fence.map((l) => `>   ${l}`)];
+		expect(listTdslFenceRanges(inItem)).toEqual([]);
+	});
+
+	it("a <!-- in a list item still hides a fence in the same item (#506)", () => {
+		const lines = ["- <!--", "", ...fence.map((l) => `  ${l}`), "  -->"];
 		expect(listTdslFenceRanges(lines)).toEqual([]);
 	});
 
