@@ -568,6 +568,8 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 	let blockHtmlListColumn = 0;
 	// Blockquote depth at which the open HTML comment started.
 	let commentDepth = 0;
+	// Content column of the list item the open comment started in (0 = none).
+	let commentListColumn = 0;
 	let prevBlank = true;
 	let prevCode = false;
 	// True while the previous line was paragraph text (type 7 HTML cannot
@@ -578,6 +580,16 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 		// An HTML comment opened inside a blockquote ends where the quote does
 		// (#504); a line with fewer `>` markers leaves the container.
 		if (state.comment && quoteDepth(line) < commentDepth) {
+			state = { comment: false, span: 0 };
+		}
+		// An HTML comment opened in a list item ends where the item does (#506).
+		if (
+			state.comment &&
+			commentListColumn >= 2 &&
+			line.trim() !== "" &&
+			stripQuotes(line).trim() !== "" &&
+			leadingColumns(stripQuotes(line)) < commentListColumn
+		) {
 			state = { comment: false, span: 0 };
 		}
 		// An HTML block inside a blockquote ends where the quote does.
@@ -683,7 +695,10 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 		}
 		const wasComment = state.comment;
 		state = advanceInlineState(line, state);
-		if (!wasComment && state.comment) commentDepth = quoteDepth(line);
+		if (!wasComment && state.comment) {
+			commentDepth = quoteDepth(line);
+			commentListColumn = htmlBlockText(lines, i).listColumn;
+		}
 	}
 }
 
