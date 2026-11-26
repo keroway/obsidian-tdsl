@@ -394,7 +394,11 @@ function findBacktickRun(line: string, n: number, from: number): number {
  * not open a comment inside an inline code span (which may span lines within a
  * paragraph, #442) or when escaped with a backslash.
  */
-function advanceInlineState(line: string, state: InlineState): InlineState {
+function advanceInlineState(
+	line: string,
+	state: InlineState,
+	laterCloser: (n: number) => boolean = () => true,
+): InlineState {
 	let { comment, span } = state;
 	let i = 0;
 	while (i < line.length) {
@@ -416,9 +420,15 @@ function advanceInlineState(line: string, state: InlineState): InlineState {
 			const n = j - i;
 			const close = findBacktickRun(line, n, j);
 			if (close === -1) {
-				// Possibly closed on a later line of the same paragraph.
-				span = n;
-				i = line.length;
+				// Possibly closed on a later line of the same paragraph. Without a
+				// matching run there, the backticks are literal text (CommonMark)
+				// and must not hide a following `<!--` (#510).
+				if (laterCloser(n)) {
+					span = n;
+					i = line.length;
+				} else {
+					i = j;
+				}
 			} else {
 				i = close + n;
 			}
@@ -694,7 +704,18 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 			inParagraph = true;
 		}
 		const wasComment = state.comment;
-		state = advanceInlineState(line, state);
+		state = advanceInlineState(line, state, (n) => {
+			for (let k = i + 1; k < lines.length; k++) {
+				const next = lines[k] ?? "";
+				// A blank line or a fence opener ends the paragraph; backticks in
+				// the fence body are code, not a span closer.
+				if (next.trim() === "" || parseOpenFence(lines, k) !== null) {
+					return false;
+				}
+				if (findBacktickRun(next, n, 0) !== -1) return true;
+			}
+			return false;
+		});
 		if (!wasComment && state.comment) {
 			commentDepth = quoteDepth(line);
 			commentListColumn = htmlBlockText(lines, i).listColumn;
