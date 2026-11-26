@@ -1048,6 +1048,36 @@ describe("HTML block in a quoted list or a list div/span hides fences (#500)", (
 	});
 });
 
+describe("unclosed backtick does not disable comment detection (#510)", () => {
+	const commented = ["<!--", "```tdsl", "timeline {}", "```", "-->"];
+
+	it("ignores a fence inside a comment after an unclosed backtick", () => {
+		expect(listTdslFenceRanges(["text `", ...commented])).toEqual([]);
+		expect(findTdslFenceAtCursor(["text `", ...commented], 3).status).toBe(
+			"not-in-block",
+		);
+	});
+
+	it("matches the control without a backtick", () => {
+		expect(listTdslFenceRanges(["text", ...commented])).toEqual([]);
+		expect(listTdslFenceRanges(["text `closed`", ...commented])).toEqual([]);
+	});
+
+	it("still ignores a comment opener inside a multi-line code span", () => {
+		const lines = [
+			"text `",
+			"<!--",
+			"` after",
+			"```tdsl",
+			"timeline {}",
+			"```",
+		];
+		expect(listTdslFenceRanges(lines)).toEqual([
+			{ openLine: 3, closeLine: 5, prefix: "" },
+		]);
+	});
+});
+
 describe("comment opener in code / escape context does not hide later fences (#442)", () => {
 	const fence = [
 		"~~~tdsl",
