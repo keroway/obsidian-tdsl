@@ -1058,6 +1058,19 @@ describe("unclosed backtick does not disable comment detection (#510)", () => {
 		);
 	});
 
+	it("does not take a backtick in the fence body as a span closer", () => {
+		const lines = [
+			"text `",
+			"<!--",
+			"```tdsl",
+			'timeline "`" {}',
+			"```",
+			"-->",
+		];
+		expect(listTdslFenceRanges(lines)).toEqual([]);
+		expect(findTdslFenceAtCursor(lines, 3).status).toBe("not-in-block");
+	});
+
 	it("matches the control without a backtick", () => {
 		expect(listTdslFenceRanges(["text", ...commented])).toEqual([]);
 		expect(listTdslFenceRanges(["text `closed`", ...commented])).toEqual([]);

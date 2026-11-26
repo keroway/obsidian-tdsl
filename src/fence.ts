@@ -707,7 +707,11 @@ function* scanFences(lines: readonly string[]): Generator<ScannedFence> {
 		state = advanceInlineState(line, state, (n) => {
 			for (let k = i + 1; k < lines.length; k++) {
 				const next = lines[k] ?? "";
-				if (next.trim() === "") return false;
+				// A blank line or a fence opener ends the paragraph; backticks in
+				// the fence body are code, not a span closer.
+				if (next.trim() === "" || parseOpenFence(lines, k) !== null) {
+					return false;
+				}
 				if (findBacktickRun(next, n, 0) !== -1) return true;
 			}
 			return false;
