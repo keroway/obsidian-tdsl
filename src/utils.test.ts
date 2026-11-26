@@ -642,6 +642,33 @@ describe("extractTimelineTitle", () => {
 		expect(extractTimelineTitle('mytimeline "No"')).toBeNull();
 	});
 
+	describe("no whitespace before the opening quote (#508)", () => {
+		it("reads a declaration name without a space", () => {
+			expect(
+				extractTimelineTitle('timeline"Visible" { unit year; range 0..100; }'),
+			).toBe("Visible");
+		});
+
+		it("reads a title property without a space", () => {
+			expect(
+				extractTimelineTitle(
+					'timeline "Declared" { title"Visible"; unit year; range 0..100; }',
+				),
+			).toBe("Visible");
+		});
+
+		it("matches the spaced form", () => {
+			const a = 'timeline"X" { title"Y"; }';
+			const b = 'timeline "X" { title "Y"; }';
+			expect(extractTimelineTitle(a)).toBe(extractTimelineTitle(b));
+		});
+
+		it("still rejects identifiers ending in the keyword", () => {
+			expect(extractTimelineTitle('mytimeline"No"')).toBeNull();
+			expect(extractTimelineTitle('timeline "D" { mytitle"No"; }')).toBe("D");
+		});
+	});
+
 	describe("line comments between tokens (#487)", () => {
 		it("reads a declaration name after a line comment", () => {
 			const source = 'timeline // comment\n"Demo" { unit year; }';

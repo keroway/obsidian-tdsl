@@ -405,9 +405,9 @@ export function extractTimelineTitle(source: string): string | null {
 		.split("")
 		.map((ch, i) => (blanked[i] === " " && noStrings[i] !== " " ? " " : ch))
 		.join("");
-	const decl = /(?<![\w$])timeline\s+"/.exec(blanked);
+	const decl = /(?<![\w$])timeline\s*"/.exec(blanked);
 	if (!decl) return null;
-	const re = /timeline\s+"((?:[^"\\]|\\[\s\S])*)"/y;
+	const re = /timeline\s*"((?:[^"\\]|\\[\s\S])*)"/y;
 	re.lastIndex = decl.index;
 	const m = re.exec(live);
 	if (!m) return null;
@@ -421,7 +421,7 @@ export function extractTimelineTitle(source: string): string | null {
 		open !== -1 &&
 		/^\s*$/.test(blanked.slice(decl.index + m[0].length, open))
 	) {
-		const prop = /(?<![\w$])title\s+"/y;
+		const prop = /(?<![\w$])title\s*"/y;
 		let depth = 0;
 		let last: string | null = null;
 		let specified = false;
@@ -434,7 +434,7 @@ export function extractTimelineTitle(source: string): string | null {
 			} else if (depth === 1 && c === "t") {
 				prop.lastIndex = i;
 				if (prop.test(blanked)) {
-					const pm = /title\s+"((?:[^"\\]|\\[\s\S])*)"/y;
+					const pm = /title\s*"((?:[^"\\]|\\[\s\S])*)"/y;
 					pm.lastIndex = i;
 					const pt = pm.exec(live);
 					// 複数指定ではレンダラーが最後の指定を採用するので走査を続ける（#431）。
